@@ -1,0 +1,6 @@
+{
+  "name": "CSJMU Urban Planning & Maintenance Portal",
+  "description": "Real-time campus infrastructure overview, incident reporting, interactive campus map, and maintenance management for UIET CSJMU.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
