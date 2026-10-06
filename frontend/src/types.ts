@@ -218,6 +218,7 @@ export type ActiveTab =
   | 'management_dashboard'
   | 'operator_dashboard' 
   | 'admin_dashboard' 
+  | 'cctv_pipeline'
   | 'map' 
   | 'heatisland' 
   | 'pipeline' 
@@ -434,5 +435,73 @@ export interface MicroclimateSummary {
     coolPavementSqM: number;
     seatingCapacity: number;
   };
+}
+
+// -------------------------------------------------------------
+// CCTV Garbage Detection 8-Stage Pipeline Types
+// -------------------------------------------------------------
+
+export interface CctvCamera {
+  id: string;
+  name: string;
+  location: string;
+  zoneId: string;
+  zoneName: string;
+  ward: string;
+  coordinates: { x: number; y: number };
+  gps: { latitude: number; longitude: number };
+  resolution: string;
+  fps: number;
+  status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE';
+  ipAddress: string;
+  installedHeightMeters: number;
+  sampleImages?: Record<string, string>;
+}
+
+export interface CctvSweep {
+  slot: string;
+  name: string;
+  description: string;
+  targetTime: string;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'SCHEDULED' | 'PENDING';
+  lastRun: string;
+  detectionsCount: number;
+  ticketsGenerated: number;
+}
+
+export interface CctvPipelineRun {
+  runId: string;
+  timestamp: string;
+  sweepSlot: string;
+  camera: {
+    id: string;
+    name: string;
+    location: string;
+    zone: string;
+  };
+  frameUrl: string;
+  detection: {
+    detectionClass: string;
+    confidence: number;
+    boundingBox?: { ymin: number; xmin: number; ymax: number; xmax: number } | null;
+    estimatedAmount?: any;
+  };
+  decision: {
+    passesConfidence: boolean;
+    isSignificant: boolean;
+    isDuplicate: boolean;
+    shouldCreateTicket: boolean;
+  };
+  ticket?: {
+    title: string;
+    summary: string;
+    priority: string;
+    suggestedAction: string;
+    aiModel: string;
+    confidenceScore: number;
+  } | null;
+  createdIncidentId?: string | null;
+  ticketNumber?: string | null;
+  status: 'TICKET_DISPATCHED' | 'DUPLICATE_IGNORED' | 'CLEAN_RECORDED';
 }
 

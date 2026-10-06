@@ -530,3 +530,85 @@ export async function simulateMitigationAPI(
     newClassification: totalDrop > 6 ? 'MODERATE' : 'HIGH_STRESS'
   };
 }
+
+// -------------------------------------------------------------
+// CCTV Garbage Detection 8-Stage Pipeline API Methods
+// -------------------------------------------------------------
+
+export async function fetchCctvCamerasAPI(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/cameras`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data.cameras || [];
+    }
+  } catch (err) {
+    console.warn('CCTV cameras API offline, using fallback');
+  }
+  return [];
+}
+
+export async function fetchCctvSweepsAPI(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/sweeps`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data.sweeps || [];
+    }
+  } catch (err) {
+    console.warn('CCTV sweeps API offline, using fallback');
+  }
+  return [];
+}
+
+export async function triggerCctvCaptureAPI(
+  cameraId: string,
+  detectionClass?: string,
+  sweepSlot?: string
+): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cameraId, detectionClass, sweepSlot }),
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Trigger CCTV capture API error', err);
+  }
+  return null;
+}
+
+export async function runScheduledSweepAPI(sweepSlot: string = '12:00'): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/sweep/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sweepSlot }),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Run scheduled sweep API error', err);
+  }
+  return null;
+}
+
+export async function fetchCctvRunsAPI(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/runs`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data.runs || [];
+    }
+  } catch (err) {
+    console.warn('Fetch CCTV runs API offline');
+  }
+  return [];
+}
+

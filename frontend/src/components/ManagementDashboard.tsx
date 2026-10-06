@@ -22,7 +22,8 @@ import {
   ArrowRight,
   HardHat,
   ChevronRight,
-  Calendar
+  Calendar,
+  Video
 } from 'lucide-react';
 
 interface ManagementDashboardProps {
@@ -127,6 +128,13 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({
             <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
               Contractor Score: A+ (Incentive Eligible)
             </span>
+            <button
+              onClick={() => onNavigateToTab('cctv_pipeline')}
+              className="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
+            >
+              <Video className="w-3.5 h-3.5" />
+              <span>CCTV 4-Sweep Center</span>
+            </button>
           </div>
         </div>
 

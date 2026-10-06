@@ -18,7 +18,8 @@ import {
   HardHat,
   Award,
   TreeDeciduous,
-  CheckCircle2
+  CheckCircle2,
+  Video
 } from 'lucide-react';
 import { ActiveTab, UserRole } from '../types';
 
@@ -307,6 +308,22 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 </div>
               </button>
 
+              {/* CCTV Garbage Pipeline */}
+              <button
+                id="nav-cctv-pipeline-operator"
+                onClick={() => onSelectTab('cctv_pipeline')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'cctv_pipeline'
+                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-indigo-600 shadow-xs'
+                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Video className={`w-4 h-4 ${activeTab === 'cctv_pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
+                  <span>CCTV Pipeline</span>
+                </div>
+              </button>
+
               {/* Maintenance Log */}
               <button
                 id="nav-maintenance-log"
@@ -391,6 +408,25 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 </div>
                 <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded">
                   5-STAGE
+                </span>
+              </button>
+
+              {/* CCTV Garbage Pipeline */}
+              <button
+                id="nav-cctv-pipeline"
+                onClick={() => onSelectTab('cctv_pipeline')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'cctv_pipeline'
+                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-indigo-600 shadow-xs'
+                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Video className={`w-4 h-4 ${activeTab === 'cctv_pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
+                  <span className="font-extrabold">CCTV Pipeline</span>
+                </div>
+                <span className="bg-indigo-100 text-indigo-800 text-[9px] font-black px-1.5 py-0.5 rounded tracking-wider">
+                  4X DAILY
                 </span>
               </button>
 

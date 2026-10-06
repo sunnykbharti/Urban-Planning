@@ -25,7 +25,8 @@ import {
   ExternalLink,
   ChevronRight,
   RefreshCw,
-  Cpu
+  Cpu,
+  Video
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -115,10 +116,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
             <button
               onClick={() => onNavigateToTab('pipeline')}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
             >
               <Layers className="w-4 h-4 text-indigo-200" />
               <span>ARE 5-Stage Pipeline</span>
+            </button>
+            <button
+              onClick={() => onNavigateToTab('cctv_pipeline')}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+            >
+              <Video className="w-4 h-4 text-emerald-200" />
+              <span>CCTV 4-Sweep Pipeline</span>
             </button>
           </div>
         </div>

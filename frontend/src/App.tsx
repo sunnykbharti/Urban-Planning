@@ -23,6 +23,7 @@ import { PlanningBoardView } from './components/PlanningBoardView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SettingsModal } from './components/SettingsModal';
 import { PipelineVisualizer } from './components/PipelineVisualizer';
+import { CctvPipelineDashboard } from './components/CctvPipelineDashboard';
 import { HeatIslandMapView } from './components/HeatIslandMapView';
 import { StudentDashboard } from './components/StudentDashboard';
 import { OperatorDashboard } from './components/OperatorDashboard';
@@ -423,6 +424,13 @@ export default function App() {
 
           {activeTab === 'pipeline' && (
             <PipelineVisualizer />
+          )}
+
+          {activeTab === 'cctv_pipeline' && (
+            <CctvPipelineDashboard
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+            />
           )}
 
           {activeTab === 'map' && (

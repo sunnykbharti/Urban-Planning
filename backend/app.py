@@ -20,6 +20,7 @@ from authority_engine import authority_engine
 from detection_service import simulate_detection, analyze_garbage_image, DETECTION_CLASSES, SAMPLE_SOURCES
 from heat_island_service import heat_island_service
 from database import db_manager
+from cctv_service import cctv_service
 
 app = Flask(__name__)
 # Enable CORS for frontend running on Vite or any localhost port
@@ -445,6 +446,61 @@ def simulate_microclimate_mitigation():
         shade_sqm=shade_sqm
     )
     return jsonify(simulation_result), 200
+
+# -------------------------------------------------------------
+# CCTV Garbage Detection & 4-Sweep Automated Pipeline Endpoints
+# -------------------------------------------------------------
+
+@app.route("/api/cctv/cameras", methods=["GET"])
+def get_cctv_cameras():
+    """Returns list of registered campus CCTV cameras with locations and feeds."""
+    return jsonify({
+        "cameras": cctv_service.get_cameras()
+    }), 200
+
+@app.route("/api/cctv/sweeps", methods=["GET"])
+def get_cctv_sweeps():
+    """Returns status of 4 daily scheduled sweeps (6 AM, 12 PM, 4 PM, 8 PM)."""
+    return jsonify({
+        "sweeps": cctv_service.get_sweeps()
+    }), 200
+
+@app.route("/api/cctv/capture", methods=["POST"])
+def capture_and_detect_camera():
+    """
+    Executes 8-stage CCTV garbage detection pipeline for a specific camera:
+    Frame capture -> AI Detection -> Decision Engine -> LLM Ticket -> Dispatch
+    """
+    data = request.get_json() or {}
+    camera_id = data.get("cameraId", "CAM-UIET-01")
+    forced_class = data.get("detectionClass")
+    sweep_slot = data.get("sweepSlot", "ON_DEMAND")
+
+    try:
+        result = cctv_service.execute_camera_pipeline(
+            camera_id=camera_id,
+            forced_class=forced_class,
+            sweep_slot=sweep_slot
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/api/cctv/sweep/run", methods=["POST"])
+def run_scheduled_cctv_sweep():
+    """Executes campus-wide automated sweep across all CCTV cameras."""
+    data = request.get_json() or {}
+    sweep_slot = data.get("sweepSlot", "12:00")
+
+    result = cctv_service.run_scheduled_sweep(sweep_slot=sweep_slot)
+    return jsonify(result), 200
+
+@app.route("/api/cctv/runs", methods=["GET"])
+def get_cctv_pipeline_runs():
+    """Returns history and audit trail of CCTV pipeline detections."""
+    return jsonify({
+        "runs": cctv_service.get_pipeline_runs()
+    }), 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
