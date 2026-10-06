@@ -166,3 +166,30 @@ npm run dev
 | `POST` | `/api/incidents/<id>/verify` | Stage 5: Upload "After" photo, calculate response time, verify SLA |
 | `POST` | `/api/detect/simulate` | Simulate YOLOv11 inference on Drone/CCTV/Mobile |
 | `GET` | `/api/stats` | Aggregated SLA compliance rates, average response duration |
+| `GET` | `/api/microclimate/sectors` | Retrieve all 8 campus microclimate polygons & multi-layer indicators |
+| `GET` | `/api/microclimate/interventions` | Retrieve 4 Actionable Urban Planning recommendations |
+| `GET` | `/api/microclimate/summary` | UHI summary: peak Hot Zone LST, cool sink delta, intervention totals |
+| `POST` | `/api/microclimate/simulate` | Interactive "What-If" scenario simulator (tree count, cool pave %, shade m²) |
+
+---
+
+### Campus Heat Island (UHI) & Hot Zones Map Module ⭐⭐⭐⭐⭐
+
+This module elevates the system into true urban planning by mapping multi-layer environmental factors:
+- 🌡️ **Surface Temperature (LST °C)**: Thermal gradient spectrum (28°C to 44°C)
+- 🌳 **Tree Canopy Cover (%)**: NDVI green cover index and biological shading
+- 🏢 **Building Density (%)**: Concrete volume, aspect ratio, and thermal mass
+- 🛣️ **Paved Surfaces (%)**: Impervious asphalt/concrete with low albedo ($< 0.15$)
+- 💧 **Water Bodies (m)**: Evaporative cooling sink buffer zones
+- 🚶 **Pedestrian Movement**: High-density human transit corridors intersecting with extreme thermal exposure
+
+#### The 4 Actionable Urban Planning Decisions:
+1. **🌳 Where should we plant trees?**
+   - Identifies high-solar insolation pathways with low canopy and high soil permeability. Recommends native species (*Azadirachta indica* / Neem, *Cassia fistula* / Amaltas, *Dalbergia sissoo* / Shisham) with projected $\Delta T$ drops up to $-4.2^\circ\text{C}$.
+2. **⛱️ Where should we create shade?**
+   - Pinpoints critical student transit corridors where underground utilities (e.g. 11kV cables, culverts) prevent deep-root trees. Recommends architectural tensile PTFE fabric membranes and bifacial solar pergolas ($98\%$ UV cut).
+3. **🛣️ Where should we use cool pavement?**
+   - Targets expansive, unshaded asphalt parking lots and workshop loading yards. Recommends high-reflectance titanium-dioxide coatings (SRI $\ge 82$) and permeable pavers (expected surface drop from $44.2^\circ\text{C}$ to $34.5^\circ\text{C}$).
+4. **🪑 Where should seating be located?**
+   - Locates microclimate "Cool Refuges" with $> 70\%$ canopy shade, natural wind channeling, and lake breeze buffers within convenient walking distance from academic lecture halls.
+

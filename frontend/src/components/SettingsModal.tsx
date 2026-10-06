@@ -42,10 +42,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <label className="block text-xs font-bold text-[#43474f] uppercase tracking-wider">
             Active User Role Profile
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button
+              onClick={() => onRoleChange('student')}
+              className={`p-3 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
+                userRole === 'student'
+                  ? 'border-blue-600 bg-blue-50 text-blue-900 font-bold ring-1 ring-blue-600'
+                  : 'border-[#c3c6d1] text-[#43474f] hover:bg-[#f0f3ff]'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold">Student / Citizen</span>
+                {userRole === 'student' && <Check className="w-4 h-4 text-blue-600" />}
+              </div>
+              <p className="text-[11px] text-[#737780] mt-1 font-normal">Report hazards &amp; track progress</p>
+            </button>
+
+            <button
+              onClick={() => onRoleChange('operator')}
+              className={`p-3 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
+                userRole === 'operator'
+                  ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold ring-1 ring-emerald-600'
+                  : 'border-[#c3c6d1] text-[#43474f] hover:bg-emerald-50/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold">Field Operator</span>
+                {userRole === 'operator' && <Check className="w-4 h-4 text-emerald-600" />}
+              </div>
+              <p className="text-[11px] text-[#737780] mt-1 font-normal">Work orders &amp; photo verification</p>
+            </button>
+
             <button
               onClick={() => onRoleChange('admin')}
-              className={`p-3 rounded-lg border text-left text-xs transition-colors ${
+              className={`p-3 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
                 userRole === 'admin'
                   ? 'border-[#001e40] bg-[#e7eeff] text-[#001e40] font-bold ring-1 ring-[#001e40]'
                   : 'border-[#c3c6d1] text-[#43474f] hover:bg-[#f0f3ff]'
@@ -55,22 +85,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="font-bold">Planning Officer</span>
                 {userRole === 'admin' && <Check className="w-4 h-4 text-[#001e40]" />}
               </div>
-              <p className="text-[11px] text-[#737780] mt-1 font-normal">Full triage &amp; dispatch access</p>
-            </button>
-
-            <button
-              onClick={() => onRoleChange('student')}
-              className={`p-3 rounded-lg border text-left text-xs transition-colors ${
-                userRole === 'student'
-                  ? 'border-[#001e40] bg-[#e7eeff] text-[#001e40] font-bold ring-1 ring-[#001e40]'
-                  : 'border-[#c3c6d1] text-[#43474f] hover:bg-[#f0f3ff]'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-bold">Student / Staff</span>
-                {userRole === 'student' && <Check className="w-4 h-4 text-[#001e40]" />}
-              </div>
-              <p className="text-[11px] text-[#737780] mt-1 font-normal">Campus incident reporter</p>
+              <p className="text-[11px] text-[#737780] mt-1 font-normal">Executive triage &amp; command HQ</p>
             </button>
           </div>
         </div>

@@ -23,8 +23,12 @@ import { PlanningBoardView } from './components/PlanningBoardView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SettingsModal } from './components/SettingsModal';
 import { PipelineVisualizer } from './components/PipelineVisualizer';
+import { HeatIslandMapView } from './components/HeatIslandMapView';
+import { StudentDashboard } from './components/StudentDashboard';
+import { OperatorDashboard } from './components/OperatorDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
 import { checkBackendHealth, fetchIncidentsFromBackend } from './api/client';
-import { CheckCircle2, AlertTriangle, Info, Server } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
 
 export default function App() {
   // Application State
@@ -40,9 +44,30 @@ export default function App() {
     return saved ? JSON.parse(saved) : initialActivities;
   });
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('map');
   const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('admin_dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const handleRoleChange = (newRole: UserRole) => {
+    setUserRole(newRole);
+    if (newRole === 'student') {
+      setActiveTab('student_dashboard');
+    } else if (newRole === 'operator') {
+      setActiveTab('operator_dashboard');
+    } else {
+      setActiveTab('admin_dashboard');
+    }
+  };
+
+  const handleToggleRole = () => {
+    if (userRole === 'admin') {
+      handleRoleChange('operator');
+    } else if (userRole === 'operator') {
+      handleRoleChange('student');
+    } else {
+      handleRoleChange('admin');
+    }
+  };
   
   // Modals and Drawers
   const [isReportDrawerOpen, setIsReportDrawerOpen] = useState<boolean>(false);
@@ -101,14 +126,30 @@ export default function App() {
       id: `act-${Date.now()}`,
       type: 'new_report',
       title: `New report filed: ${newReport.title}`,
-      description: `${newReport.description.slice(0, 80)}...`,
+      description: `${(newReport.description || '').slice(0, 80)}...`,
       location: newReport.location,
       timestamp: 'JUST NOW',
-      actor: newReport.reportedBy.name,
+      actor: newReport.reportedBy?.name || 'Campus Reporter',
       iconType: newReport.severity === 'urgent' ? 'report' : 'engineering'
     };
 
     setActivities([newAct, ...activities]);
+
+    if (backendStatus.online) {
+      createIncidentAPI({
+        title: newReport.title,
+        description: newReport.description,
+        category: newReport.category,
+        coordinates: newReport.coordinates,
+        detectionClass: newReport.detectionClass || (newReport.category === 'waterlogging' ? 'blocked_drain' : 'overflow'),
+        severity: newReport.severity,
+        imageUrl: newReport.imageUrl,
+        beforeImageUrl: newReport.imageUrl,
+        garbageDetection: newReport.garbageDetection,
+        estimatedAmount: newReport.estimatedAmount
+      });
+    }
+
     showToast(`Report ${newReport.id} registered on CSJMU map`, newReport.severity === 'urgent' ? 'urgent' : 'success');
   };
 
@@ -213,7 +254,7 @@ export default function App() {
         activities={activities}
         urgentCount={urgentCount}
         userRole={userRole}
-        onRoleChange={setUserRole}
+        onRoleChange={handleRoleChange}
         onOpenReportDrawer={() => {
           setReportDrawerLocation('UIET Block 1');
           setReportDrawerCoords({ x: 38, y: 38 });
@@ -234,14 +275,14 @@ export default function App() {
           }}
           onOpenSettings={() => setIsSettingsOpen(true)}
           userRole={userRole}
-          onToggleRole={() => setUserRole(prev => prev === 'admin' ? 'student' : 'admin')}
+          onToggleRole={handleToggleRole}
           urgentCount={urgentCount}
         />
 
         {/* Main Content Area Canvas */}
         <main className="flex-1 ml-0 md:ml-[240px] p-4 md:p-8 max-w-[1600px] w-full min-h-[calc(100vh-4rem)] transition-all">
           {/* Backend Status Notification Pill */}
-          <div className="mb-4 flex items-center justify-between text-xs px-3.5 py-2 rounded-lg border bg-white border-slate-200">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs px-3.5 py-2 rounded-lg border bg-white border-slate-200">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${backendStatus.online ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
               <span className="font-semibold text-slate-700">
@@ -251,13 +292,74 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setActiveTab('pipeline')}
-                className={`text-[11px] font-bold px-2 py-0.5 rounded transition-colors ${activeTab === 'pipeline' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                onClick={() => setActiveTab('heatisland')}
+                className={`text-[11px] font-extrabold px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'heatisland' 
+                    ? 'bg-rose-600 text-white shadow-xs' 
+                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                }`}
               >
-                Inspect ARE Engine
+                <Flame className="w-3.5 h-3.5" />
+                <span>Heat Island Map</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('pipeline')}
+                className={`text-[11px] font-bold px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                  activeTab === 'pipeline' 
+                    ? 'bg-indigo-600 text-white' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                ARE Engine
               </button>
             </div>
           </div>
+
+          {/* DEDICATED ROLE DASHBOARDS */}
+          {activeTab === 'student_dashboard' && (
+            <StudentDashboard
+              reports={displayedReports}
+              blocks={blocks}
+              activities={activities}
+              onOpenReportDrawer={() => {
+                setReportDrawerLocation('UIET Block 1');
+                setReportDrawerCoords({ x: 38, y: 38 });
+                setIsReportDrawerOpen(true);
+              }}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {activeTab === 'operator_dashboard' && (
+            <OperatorDashboard
+              reports={displayedReports}
+              activities={activities}
+              onUpdateStatus={handleUpdateStatus}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {activeTab === 'admin_dashboard' && (
+            <AdminDashboard
+              reports={displayedReports}
+              blocks={blocks}
+              activities={activities}
+              onOpenReportDrawer={() => {
+                setReportDrawerLocation('UIET Block 1');
+                setReportDrawerCoords({ x: 38, y: 38 });
+                setIsReportDrawerOpen(true);
+              }}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {/* OTHER ROLE-SPECIFIC / SHARED MODULE VIEWS */}
+          {activeTab === 'heatisland' && (
+            <HeatIslandMapView />
+          )}
 
           {activeTab === 'pipeline' && (
             <PipelineVisualizer />
@@ -334,7 +436,7 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         userRole={userRole}
-        onRoleChange={setUserRole}
+        onRoleChange={handleRoleChange}
         onResetData={handleResetData}
       />
 

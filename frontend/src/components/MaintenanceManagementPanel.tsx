@@ -68,7 +68,7 @@ export const MaintenanceManagementPanel: React.FC<MaintenanceManagementPanelProp
         if (b.severity === 'urgent' && a.severity !== 'urgent') return 1;
       }
       if (sortBy === 'status') {
-        const order: Record<ReportStatus, number> = { pending: 1, in_progress: 2, resolved: 3 };
+        const order: Record<ReportStatus, number> = { pending: 1, dispatched: 2, in_progress: 3, resolved: 4 };
         return order[a.status] - order[b.status];
       }
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

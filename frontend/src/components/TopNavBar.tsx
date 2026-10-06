@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Search, Bell, HelpCircle, User, ShieldAlert, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { 
+  Search, 
+  Bell, 
+  HelpCircle, 
+  User, 
+  ShieldAlert, 
+  CheckCircle2, 
+  AlertTriangle, 
+  X,
+  GraduationCap,
+  HardHat,
+  Building2,
+  ChevronDown
+} from 'lucide-react';
 import { ActivityEvent, UserRole } from '../types';
 
 interface TopNavBarProps {
@@ -26,30 +39,93 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   const [showAccountMenu, setShowAccountMenu] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-6 md:px-10 h-16 bg-[#ffffff] border-b border-[#c3c6d1] shadow-xs">
+    <header className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 md:px-8 h-16 bg-[#ffffff] border-b border-[#c3c6d1] shadow-xs">
       {/* Brand Logo / Title */}
-      <div className="flex items-center gap-4">
-        <span className="text-lg md:text-xl font-bold text-[#001e40] tracking-tight">
-          CSJMU Urban Planning &amp; Maintenance Portal
-        </span>
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${
+          userRole === 'student'
+            ? 'bg-blue-600'
+            : userRole === 'operator'
+            ? 'bg-emerald-600'
+            : 'bg-[#001e40]'
+        }`}>
+          {userRole === 'student' ? (
+            <GraduationCap className="w-5 h-5" />
+          ) : userRole === 'operator' ? (
+            <HardHat className="w-5 h-5 text-emerald-200" />
+          ) : (
+            <Building2 className="w-5 h-5 text-blue-200" />
+          )}
+        </div>
+        <div className="flex flex-col">
+          <span className="text-base md:text-lg font-extrabold text-[#001e40] tracking-tight leading-tight">
+            CSJMU Urban Planning Portal
+          </span>
+          <span className="text-[10px] text-slate-500 font-bold hidden sm:inline">
+            {userRole === 'student'
+              ? 'Student & Citizen Reporting Hub'
+              : userRole === 'operator'
+              ? 'Sanitation Beat 01 Field Authority'
+              : 'Estate & Works Planning Division'}
+          </span>
+        </div>
+      </div>
+
+      {/* Quick Role Switcher Pill Bar (High Visibility for pair programming & testing) */}
+      <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+        <button
+          onClick={() => onRoleChange('student')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            userRole === 'student'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <GraduationCap className="w-3.5 h-3.5" />
+          <span>Student</span>
+        </button>
+
+        <button
+          onClick={() => onRoleChange('operator')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            userRole === 'operator'
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <HardHat className="w-3.5 h-3.5" />
+          <span>Operator / Authority</span>
+        </button>
+
+        <button
+          onClick={() => onRoleChange('admin')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            userRole === 'admin'
+              ? 'bg-[#001e40] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>Admin</span>
+        </button>
       </div>
 
       {/* Global Search Bar */}
-      <div className="flex-1 max-w-md mx-6 hidden md:block">
+      <div className="flex-1 max-w-xs mx-4 hidden md:block">
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#43474f]" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#43474f]" />
           <input
             id="global-search-input"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search reports, areas, blocks..."
-            className="w-full pl-10 pr-4 py-2 rounded-full border border-[#c3c6d1] bg-[#f0f3ff] focus:bg-white focus:border-[#001e40] focus:ring-1 focus:ring-[#001e40] outline-none text-sm text-[#111c2d] placeholder-[#737780] transition-colors"
+            placeholder="Search reports, blocks, wards..."
+            className="w-full pl-9 pr-7 py-1.5 rounded-full border border-[#c3c6d1] bg-[#f0f3ff] focus:bg-white focus:border-[#001e40] focus:ring-1 focus:ring-[#001e40] outline-none text-xs text-[#111c2d] placeholder-[#737780] transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737780] hover:text-[#111c2d]"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737780] hover:text-[#111c2d]"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -64,7 +140,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
           id="help-button"
           onClick={() => setShowHelp(true)}
           aria-label="Help & Documentation"
-          className="p-2 rounded-full hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative"
+          className="p-2 rounded-full hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative cursor-pointer"
           title="Help & Campus Protocols"
         >
           <HelpCircle className="w-5 h-5" />
@@ -76,7 +152,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             id="notifications-button"
             onClick={() => setShowNotifications(!showNotifications)}
             aria-label="Notifications"
-            className="p-2 rounded-full hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative"
+            className="p-2 rounded-full hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative cursor-pointer"
             title="Notifications"
           >
             <Bell className="w-5 h-5" />
@@ -129,13 +205,13 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                       setShowNotifications(false);
                       onOpenReportDrawer();
                     }}
-                    className="text-xs text-[#001e40] font-bold hover:underline"
+                    className="text-xs text-[#001e40] font-bold hover:underline cursor-pointer"
                   >
                     + Report New Hazard
                   </button>
                   <button
                     onClick={() => setShowNotifications(false)}
-                    className="text-xs text-[#737780] hover:text-[#111c2d]"
+                    className="text-xs text-[#737780] hover:text-[#111c2d] cursor-pointer"
                   >
                     Close
                   </button>
@@ -151,11 +227,24 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             id="account-button"
             onClick={() => setShowAccountMenu(!showAccountMenu)}
             aria-label="Account Settings"
-            className="p-1.5 rounded-full hover:bg-[#dee8ff] text-[#001e40] transition-colors flex items-center gap-2"
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-[#001e40] transition-colors flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-200"
           >
-            <div className="w-8 h-8 rounded-full bg-[#003366] text-white flex items-center justify-center font-bold text-xs">
-              {userRole === 'admin' ? 'PE' : 'ST'}
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white ${
+              userRole === 'student'
+                ? 'bg-blue-600'
+                : userRole === 'operator'
+                ? 'bg-emerald-700'
+                : 'bg-[#003366]'
+            }`}>
+              {userRole === 'student' ? 'ST' : userRole === 'operator' ? 'OP' : 'PE'}
             </div>
+            <div className="hidden xl:flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-800 leading-tight">
+                {userRole === 'student' ? 'Sunny Bharti' : userRole === 'operator' ? 'Rajesh Kumar' : 'Er. R. K. Agrawal'}
+              </span>
+              <span className="text-[10px] text-slate-500 font-semibold capitalize">{userRole}</span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
           {showAccountMenu && (
@@ -164,41 +253,98 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                 className="fixed inset-0 z-40" 
                 onClick={() => setShowAccountMenu(false)} 
               />
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-[#c3c6d1] rounded-xl shadow-xl z-50 p-3 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-2 py-1.5 border-b border-[#e7eeff] mb-2">
-                  <p className="text-xs text-[#737780]">Signed in as</p>
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-[#c3c6d1] rounded-xl shadow-xl z-50 p-3 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-2 py-2 border-b border-[#e7eeff] mb-2">
+                  <p className="text-[11px] text-[#737780]">Active Persona</p>
                   <p className="text-sm font-bold text-[#001e40]">
-                    {userRole === 'admin' ? 'Er. R. K. Agrawal' : 'Sunny Bharti (Student)'}
+                    {userRole === 'student'
+                      ? 'Sunny Bharti (Student Reporter)'
+                      : userRole === 'operator'
+                      ? 'Rajesh Kumar (Field Beat Supervisor)'
+                      : 'Er. R. K. Agrawal (Chief Planning Officer)'}
                   </p>
-                  <span className="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#dee8ff] text-[#001e40]">
-                    {userRole === 'admin' ? 'Planning Division • Admin' : 'UIET CSE • Reporter'}
+                  <span className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded ${
+                    userRole === 'student'
+                      ? 'bg-blue-50 text-blue-800'
+                      : userRole === 'operator'
+                      ? 'bg-emerald-50 text-emerald-800'
+                      : 'bg-indigo-50 text-indigo-800'
+                  }`}>
+                    {userRole === 'student'
+                      ? 'UIET CSE • Campus Resident'
+                      : userRole === 'operator'
+                      ? 'Sanitation Beat Alpha • Ward 42'
+                      : 'Planning & Works Directorate • CSJMU'}
                   </span>
                 </div>
+
                 <div className="space-y-1">
-                  <p className="text-[11px] font-bold text-[#737780] px-2 uppercase tracking-wider">Switch Role</p>
-                  <button
-                    onClick={() => {
-                      onRoleChange('admin');
-                      setShowAccountMenu(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between ${
-                      userRole === 'admin' ? 'bg-[#001e40] text-white' : 'hover:bg-[#f0f3ff] text-[#111c2d]'
-                    }`}
-                  >
-                    <span>Planning Officer (Admin)</span>
-                    {userRole === 'admin' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </button>
+                  <p className="text-[11px] font-bold text-[#737780] px-2 uppercase tracking-wider">Switch Portal Role</p>
+                  
+                  {/* Option 1: Student */}
                   <button
                     onClick={() => {
                       onRoleChange('student');
                       setShowAccountMenu(false);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between ${
-                      userRole === 'student' ? 'bg-[#001e40] text-white' : 'hover:bg-[#f0f3ff] text-[#111c2d]'
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between cursor-pointer ${
+                      userRole === 'student' ? 'bg-blue-600 text-white font-bold' : 'hover:bg-[#f0f3ff] text-[#111c2d]'
                     }`}
                   >
-                    <span>Student / Staff Citizen</span>
-                    {userRole === 'student' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4" />
+                      <div>
+                        <p className="leading-tight">Student / Campus Citizen</p>
+                        <p className={`text-[10px] ${userRole === 'student' ? 'text-blue-100' : 'text-slate-400'}`}>
+                          Report hazards, track status &amp; cool spots
+                        </p>
+                      </div>
+                    </div>
+                    {userRole === 'student' && <CheckCircle2 className="w-4 h-4" />}
+                  </button>
+
+                  {/* Option 2: Operator */}
+                  <button
+                    onClick={() => {
+                      onRoleChange('operator');
+                      setShowAccountMenu(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between cursor-pointer ${
+                      userRole === 'operator' ? 'bg-emerald-700 text-white font-bold' : 'hover:bg-[#f0f3ff] text-[#111c2d]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <HardHat className="w-4 h-4" />
+                      <div>
+                        <p className="leading-tight">Operator / Field Authority</p>
+                        <p className={`text-[10px] ${userRole === 'operator' ? 'text-emerald-100' : 'text-slate-400'}`}>
+                          Work orders, SLA timers &amp; photo verification
+                        </p>
+                      </div>
+                    </div>
+                    {userRole === 'operator' && <CheckCircle2 className="w-4 h-4" />}
+                  </button>
+
+                  {/* Option 3: Admin */}
+                  <button
+                    onClick={() => {
+                      onRoleChange('admin');
+                      setShowAccountMenu(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between cursor-pointer ${
+                      userRole === 'admin' ? 'bg-[#001e40] text-white font-bold' : 'hover:bg-[#f0f3ff] text-[#111c2d]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      <div>
+                        <p className="leading-tight">Planning Officer (Admin)</p>
+                        <p className={`text-[10px] ${userRole === 'admin' ? 'text-blue-100' : 'text-slate-400'}`}>
+                          Command HQ, ARE pipeline, UHI &amp; capital board
+                        </p>
+                      </div>
+                    </div>
+                    {userRole === 'admin' && <CheckCircle2 className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -213,7 +359,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
           <div className="bg-white rounded-xl max-w-lg w-full p-6 border border-[#c3c6d1] shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowHelp(false)}
-              className="absolute top-4 right-4 p-1.5 text-[#737780] hover:text-[#111c2d] hover:bg-[#f0f3ff] rounded-full"
+              className="absolute top-4 right-4 p-1.5 text-[#737780] hover:text-[#111c2d] hover:bg-[#f0f3ff] rounded-full cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -222,34 +368,34 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                 <HelpCircle className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#001e40]">CSJMU Maintenance Protocols</h3>
+                <h3 className="text-lg font-bold text-[#001e40]">CSJMU Role-Based Portals</h3>
                 <p className="text-xs text-[#43474f]">University Institute of Engineering and Technology</p>
               </div>
             </div>
             <div className="space-y-3 text-sm text-[#43474f]">
-              <div className="p-3 bg-[#f0f3ff] rounded-lg border border-[#dee8ff]">
-                <p className="font-semibold text-xs text-[#001e40] uppercase tracking-wider mb-1">🚨 Urgent Reports</p>
-                <p className="text-xs">
-                  Electrical hazards, severe walkway fissures, broken glass, or massive waterlogging trigger immediate dispatcher alerts to Team Alpha &amp; Team Beta.
+              <div className="p-3 bg-blue-50/60 rounded-lg border border-blue-200">
+                <p className="font-bold text-xs text-blue-900 uppercase tracking-wider mb-1">🎓 Student Portal</p>
+                <p className="text-xs text-slate-700">
+                  Allows students and campus residents to lodge hazard reports, monitor live resolution progress with before/after photos, and find shaded cool walking routes.
                 </p>
               </div>
-              <div className="p-3 bg-[#f0f3ff] rounded-lg border border-[#dee8ff]">
-                <p className="font-semibold text-xs text-[#001e40] uppercase tracking-wider mb-1">📍 Interactive Map Navigation</p>
-                <p className="text-xs">
-                  Click directly on any building or open lawn on the map to inspect active reports or drop a pinpoint report with pre-filled coordinates.
+              <div className="p-3 bg-emerald-50/60 rounded-lg border border-emerald-200">
+                <p className="font-bold text-xs text-emerald-900 uppercase tracking-wider mb-1">👷 Field Operator / Authority</p>
+                <p className="text-xs text-slate-700">
+                  Equips sanitation beat supervisors and field crews with active work order queues, SLA countdowns, and instant post-cleaning AI photo verification closing.
                 </p>
               </div>
-              <div className="p-3 bg-[#f0f3ff] rounded-lg border border-[#dee8ff]">
-                <p className="font-semibold text-xs text-[#001e40] uppercase tracking-wider mb-1">🔧 Triage Management</p>
-                <p className="text-xs">
-                  Estate engineers can update status in real-time from the Maintenance Log, assign repair crews, and view detailed photographic records.
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="font-bold text-xs text-[#001e40] uppercase tracking-wider mb-1">🏛️ Admin / Planning Division</p>
+                <p className="text-xs text-slate-700">
+                  Comprehensive executive oversight of the 5-Stage ARE pipeline, master spatial maps, urban heat island (UHI) microclimate interventions, and capital maintenance board.
                 </p>
               </div>
             </div>
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowHelp(false)}
-                className="px-4 py-2 bg-[#001e40] text-white text-xs font-bold rounded-lg hover:bg-[#003366] transition-colors"
+                className="px-4 py-2 bg-[#001e40] text-white text-xs font-bold rounded-lg hover:bg-[#003366] transition-colors cursor-pointer"
               >
                 Got It
               </button>

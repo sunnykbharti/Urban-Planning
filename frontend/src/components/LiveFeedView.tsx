@@ -71,7 +71,7 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
-        {['all', 'infrastructure', 'plumbing', 'electrical', 'waterlogging', 'safety'].map((cat) => (
+        {['all', 'overflow', 'blocked_drain', 'litter_pile', 'infrastructure', 'plumbing', 'electrical'].map((cat) => (
           <button
             key={cat}
             onClick={() => setCategoryFilter(cat)}
@@ -81,7 +81,7 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
                 : 'bg-white border border-[#c3c6d1] text-[#43474f] hover:bg-[#dee8ff]'
             }`}
           >
-            {cat === 'all' ? 'All Live Reports' : cat}
+            {cat === 'all' ? 'All Live Reports' : cat.replace('_', ' ')}
           </button>
         ))}
       </div>
@@ -89,9 +89,10 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
       {/* Live Feed Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((report) => {
-          const isUrgent = report.severity === 'urgent';
+          const isUrgent = report.severity === 'urgent' || report.severity === 'high' || report.severity === 'critical';
           const isUpvoted = upvotedIds.has(report.id);
           const upvoteCount = (isUpvoted ? 1 : 0) + (isUrgent ? 14 : 5);
+          const reporterName = report.reportedBy?.name || (report.source?.type ? `${report.source.type.replace('_', ' ')} Feed` : 'Campus Ingestion');
 
           return (
             <div
@@ -101,9 +102,9 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
             >
               {/* Media Header */}
               <div className="relative h-44 bg-[#dee8ff] overflow-hidden">
-                {report.imageUrl ? (
+                {(report.beforeImageUrl || report.imageUrl) ? (
                   <img
-                    src={report.imageUrl}
+                    src={report.beforeImageUrl || report.imageUrl}
                     alt={report.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -143,8 +144,8 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
               <div className="p-4 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-[11px] text-[#737780] mb-1">
-                    <span className="font-semibold text-[#001e40]">{report.reportedBy.name}</span>
-                    <span>{report.timeAgo}</span>
+                    <span className="font-semibold text-[#001e40]">{reporterName}</span>
+                    <span>{report.timeAgo || 'Just now'}</span>
                   </div>
 
                   <h3 className="text-sm font-bold text-[#111c2d] group-hover:text-[#001e40] transition-colors line-clamp-1 mb-1.5">
@@ -152,7 +153,7 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
                   </h3>
 
                   <p className="text-xs text-[#43474f] line-clamp-2 leading-relaxed mb-3">
-                    {report.description}
+                    {report.description || report.aiNotes || 'Automated civic work order recorded.'}
                   </p>
 
                   <div className="flex items-center gap-1 text-xs text-[#50606f]">

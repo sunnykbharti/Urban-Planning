@@ -441,6 +441,24 @@ export const initialProjects: PlanningProject[] = [
 
 export const samplePhotos = [
   {
+    title: 'Severe Overflowing Waste Bin',
+    url: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
+    category: 'garbage' as const,
+    suggestedTitle: 'Critical Waste Bin Overflow & Ground Spillage'
+  },
+  {
+    title: 'Plastic Litter Pile on Lawn',
+    url: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=800&q=80',
+    category: 'garbage' as const,
+    suggestedTitle: 'Scattered Plastic Litter & Food Wrappers'
+  },
+  {
+    title: 'Blocked Drain Silt & Waste',
+    url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    category: 'waterlogging' as const,
+    suggestedTitle: 'Blocked Storm Drain Clogged with Solid Waste'
+  },
+  {
     title: 'Cracked Pavement / Road Hazard',
     url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
     category: 'infrastructure' as const,
@@ -451,12 +469,6 @@ export const samplePhotos = [
     url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBNz9kmKjs6xYEvNxTTRpzZZPl45MCRBjF5R8Y1Stw1P-6sNpm3xZvKlnHVVpTg6t55BMjLa7nxjO0HpMzHPTMJTbN1BB6vrIJWzoaPti2JTyECXgoOjODV9SnPsygTO7zq89eTelmoh4vZ1yZ9m-bc6LZtkf4SGKId8INwdgu73SbrbilYhDyQJyfD1S5BPpwYiNgo9VVFt5J2-Ry7vmNB4fwzldaPB0EFNg_suR-dzMo_uD8R1FEQ',
     category: 'plumbing' as const,
     suggestedTitle: 'Overhead Pipe Drip & Puddle'
-  },
-  {
-    title: 'Monsoon Waterlogging',
-    url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
-    category: 'waterlogging' as const,
-    suggestedTitle: 'Submerged Pedestrian Walkway'
   },
   {
     title: 'Electrical Panel / Wiring Spark',

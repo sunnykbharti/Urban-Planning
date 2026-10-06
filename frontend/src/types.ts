@@ -44,6 +44,68 @@ export interface SanitationTeam {
   status?: string;
 }
 
+export interface BoundingBox {
+  id: string;
+  label: string;
+  confidence: number;
+  box: { ymin: number; xmin: number; ymax: number; xmax: number };
+  color?: string;
+  weightShareKg?: number;
+}
+
+export interface WasteCompositionItem {
+  item: string;
+  percentage: number;
+}
+
+export interface EstimatedAmount {
+  weightKg: number;
+  volumeM3: number;
+  volumeLiters: number;
+  spreadAreaSqM: number;
+  pileDepthCm?: number;
+  pileSeverity: string;
+  binFillLevelPct?: number | null;
+  compositionBreakdown?: WasteCompositionItem[];
+  recommendedCrew?: string;
+  recommendedSlaMinutes?: number;
+}
+
+export interface GarbageDetectionResult {
+  isGarbageDetected: boolean;
+  confidence: number;
+  primaryClass: DetectionClass;
+  classLabel: string;
+  defaultSeverity: string;
+  estimatedAmount: EstimatedAmount;
+  boundingBoxes: BoundingBox[];
+  source?: {
+    type: SensorSourceType;
+    sensorId: string;
+    modelInference?: string;
+  };
+  imageTelemetry?: {
+    width: number;
+    height: number;
+    edgeDensity: number;
+    clutterRatio: number;
+  };
+  aiSummary: string;
+}
+
+export interface UploadDetectionResponse {
+  success: boolean;
+  message?: string;
+  file: {
+    filename: string;
+    url: string;
+    fullUrl?: string;
+    sizeBytes: number;
+    uploadedAt: string;
+  };
+  detection: GarbageDetectionResult;
+}
+
 export interface AuthorityResolution {
   zoneId: string;
   zoneName: string;
@@ -98,6 +160,10 @@ export interface MaintenanceReport {
   afterImageUrl?: string | null;
   verificationStatus?: 'AWAITING_CLEANUP' | 'TEAM_ON_SITE' | 'DISPATCHED_TO_BEAT' | 'VERIFIED_CLEAN';
   aiNotes?: string;
+  garbageDetection?: GarbageDetectionResult;
+  estimatedAmount?: EstimatedAmount;
+  estimatedAmountKg?: number;
+  estimatedVolumeM3?: number;
   reportedBy?: {
     name: string;
     role: string;
@@ -146,6 +212,133 @@ export interface PlanningProject {
   leadEngineer: string;
 }
 
-export type ActiveTab = 'map' | 'pipeline' | 'feed' | 'planning' | 'maintenance' | 'analytics';
+export type ActiveTab = 
+  | 'student_dashboard'
+  | 'operator_dashboard' 
+  | 'admin_dashboard' 
+  | 'map' 
+  | 'heatisland' 
+  | 'pipeline' 
+  | 'feed' 
+  | 'planning' 
+  | 'maintenance' 
+  | 'analytics';
 
-export type UserRole = 'admin' | 'staff' | 'student';
+export type UserRole = 'admin' | 'operator' | 'student';
+
+export type HeatIslandLayer = 
+  | 'temperature'
+  | 'canopy'
+  | 'density'
+  | 'pavement'
+  | 'water'
+  | 'pedestrian'
+  | 'composite';
+
+export type InterventionCategory = 
+  | 'treePlanting'
+  | 'shadeStructures'
+  | 'coolPavement'
+  | 'optimalSeating';
+
+export interface MicroclimateSector {
+  id: string;
+  name: string;
+  zone: string;
+  bounds: { x: number; y: number; width: number; height: number };
+  gps: { latitude: number; longitude: number };
+  metrics: {
+    surfaceTempC: number;
+    treeCanopyPct: number;
+    buildingDensityPct: number;
+    pavedSurfacePct: number;
+    waterBodyBufferM: number;
+    pedestrianFootfall: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
+    albedo: number;
+  };
+  heatRiskScore: number;
+  classification: 'CRITICAL_HOT_ZONE' | 'HIGH_STRESS' | 'MODERATE' | 'COOL_REFUGE';
+  statusColor: string;
+  exposureSummary: string;
+}
+
+export interface TreePlantingIntervention {
+  id: string;
+  title: string;
+  sectorId: string;
+  location: string;
+  coordinates: { x: number; y: number };
+  gps: { latitude: number; longitude: number };
+  urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+  recommendedSpecies: {
+    name: string;
+    reason: string;
+    coolingEffect: string;
+  }[];
+  treeCountTarget: number;
+  estimatedTempDropC: number;
+  soilPermeability: string;
+  undergroundUtilitiesCheck: string;
+  whyHere: string;
+}
+
+export interface ShadeStructureIntervention {
+  id: string;
+  title: string;
+  sectorId: string;
+  location: string;
+  coordinates: { x: number; y: number };
+  gps: { latitude: number; longitude: number };
+  structureType: string;
+  spanLengthMeters: number;
+  uvProtectionPct: number;
+  solarInsolationCut: string;
+  whyNoTrees: string;
+  immediateImpact: string;
+}
+
+export interface CoolPavementIntervention {
+  id: string;
+  title: string;
+  sectorId: string;
+  location: string;
+  coordinates: { x: number; y: number };
+  gps: { latitude: number; longitude: number };
+  currentMaterial: string;
+  recommendedTreatment: string;
+  retrofitAreaSqM: number;
+  expectedSurfaceTempDrop: string;
+  permeabilityGain: string;
+}
+
+export interface OptimalSeatingIntervention {
+  id: string;
+  title: string;
+  sectorId: string;
+  location: string;
+  coordinates: { x: number; y: number };
+  gps: { latitude: number; longitude: number };
+  thermalComfortIndex: string;
+  canopyShadeFactor: string;
+  windChanneling: string;
+  furnitureType: string;
+  capacity: number;
+  walkDistanceMinutes: string;
+}
+
+export interface MicroclimateSummary {
+  avgSurfaceTempC: number;
+  peakHotZoneTempC: number;
+  coolOasisTempC: number;
+  uhiDeltaRangeC: number;
+  criticalHotZonesCount: number;
+  avgTreeCanopyPct: number;
+  avgPavedSurfacePct: number;
+  totalInterventions: {
+    treePlantingTarget: number;
+    shadeCanopyMeters: number;
+    coolPavementSqM: number;
+    seatingCapacity: number;
+  };
+}
+
