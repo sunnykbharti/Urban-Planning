@@ -52,54 +52,80 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Setting 1: Role */}
         <div className="space-y-2">
           <label className="block text-xs font-bold text-[#43474f] uppercase tracking-wider">
-            Active User Role Profile
+            Active RBAC User Role Profile
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <button
-              onClick={() => onRoleChange('student')}
-              className={`p-3 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Student */}
+            <div
+              className={`p-3 rounded-lg border text-left text-xs transition-colors ${
                 userRole === 'student'
-                  ? 'border-blue-600 bg-blue-50 text-blue-900 font-bold ring-1 ring-blue-600'
-                  : 'border-[#c3c6d1] text-[#43474f] hover:bg-[#f0f3ff]'
+                  ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold ring-1 ring-emerald-600'
+                  : 'border-[#c3c6d1] text-[#43474f] bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold">Student / Citizen</span>
-                {userRole === 'student' && <Check className="w-4 h-4 text-blue-600" />}
+                <span className="font-bold flex items-center gap-1.5">
+                  <span>👨‍🎓</span> Student / Audience
+                </span>
+                {userRole === 'student' && <Check className="w-4 h-4 text-emerald-600" />}
               </div>
-              <p className="text-[11px] text-[#737780] mt-1 font-normal">Report hazards &amp; track progress</p>
-            </button>
+              <p className="text-[11px] text-slate-500 mt-1 font-normal">Report hazards, live tracking &amp; cool havens</p>
+            </div>
 
-            <button
-              onClick={() => onRoleChange('operator')}
-              className={`p-3 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
-                userRole === 'operator'
-                  ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold ring-1 ring-emerald-600'
-                  : 'border-[#c3c6d1] text-[#43474f] hover:bg-emerald-50/50'
+            {/* BVG Worker */}
+            <div
+              className={`p-3 rounded-lg border text-left text-xs transition-colors ${
+                userRole === 'bvg_worker' || userRole === 'operator'
+                  ? 'border-amber-600 bg-amber-50 text-amber-950 font-bold ring-1 ring-amber-600'
+                  : 'border-[#c3c6d1] text-[#43474f] bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold">Field Operator</span>
-                {userRole === 'operator' && <Check className="w-4 h-4 text-emerald-600" />}
+                <span className="font-bold flex items-center gap-1.5">
+                  <span>👷‍♂️</span> BVG Workers
+                </span>
+                {(userRole === 'bvg_worker' || userRole === 'operator') && <Check className="w-4 h-4 text-amber-600" />}
               </div>
-              <p className="text-[11px] text-[#737780] mt-1 font-normal">Work orders &amp; photo verification</p>
-            </button>
+              <p className="text-[11px] text-slate-500 mt-1 font-normal">Campus cleaning contractor (PIN: 1234)</p>
+            </div>
 
-            <button
-              onClick={() => onRoleChange('admin')}
-              className={`p-3 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
-                userRole === 'admin'
-                  ? 'border-[#001e40] bg-[#e7eeff] text-[#001e40] font-bold ring-1 ring-[#001e40]'
-                  : 'border-[#c3c6d1] text-[#43474f] hover:bg-[#f0f3ff]'
+            {/* Management */}
+            <div
+              className={`p-3 rounded-lg border text-left text-xs transition-colors ${
+                userRole === 'management'
+                  ? 'border-blue-700 bg-blue-50 text-blue-950 font-bold ring-1 ring-blue-700'
+                  : 'border-[#c3c6d1] text-[#43474f] bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold">Planning Officer</span>
-                {userRole === 'admin' && <Check className="w-4 h-4 text-[#001e40]" />}
+                <span className="font-bold flex items-center gap-1.5">
+                  <span>👨‍💼</span> Management
+                </span>
+                {userRole === 'management' && <Check className="w-4 h-4 text-blue-700" />}
               </div>
-              <p className="text-[11px] text-[#737780] mt-1 font-normal">Executive triage &amp; command HQ</p>
-            </button>
+              <p className="text-[11px] text-slate-500 mt-1 font-normal">Estate Directorate &amp; SLA audits (PIN: 5678)</p>
+            </div>
+
+            {/* Super Admin */}
+            <div
+              className={`p-3 rounded-lg border text-left text-xs transition-colors ${
+                userRole === 'super_admin' || userRole === 'admin'
+                  ? 'border-purple-800 bg-purple-50 text-purple-950 font-bold ring-1 ring-purple-800'
+                  : 'border-[#c3c6d1] text-[#43474f] bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5">
+                  <span>🏛️</span> Super Admin
+                </span>
+                {(userRole === 'super_admin' || userRole === 'admin') && <Check className="w-4 h-4 text-purple-800" />}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1 font-normal">Master configuration &amp; DB keys (PIN: 9999)</p>
+            </div>
           </div>
+          <p className="text-[10px] text-slate-500 pt-1">
+            🔒 Switch roles from the top navigation bar using your authenticated credentials.
+          </p>
         </div>
 
         {/* Setting 2: Notifications */}

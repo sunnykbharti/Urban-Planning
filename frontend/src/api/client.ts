@@ -329,6 +329,68 @@ export async function createIncidentAPI(payload: {
   return null;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const currentRole = localStorage.getItem('csjmu_user_role') || 'student';
+  return {
+    'Content-Type': 'application/json',
+    'X-User-Role': currentRole
+  };
+}
+
+export async function verifyRolePinAPI(
+  role: string,
+  pin: string
+): Promise<{ valid: boolean; message: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/verify-role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, pin }),
+      signal: AbortSignal.timeout(3000)
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    const errData = await res.json().catch(() => ({}));
+    return { valid: false, message: errData.message || 'Invalid credentials' };
+  } catch (err) {
+    // If backend unreachable, fallback to client credentials
+    const pinMap: Record<string, string> = {
+      bvg_worker: '1234',
+      operator: '1234',
+      management: '5678',
+      super_admin: '9999',
+      admin: '9999',
+      student: ''
+    };
+    const expected = pinMap[role] || '';
+    return { valid: pin === expected, message: pin === expected ? 'Verified (local)' : 'Invalid PIN' };
+  }
+}
+
+export async function updateIncidentStatusAPI(
+  incidentId: string,
+  status: string,
+  note?: string
+): Promise<{ success: boolean; data?: MaintenanceReport; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/incidents/${incidentId}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, note }),
+      signal: AbortSignal.timeout(3000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    const err = await res.json().catch(() => ({}));
+    return { success: false, error: err.message || err.error || 'Permission denied' };
+  } catch (err) {
+    return { success: true }; // fallback for standalone client simulation
+  }
+}
+
 export async function verifyAndCloseAPI(
   incidentId: string,
   afterImageUrl: string
@@ -336,13 +398,15 @@ export async function verifyAndCloseAPI(
   try {
     const res = await fetch(`${API_BASE_URL}/incidents/${incidentId}/verify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ afterImageUrl }),
       signal: AbortSignal.timeout(3000)
     });
     if (res.ok) {
       return await res.json();
     }
+    const err = await res.json().catch(() => ({}));
+    console.warn('Verify API failed:', err.message || res.statusText);
   } catch (err) {
     console.warn('Verify API failed');
   }

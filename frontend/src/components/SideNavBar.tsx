@@ -28,7 +28,8 @@ interface SideNavBarProps {
   onOpenReportDrawer: () => void;
   onOpenSettings: () => void;
   userRole: UserRole;
-  onToggleRole: () => void;
+  onToggleRole?: () => void;
+  onRequestRoleChange?: (role: UserRole) => void;
   urgentCount: number;
 }
 
@@ -39,8 +40,14 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   onOpenSettings,
   userRole,
   onToggleRole,
+  onRequestRoleChange,
   urgentCount
 }) => {
+  const isStudent = userRole === 'student';
+  const isBvg = userRole === 'bvg_worker' || userRole === 'operator';
+  const isManagement = userRole === 'management';
+  const isSuperAdmin = userRole === 'super_admin' || userRole === 'admin';
+
   return (
     <aside className="fixed left-0 top-0 h-full w-[240px] z-30 pt-20 pb-6 flex flex-col justify-between bg-[#ffffff] border-r border-[#c3c6d1] transition-transform duration-200">
       {/* Top Section */}
@@ -49,26 +56,30 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         <div className="px-5 mb-5">
           <div className="flex items-center gap-3 mb-4">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-xs overflow-hidden flex-shrink-0 ${
-              userRole === 'student' 
-                ? 'bg-gradient-to-br from-blue-600 to-indigo-700' 
-                : userRole === 'operator'
-                ? 'bg-gradient-to-br from-emerald-600 to-teal-800'
-                : 'bg-gradient-to-br from-[#001e40] to-[#003366]'
+              isStudent 
+                ? 'bg-gradient-to-br from-emerald-600 to-teal-700' 
+                : isBvg
+                ? 'bg-gradient-to-br from-amber-600 to-orange-700'
+                : isManagement
+                ? 'bg-gradient-to-br from-blue-700 to-indigo-900'
+                : 'bg-gradient-to-br from-purple-800 to-slate-900'
             }`}>
-              {userRole === 'student' ? (
+              {isStudent ? (
                 <GraduationCap className="w-5 h-5 text-white" />
-              ) : userRole === 'operator' ? (
-                <HardHat className="w-5 h-5 text-emerald-200" />
-              ) : (
+              ) : isBvg ? (
+                <HardHat className="w-5 h-5 text-amber-200" />
+              ) : isManagement ? (
                 <Building2 className="w-5 h-5 text-blue-200" />
+              ) : (
+                <span className="text-base">👑</span>
               )}
             </div>
             <div className="min-w-0">
               <h2 className="text-sm font-black text-[#001e40] leading-tight truncate">
-                {userRole === 'student' ? 'UIET Student' : userRole === 'operator' ? 'Beat Operations' : 'Planning Division'}
+                {isStudent ? 'UIET Student' : isBvg ? 'BVG Cleaning Agency' : isManagement ? 'Estate Management' : 'Super Admin HQ'}
               </h2>
               <p className="text-[11px] text-[#737780] font-semibold truncate">
-                {userRole === 'student' ? 'Citizen Hub' : userRole === 'operator' ? 'Beat 01 • Ward 42' : 'Estate & Works HQ'}
+                {isStudent ? 'Citizen Hub' : isBvg ? 'Beat 01 Field Staff' : isManagement ? 'Sanitation Oversight' : 'Master IT Terminal'}
               </p>
             </div>
           </div>
@@ -78,16 +89,18 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             id="new-report-button"
             onClick={onOpenReportDrawer}
             className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 group cursor-pointer transition-all active:scale-[0.98] ${
-              userRole === 'student'
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 shadow-amber-500/20'
-                : userRole === 'operator'
-                ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+              isStudent
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20'
+                : isBvg
+                ? 'bg-amber-600 text-white hover:bg-amber-700'
+                : isManagement
+                ? 'bg-blue-700 text-white hover:bg-blue-800'
                 : 'bg-[#001e40] text-white hover:bg-[#003366]'
             }`}
           >
             <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
             <span>
-              {userRole === 'student' ? 'Report Hazard' : userRole === 'operator' ? 'Log Field Task' : 'New Incident'}
+              {isStudent ? 'Report Hazard' : isBvg ? 'Log Field Task' : 'New Incident'}
             </span>
           </button>
         </div>
@@ -161,22 +174,22 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             </>
           )}
 
-          {/* ==================== 2. OPERATOR / AUTHORITY NAVIGATION ==================== */}
-          {userRole === 'operator' && (
+          {/* ==================== 2. BVG WORKERS NAVIGATION ==================== */}
+          {isBvg && (
             <>
               {/* Field Work Orders */}
               <button
                 id="nav-operator-orders"
-                onClick={() => onSelectTab('operator_dashboard')}
+                onClick={() => onSelectTab('bvg_dashboard')}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'operator_dashboard'
-                    ? 'bg-emerald-50 text-emerald-900 border-r-4 border-emerald-700 shadow-xs'
-                    : 'text-[#43474f] hover:bg-emerald-50/60 hover:text-emerald-900'
+                  activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard'
+                    ? 'bg-amber-50 text-amber-900 border-r-4 border-amber-600 shadow-xs'
+                    : 'text-[#43474f] hover:bg-amber-50/60 hover:text-amber-900'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Wrench className={`w-4 h-4 ${activeTab === 'operator_dashboard' ? 'text-emerald-700' : 'text-[#737780]'}`} />
-                  <span>Work Orders</span>
+                  <HardHat className={`w-4 h-4 ${activeTab === 'bvg_dashboard' ? 'text-amber-700' : 'text-[#737780]'}`} />
+                  <span>BVG Work Orders</span>
                 </div>
                 {urgentCount > 0 && (
                   <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
@@ -196,7 +209,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 }`}
               >
                 <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Field Route Map</span>
+                <span>Beat Route Map</span>
               </button>
 
               {/* Maintenance Log */}
@@ -210,28 +223,9 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <HardHat className={`w-4 h-4 ${activeTab === 'maintenance' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
+                  <Wrench className={`w-4 h-4 ${activeTab === 'maintenance' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
                   <span>Beat Triage</span>
                 </div>
-              </button>
-
-              {/* ARE Pipeline Engine */}
-              <button
-                id="nav-pipeline-visualizer"
-                onClick={() => onSelectTab('pipeline')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'pipeline'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Layers className={`w-4 h-4 ${activeTab === 'pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
-                  <span>ARE Engine</span>
-                </div>
-                <span className="bg-indigo-100 text-indigo-800 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                  DISPATCH
-                </span>
               </button>
 
               {/* Live Feed */}
@@ -250,8 +244,89 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             </>
           )}
 
-          {/* ==================== 3. ADMIN ROLE NAVIGATION ==================== */}
-          {userRole === 'admin' && (
+          {/* ==================== 3. MANAGEMENT NAVIGATION ==================== */}
+          {isManagement && (
+            <>
+              {/* Management Oversight */}
+              <button
+                id="nav-management-overview"
+                onClick={() => onSelectTab('management_dashboard')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'management_dashboard'
+                    ? 'bg-blue-50 text-blue-900 border-r-4 border-blue-700 shadow-xs'
+                    : 'text-[#43474f] hover:bg-blue-50/60 hover:text-blue-900'
+                }`}
+              >
+                <Building2 className={`w-4 h-4 ${activeTab === 'management_dashboard' ? 'text-blue-700' : 'text-[#737780]'}`} />
+                <span>Management HQ</span>
+              </button>
+
+              {/* Campus Master Map */}
+              <button
+                id="nav-map-overview"
+                onClick={() => onSelectTab('map')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'map'
+                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
+                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
+                }`}
+              >
+                <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
+                <span>Master Map</span>
+              </button>
+
+              {/* Heat Island Studio */}
+              <button
+                id="nav-heat-island"
+                onClick={() => onSelectTab('heatisland')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'heatisland'
+                    ? 'bg-[#fff1f2] text-[#be123c] border-r-4 border-[#be123c] shadow-xs'
+                    : 'text-[#43474f] hover:bg-[#fff1f2] hover:text-[#be123c]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Flame className="w-4 h-4 text-rose-600" />
+                  <span>Heat Island</span>
+                </div>
+              </button>
+
+              {/* ARE Pipeline */}
+              <button
+                id="nav-pipeline-visualizer"
+                onClick={() => onSelectTab('pipeline')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'pipeline'
+                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
+                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Layers className={`w-4 h-4 ${activeTab === 'pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
+                  <span>ARE Pipeline</span>
+                </div>
+              </button>
+
+              {/* Maintenance Log */}
+              <button
+                id="nav-maintenance-log"
+                onClick={() => onSelectTab('maintenance')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                  activeTab === 'maintenance'
+                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
+                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Wrench className={`w-4 h-4 ${activeTab === 'maintenance' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
+                  <span>SLA Audit</span>
+                </div>
+              </button>
+            </>
+          )}
+
+          {/* ==================== 4. SUPER ADMIN NAVIGATION ==================== */}
+          {isSuperAdmin && (
             <>
               {/* Executive Command */}
               <button
@@ -399,25 +474,35 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           <span>Settings</span>
         </button>
 
-        {/* Switch View Button cycling through 3 roles */}
+        {/* Switch View Button triggering RBAC modal */}
         <button
           id="nav-switch-view"
-          onClick={onToggleRole}
+          onClick={() => {
+            if (onRequestRoleChange) {
+              const nextRole: UserRole = 
+                isStudent ? 'bvg_worker' : isBvg ? 'management' : isManagement ? 'super_admin' : 'student';
+              onRequestRoleChange(nextRole);
+            } else if (onToggleRole) {
+              onToggleRole();
+            }
+          }}
           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40] transition-colors text-left cursor-pointer"
-          title={`Click to switch role (Current: ${userRole.toUpperCase()})`}
+          title={`Click to authenticate and switch role (Current: ${userRole.toUpperCase()})`}
         >
           <div className="flex items-center gap-2.5">
             <RefreshCw className="w-4 h-4 text-[#737780]" />
             <span>Switch Role</span>
           </div>
           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${
-            userRole === 'student'
-              ? 'bg-blue-100 text-blue-800'
-              : userRole === 'operator'
+            isStudent
               ? 'bg-emerald-100 text-emerald-800'
-              : 'bg-indigo-100 text-indigo-800'
+              : isBvg
+              ? 'bg-amber-100 text-amber-900'
+              : isManagement
+              ? 'bg-blue-100 text-blue-900'
+              : 'bg-purple-100 text-purple-900'
           }`}>
-            {userRole}
+            {isStudent ? 'Student' : isBvg ? 'BVG' : isManagement ? 'Mgmt' : 'Super Admin'}
           </span>
         </button>
       </div>

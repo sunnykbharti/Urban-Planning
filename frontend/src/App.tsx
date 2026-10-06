@@ -26,7 +26,11 @@ import { PipelineVisualizer } from './components/PipelineVisualizer';
 import { HeatIslandMapView } from './components/HeatIslandMapView';
 import { StudentDashboard } from './components/StudentDashboard';
 import { OperatorDashboard } from './components/OperatorDashboard';
+import { BvgWorkerDashboard } from './components/BvgWorkerDashboard';
+import { ManagementDashboard } from './components/ManagementDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
+import { RoleAuthModal } from './components/RoleAuthModal';
+import { DEFAULT_PROFILES, UserProfile } from './types';
 import { checkBackendHealth, fetchIncidentsFromBackend } from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
 
@@ -44,29 +48,72 @@ export default function App() {
     return saved ? JSON.parse(saved) : initialActivities;
   });
 
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [activeTab, setActiveTab] = useState<ActiveTab>('admin_dashboard');
+  const [userRole, setUserRole] = useState<UserRole>(() => {
+    const saved = localStorage.getItem('csjmu_user_role') as UserRole;
+    return (saved && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(saved)) ? saved : 'student';
+  });
+
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => {
+    const norm = (userRole === 'admin' ? 'super_admin' : userRole === 'operator' ? 'bvg_worker' : userRole) as any;
+    return DEFAULT_PROFILES[norm] || DEFAULT_PROFILES.student;
+  });
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    return userRole === 'student' ? 'student_dashboard' : userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' : userRole === 'management' ? 'management_dashboard' : 'admin_dashboard';
+  });
+
+  const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const handleRoleChange = (newRole: UserRole) => {
+  const handleRoleChange = (newRole: UserRole, newProfile?: UserProfile) => {
     setUserRole(newRole);
+    localStorage.setItem('csjmu_user_role', newRole);
+    if (newProfile) {
+      setCurrentUserProfile(newProfile);
+    } else {
+      const norm = (newRole === 'admin' ? 'super_admin' : newRole === 'operator' ? 'bvg_worker' : newRole) as any;
+      if (DEFAULT_PROFILES[norm]) setCurrentUserProfile(DEFAULT_PROFILES[norm]);
+    }
+
     if (newRole === 'student') {
       setActiveTab('student_dashboard');
-    } else if (newRole === 'operator') {
-      setActiveTab('operator_dashboard');
+    } else if (newRole === 'bvg_worker' || newRole === 'operator') {
+      setActiveTab('bvg_dashboard');
+    } else if (newRole === 'management') {
+      setActiveTab('management_dashboard');
     } else {
       setActiveTab('admin_dashboard');
     }
   };
 
-  const handleToggleRole = () => {
-    if (userRole === 'admin') {
-      handleRoleChange('operator');
-    } else if (userRole === 'operator') {
-      handleRoleChange('student');
-    } else {
-      handleRoleChange('admin');
+  const handleRequestRoleChange = (requestedRole: UserRole) => {
+    const normCurrent = userRole === 'admin' ? 'super_admin' : userRole === 'operator' ? 'bvg_worker' : userRole;
+    const normTarget = requestedRole === 'admin' ? 'super_admin' : requestedRole === 'operator' ? 'bvg_worker' : requestedRole;
+
+    if (normCurrent === normTarget) return;
+
+    // Student role is open access without PIN
+    if (normTarget === 'student') {
+      handleRoleChange('student', DEFAULT_PROFILES.student);
+      showToast('Switched to Student / Audience View (Civic Hub)', 'info');
+      return;
     }
+
+    // Administrative / Agency roles require PIN authentication
+    setTargetAuthRole(normTarget);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = (authenticatedRole: UserRole, profile: UserProfile) => {
+    handleRoleChange(authenticatedRole, profile);
+    showToast(`Access granted: ${profile.roleTitle} (${profile.name})`, 'success');
+  };
+
+  const handleToggleRole = () => {
+    const nextRole: UserRole = 
+      userRole === 'student' ? 'bvg_worker' : userRole === 'bvg_worker' || userRole === 'operator' ? 'management' : userRole === 'management' ? 'super_admin' : 'student';
+    handleRequestRoleChange(nextRole);
   };
   
   // Modals and Drawers
@@ -255,6 +302,8 @@ export default function App() {
         urgentCount={urgentCount}
         userRole={userRole}
         onRoleChange={handleRoleChange}
+        onRequestRoleChange={handleRequestRoleChange}
+        currentProfile={currentUserProfile}
         onOpenReportDrawer={() => {
           setReportDrawerLocation('UIET Block 1');
           setReportDrawerCoords({ x: 38, y: 38 });
@@ -276,6 +325,7 @@ export default function App() {
           onOpenSettings={() => setIsSettingsOpen(true)}
           userRole={userRole}
           onToggleRole={handleToggleRole}
+          onRequestRoleChange={handleRequestRoleChange}
           urgentCount={urgentCount}
         />
 
@@ -315,7 +365,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* DEDICATED ROLE DASHBOARDS */}
+          {/* DEDICATED 4-ROLE DASHBOARDS */}
           {activeTab === 'student_dashboard' && (
             <StudentDashboard
               reports={displayedReports}
@@ -331,8 +381,18 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'operator_dashboard' && (
-            <OperatorDashboard
+          {(activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard') && (
+            <BvgWorkerDashboard
+              reports={displayedReports}
+              activities={activities}
+              onUpdateStatus={handleUpdateStatus}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {activeTab === 'management_dashboard' && (
+            <ManagementDashboard
               reports={displayedReports}
               activities={activities}
               onUpdateStatus={handleUpdateStatus}
@@ -438,6 +498,15 @@ export default function App() {
         userRole={userRole}
         onRoleChange={handleRoleChange}
         onResetData={handleResetData}
+      />
+
+      {/* Role-Based Access Control (RBAC) Authentication Modal */}
+      <RoleAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        targetRole={targetAuthRole || 'student'}
+        currentRole={userRole}
+        onSuccess={handleAuthSuccess}
       />
 
       {/* Toast Notification Alert Banner */}

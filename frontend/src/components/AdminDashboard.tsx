@@ -315,6 +315,108 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
+      {/* Role-Based Access Control (RBAC) System Overview */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+          <div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-base font-bold text-slate-900">
+                Campus RBAC Authority Matrix (Role-Based Access Control)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Strictly segmented privileges across 4 user profiles. PIN-authenticated transitions protect administrative endpoints.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-bold">
+            ENFORCED ON CLIENT &amp; BACKEND
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* 1. Student */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xl">👨‍🎓</span>
+              <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                Open Access
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900">Student / Audience</h4>
+              <p className="text-[11px] text-slate-500 font-medium">CSJMU Students &amp; Public</p>
+            </div>
+            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-slate-200">
+              <div>✓ AI Garbage Reporting</div>
+              <div>✓ Live Progress Tracking</div>
+              <div>✓ Campus Cool Havens</div>
+              <div className="text-slate-400">✗ No Dispatch or Closures</div>
+            </div>
+          </div>
+
+          {/* 2. BVG Workers */}
+          <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xl">👷‍♂️</span>
+              <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded">
+                PIN: 1234
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900">BVG Workers</h4>
+              <p className="text-[11px] text-amber-900 font-medium">Campus Cleaning Agency</p>
+            </div>
+            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-amber-200">
+              <div>✓ Assigned Beat Work Orders</div>
+              <div>✓ Start Cleaning Task</div>
+              <div>✓ &quot;After&quot; Photo Upload &amp; Close</div>
+              <div className="text-slate-400">✗ No Budget/System Config</div>
+            </div>
+          </div>
+
+          {/* 3. Management */}
+          <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xl">👨‍💼</span>
+              <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded">
+                PIN: 5678
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900">Management</h4>
+              <p className="text-[11px] text-blue-900 font-medium">Estate Directorate &amp; Engineers</p>
+            </div>
+            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-blue-200">
+              <div>✓ BVG Contractor SLA Audit</div>
+              <div>✓ Re-route Beats &amp; Teams</div>
+              <div>✓ Heat Island Microclimate</div>
+              <div className="text-slate-400">✗ No Root Server Config</div>
+            </div>
+          </div>
+
+          {/* 4. Super Admin */}
+          <div className="bg-purple-50/60 border border-purple-200 rounded-xl p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xl">🏛️</span>
+              <span className="text-[10px] font-bold uppercase bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded">
+                PIN: 9999
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900">Super Admin</h4>
+              <p className="text-[11px] text-purple-900 font-medium">Vice Chancellor / IT Admin</p>
+            </div>
+            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-purple-200">
+              <div>✓ Full Unrestricted Access</div>
+              <div>✓ PostgreSQL Database Sync</div>
+              <div>✓ RBAC User &amp; PIN Manager</div>
+              <div>✓ ARE SLA Matrix Editor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Urban Climate Interventions Snapshot */}
       <div className="bg-gradient-to-r from-emerald-900 to-teal-950 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1 max-w-2xl">

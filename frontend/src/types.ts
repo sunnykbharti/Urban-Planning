@@ -214,6 +214,8 @@ export interface PlanningProject {
 
 export type ActiveTab = 
   | 'student_dashboard'
+  | 'bvg_dashboard'
+  | 'management_dashboard'
   | 'operator_dashboard' 
   | 'admin_dashboard' 
   | 'map' 
@@ -224,7 +226,99 @@ export type ActiveTab =
   | 'maintenance' 
   | 'analytics';
 
-export type UserRole = 'admin' | 'operator' | 'student';
+export type UserRole = 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'admin' | 'operator';
+
+export type RolePermission = 
+  | 'lodge_report'
+  | 'view_public_map'
+  | 'view_cool_havens'
+  | 'view_bvg_tasks'
+  | 'start_bvg_task'
+  | 'verify_closure'
+  | 'dispatch_crews'
+  | 'manage_sla'
+  | 'audit_contractors'
+  | 'manage_users'
+  | 'system_settings'
+  | 'database_config';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  role: UserRole;
+  roleTitle: string;
+  agency: string;
+  department: string;
+  badgeNumber: string;
+  email: string;
+  avatar: string;
+  pin: string;
+  permissions: RolePermission[];
+}
+
+export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 'super_admin', UserProfile> = {
+  student: {
+    id: 'USR-STU-01',
+    name: 'Sunny Bharti',
+    role: 'student',
+    roleTitle: 'UIET B.Tech Student / Campus Citizen',
+    agency: 'CSJMU Student Body',
+    department: 'Computer Science & Engineering (UIET)',
+    badgeNumber: 'CSJMU/UIET/2023/104',
+    email: 'sunny.student@csjmu.ac.in',
+    avatar: '👨‍🎓',
+    pin: '', // No PIN required for students/public audience
+    permissions: ['lodge_report', 'view_public_map', 'view_cool_havens']
+  },
+  bvg_worker: {
+    id: 'USR-BVG-204',
+    name: 'Ramesh Kumar',
+    role: 'bvg_worker',
+    roleTitle: 'Sanitation Beat Lead (BVG India)',
+    agency: 'BVG India Ltd. (Campus Facility Management)',
+    department: 'CSJMU Solid Waste Cleansing Beat 01',
+    badgeNumber: 'BVG-IND-KNP-204',
+    email: 'ramesh.bvg@csjmu.facility.in',
+    avatar: '👷‍♂️',
+    pin: '1234',
+    permissions: ['lodge_report', 'view_bvg_tasks', 'start_bvg_task', 'verify_closure']
+  },
+  management: {
+    id: 'USR-MGT-101',
+    name: 'Er. R. K. Sharma',
+    role: 'management',
+    roleTitle: 'Executive Sanitation Engineer',
+    agency: 'CSJMU Directorate of Estate & Works',
+    department: 'Campus Works & Public Health Engineering',
+    badgeNumber: 'CSJMU-EST-019',
+    email: 'rksharma.estate@csjmu.ac.in',
+    avatar: '👨‍💼',
+    pin: '5678',
+    permissions: [
+      'lodge_report', 'view_public_map', 'view_cool_havens',
+      'view_bvg_tasks', 'start_bvg_task', 'verify_closure',
+      'dispatch_crews', 'manage_sla', 'audit_contractors'
+    ]
+  },
+  super_admin: {
+    id: 'USR-ADM-001',
+    name: 'Vice Chancellor / Registrar Office',
+    role: 'super_admin',
+    roleTitle: 'Chief System Administrator & Master Key',
+    agency: 'CSJMU Central Secretariat',
+    department: 'Directorate of Campus Administration & IT',
+    badgeNumber: 'CSJMU-ROOT-001',
+    email: 'admin.root@csjmu.ac.in',
+    avatar: '🏛️',
+    pin: '9999',
+    permissions: [
+      'lodge_report', 'view_public_map', 'view_cool_havens',
+      'view_bvg_tasks', 'start_bvg_task', 'verify_closure',
+      'dispatch_crews', 'manage_sla', 'audit_contractors',
+      'manage_users', 'system_settings', 'database_config'
+    ]
+  }
+};
 
 export type HeatIslandLayer = 
   | 'temperature'

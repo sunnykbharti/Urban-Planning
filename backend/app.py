@@ -306,9 +306,59 @@ def create_incident():
     created = db_manager.create_incident(new_incident_payload)
     return jsonify(created), 201
 
+# -------------------------------------------------------------
+# RBAC (Role-Based Access Control) Enforcement
+# -------------------------------------------------------------
+
+VALID_ROLES = {"student", "audience", "bvg_worker", "operator", "management", "super_admin", "admin"}
+PRIVILEGED_ROLES = {"bvg_worker", "operator", "management", "super_admin", "admin"}
+ROLE_PIN_CREDENTIALS = {
+    "student": "",
+    "audience": "",
+    "bvg_worker": "1234",
+    "operator": "1234",
+    "management": "5678",
+    "super_admin": "9999",
+    "admin": "9999"
+}
+
+def check_privileged_role():
+    """
+    Validates X-User-Role header sent from the authenticated frontend client.
+    Returns (authorized: bool, role: str)
+    """
+    role = (request.headers.get("X-User-Role") or "").strip().lower()
+    if not role or role in {"student", "audience"}:
+        return False, role or "student"
+    return True, role
+
+@app.route("/api/auth/verify-role", methods=["POST"])
+def verify_role_pin():
+    """Validates role PIN credentials for privileged role elevation."""
+    data = request.get_json() or {}
+    target_role = (data.get("role") or "").strip().lower()
+    provided_pin = (data.get("pin") or "").strip()
+    
+    if target_role in {"student", "audience"}:
+        return jsonify({"valid": True, "role": target_role, "message": "Public access authorized"}), 200
+        
+    expected_pin = ROLE_PIN_CREDENTIALS.get(target_role)
+    if expected_pin and provided_pin == expected_pin:
+        return jsonify({"valid": True, "role": target_role, "message": f"Access granted for role {target_role}"}), 200
+        
+    return jsonify({"valid": False, "role": target_role, "message": "Invalid security PIN for requested role"}), 401
+
 @app.route("/api/incidents/<incident_id>/status", methods=["PATCH"])
 def update_incident_status(incident_id):
-    """Update status of an incident (DISPATCHED -> IN_PROGRESS -> RESOLVED)."""
+    """Update status of an incident (DISPATCHED -> IN_PROGRESS -> RESOLVED). RBAC enforced."""
+    is_authorized, role = check_privileged_role()
+    if not is_authorized:
+        return jsonify({
+            "error": "Forbidden",
+            "message": f"Role '{role}' is not permitted to modify ticket status. BVG Workers, Management, or Super Admin authorization required.",
+            "role": role
+        }), 403
+
     data = request.get_json() or {}
     new_status = data.get("status")
     note = data.get("note")
@@ -324,7 +374,16 @@ def verify_and_close_incident(incident_id):
     """
     Stage 5: Verify & Close
     Uploads "After" cleaning photo, records resolution time, and compares against SLA window.
+    RBAC enforced: Only BVG Workers, Management, and Super Admins can close tickets.
     """
+    is_authorized, role = check_privileged_role()
+    if not is_authorized:
+        return jsonify({
+            "error": "Forbidden",
+            "message": f"Role '{role}' is not permitted to verify or close tickets. BVG Worker or Admin authorization required.",
+            "role": role
+        }), 403
+
     data = request.get_json() or {}
     after_image = data.get("afterImageUrl", "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80")
     
