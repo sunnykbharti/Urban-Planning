@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Settings, Bell, Shield, MapPin, Database, Check, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Settings, Bell, Shield, MapPin, Database, Check, RefreshCw, Server, CheckCircle2 } from 'lucide-react';
 import { UserRole } from '../types';
+import { checkBackendHealth } from '../api/client';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -21,6 +22,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [autoLocate, setAutoLocate] = useState(true);
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  const [dbInfo, setDbInfo] = useState<{ type: string; host: string; incidentCount: number; status: string } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      checkBackendHealth().then((res) => {
+        if (res.online && res.database) {
+          setDbInfo(res.database);
+        }
+      });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -120,6 +132,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onChange={(e) => setAutoLocate(e.target.checked)}
               className="w-4 h-4 rounded text-[#001e40] focus:ring-[#001e40]"
             />
+          </div>
+        </div>
+
+        {/* Database & Storage Engine */}
+        <div className="pt-3 border-t border-[#c3c6d1] space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-[#43474f] uppercase tracking-wider flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-[#001e40]" />
+              Storage Engine
+            </label>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800">
+              <CheckCircle2 className="w-3 h-3 text-green-600" />
+              {dbInfo ? (dbInfo.type === 'postgresql' ? 'PostgreSQL (Cloud / Local)' : 'SQLite Persistent File') : 'Checking...'}
+            </span>
+          </div>
+
+          <div className="bg-[#f8f9ff] border border-[#dce2f9] rounded-lg p-3 text-xs space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-[#555b68] font-medium">Active Database:</span>
+              <span className="font-mono font-bold text-[#111c2d] uppercase">
+                {dbInfo?.type || 'Auto-Detecting'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-[#555b68] font-medium">Stored Incidents:</span>
+              <span className="font-bold text-[#111c2d]">
+                {dbInfo?.incidentCount ?? 0} records
+              </span>
+            </div>
+            <div className="pt-1.5 border-t border-[#e2e7f7] text-[10px] text-[#6d7280]">
+              💡 <span>To switch to cloud PostgreSQL (e.g., Supabase / Neon), set <code className="bg-white px-1 py-0.5 rounded border border-gray-300 font-mono">DATABASE_URL</code> in your backend <code className="font-mono">.env</code>.</span>
+            </div>
           </div>
         </div>
 

@@ -19,6 +19,7 @@ from data import ZONES_CONFIG, SLA_RULES, SEED_INCIDENTS
 from authority_engine import authority_engine
 from detection_service import simulate_detection, analyze_garbage_image, DETECTION_CLASSES, SAMPLE_SOURCES
 from heat_island_service import heat_island_service
+from database import db_manager
 
 app = Flask(__name__)
 # Enable CORS for frontend running on Vite or any localhost port
@@ -55,12 +56,14 @@ def serve_api_upload(filename):
 
 @app.route("/api/health", methods=["GET"])
 def health_check():
+    db_status = db_manager.get_status()
     return jsonify({
         "status": "healthy",
         "service": "CSJMU Urban Operations & Authority Resolution Engine Backend",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "activeIncidents": len(incidents_db),
+        "database": db_status,
+        "activeIncidents": db_status.get("incidentCount", 0),
         "uploadsCount": len(os.listdir(UPLOAD_FOLDER)) if os.path.exists(UPLOAD_FOLDER) else 0
     }), 200
 
@@ -216,10 +219,13 @@ def simulate_detection_endpoint():
 
 @app.route("/api/incidents", methods=["GET"])
 def list_incidents():
-    """List all incidents, sortable by newest first."""
+    """List all incidents from persistent database, sortable by newest first."""
+    status_filter = request.args.get("status")
+    ward_filter = request.args.get("ward")
+    incidents = db_manager.get_all_incidents(status=status_filter, ward=ward_filter)
     return jsonify({
-        "total": len(incidents_db),
-        "incidents": incidents_db
+        "total": len(incidents),
+        "incidents": incidents
     }), 200
 
 @app.route("/api/incidents", methods=["POST"])
@@ -230,6 +236,7 @@ def create_incident():
     2. Geotag (Coordinates & Ward mapping)
     3. Authority Resolution (ARE)
     4. Dispatch (Assign team, generate ticket & SLA)
+    5. Persist into PostgreSQL / SQLite database
     """
     data = request.get_json() or {}
     coords = data.get("coordinates", {"x": 40, "y": 40})
@@ -245,7 +252,8 @@ def create_incident():
         custom_severity=data.get("severity")
     )
 
-    ticket_num = f"CSJMU-SWM-{len(incidents_db) + 1043}"
+    incident_count = db_manager.get_incident_count()
+    ticket_num = f"CSJMU-SWM-{incident_count + 1043}"
     now_iso = datetime.utcnow().isoformat() + "Z"
 
     # Garbage detection & estimated amount payload if present
@@ -254,8 +262,8 @@ def create_incident():
     if garbage_detection and not estimated_amount:
         estimated_amount = garbage_detection.get("estimatedAmount")
 
-    new_incident = {
-        "id": f"INC-{len(incidents_db) + 1043}",
+    new_incident_payload = {
+        "id": f"INC-{incident_count + 1043}",
         "ticketNumber": ticket_num,
         "title": title,
         "description": data.get("description", ""),
@@ -295,8 +303,8 @@ def create_incident():
         "aiNotes": data.get("aiNotes") or f"Automatically routed to {resolution['supervisor']['name']} ({resolution['department']}) via Authority Resolution Engine."
     }
 
-    incidents_db.insert(0, new_incident)
-    return jsonify(new_incident), 201
+    created = db_manager.create_incident(new_incident_payload)
+    return jsonify(created), 201
 
 @app.route("/api/incidents/<incident_id>/status", methods=["PATCH"])
 def update_incident_status(incident_id):
@@ -305,12 +313,9 @@ def update_incident_status(incident_id):
     new_status = data.get("status")
     note = data.get("note")
 
-    for inc in incidents_db:
-        if inc["id"] == incident_id:
-            inc["status"] = new_status
-            if note:
-                inc["aiNotes"] = f"{inc.get('aiNotes', '')} | Note: {note}"
-            return jsonify(inc), 200
+    updated = db_manager.update_incident_status(incident_id, new_status, note=note)
+    if updated:
+        return jsonify(updated), 200
 
     return jsonify({"error": "Incident not found"}), 404
 
@@ -323,72 +328,26 @@ def verify_and_close_incident(incident_id):
     data = request.get_json() or {}
     after_image = data.get("afterImageUrl", "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80")
     
-    for inc in incidents_db:
-        if inc["id"] == incident_id:
-            now = datetime.utcnow()
-            inc["status"] = "RESOLVED"
-            inc["afterImageUrl"] = after_image
-            inc["resolvedAt"] = now.isoformat() + "Z"
-            inc["verificationStatus"] = "VERIFIED_CLEAN"
-
-            # Calculate turnaround duration
-            try:
-                created_dt = datetime.fromisoformat(inc["createdAt"].replace("Z", "+00:00"))
-                diff_minutes = max(1, int((datetime.now(created_dt.tzinfo) - created_dt).total_seconds() / 60))
-            except Exception:
-                diff_minutes = 45
-
-            inc["responseDurationMinutes"] = diff_minutes
-            sla_target = inc.get("slaMinutes", 60)
-            inc["slaMet"] = diff_minutes <= sla_target
-
-            return jsonify({
-                "incident": inc,
-                "verification": {
-                    "isClean": True,
-                    "confidence": 0.96,
-                    "resolutionMinutes": diff_minutes,
-                    "slaMet": inc["slaMet"],
-                    "message": f"Verification passed: Solid waste cleared. Resolution logged in {diff_minutes}m (SLA: {sla_target}m)."
-                }
-            }), 200
+    result = db_manager.verify_and_close_incident(incident_id, after_image)
+    if result:
+        return jsonify(result), 200
 
     return jsonify({"error": "Incident not found"}), 404
 
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
-    """Aggregate statistics for the Urban Operations analytics."""
-    total = len(incidents_db)
-    resolved = [i for i in incidents_db if i["status"] == "RESOLVED"]
-    in_progress = [i for i in incidents_db if i["status"] == "IN_PROGRESS"]
-    dispatched = [i for i in incidents_db if i["status"] == "DISPATCHED"]
-
-    met_sla_count = sum(1 for i in resolved if i.get("slaMet", True))
-    sla_compliance_rate = round((met_sla_count / len(resolved) * 100), 1) if resolved else 100.0
-
-    durations = [i["responseDurationMinutes"] for i in resolved if i.get("responseDurationMinutes")]
-    avg_response_time = round(sum(durations) / len(durations), 1) if durations else 52.0
-
-    # Total estimated garbage weight cleared or active
-    total_waste_kg = sum(
-        (i.get("estimatedAmountKg") or i.get("estimatedAmount", {}).get("weightKg") or 0.0)
-        for i in incidents_db
-    )
-
-    class_counts = {}
-    for i in incidents_db:
-        cls = i.get("detectionClass", "other")
-        class_counts[cls] = class_counts.get(cls, 0) + 1
-
+    """Aggregate statistics for the Urban Operations analytics from persistent database."""
+    stats = db_manager.get_analytics_stats()
     return jsonify({
-        "totalIncidents": total,
-        "dispatchedCount": len(dispatched),
-        "inProgressCount": len(in_progress),
-        "resolvedCount": len(resolved),
-        "slaComplianceRate": sla_compliance_rate,
-        "avgResponseTimeMinutes": avg_response_time,
-        "totalEstimatedWasteKg": round(total_waste_kg, 1),
-        "classBreakdown": class_counts
+        "totalIncidents": stats["totalIncidents"],
+        "dispatchedCount": stats["dispatchedCount"],
+        "inProgressCount": stats["inProgressCount"],
+        "resolvedCount": stats["resolvedCount"],
+        "slaComplianceRate": stats["slaComplianceRate"],
+        "avgResponseTimeMinutes": stats["averageResponseMinutes"],
+        "totalEstimatedWasteKg": stats["totalWasteManagedKg"],
+        "classBreakdown": stats["classBreakdown"],
+        "databaseType": stats["databaseType"]
     }), 200
 
 # -------------------------------------------------------------

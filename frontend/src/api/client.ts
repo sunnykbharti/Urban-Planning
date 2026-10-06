@@ -17,12 +17,16 @@ import {
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
-export async function checkBackendHealth(): Promise<{ online: boolean; version?: string }> {
+export async function checkBackendHealth(): Promise<{ 
+  online: boolean; 
+  version?: string;
+  database?: { type: string; host: string; status: string; incidentCount: number };
+}> {
   try {
     const res = await fetch(`${API_BASE_URL}/health`, { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
       const data = await res.json();
-      return { online: true, version: data.version };
+      return { online: true, version: data.version, database: data.database };
     }
   } catch (err) {
     // Backend offline
