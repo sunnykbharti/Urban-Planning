@@ -22,7 +22,8 @@ import {
   HardHat,
   Clock,
   ShieldCheck,
-  FileCheck
+  FileCheck,
+  Plus
 } from 'lucide-react';
 import { ReportCategory, ReportSeverity, MaintenanceReport, GarbageDetectionResult, BoundingBox } from '../types';
 import { samplePhotos } from '../data/mockData';
@@ -49,6 +50,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [storedFileName, setStoredFileName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
@@ -95,6 +97,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
       });
 
       setPhotoUrl(res.file.url);
+      setPhotoUrls(prev => prev.includes(res.file.url) ? prev : [...prev, res.file.url]);
       setStoredFileName(res.file.filename);
       setDetectionResult(res.detection);
 
@@ -126,13 +129,44 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
   };
 
   const handleApplySamplePhoto = (sample: typeof samplePhotos[0]) => {
-    processImageUpload(sample.url, sample.category, sample.suggestedTitle);
+    if (photoUrls.length === 0) {
+      processImageUpload(sample.url, sample.category, sample.suggestedTitle);
+    } else {
+      setPhotoUrls(prev => prev.includes(sample.url) ? prev : [...prev, sample.url]);
+      if (!photoUrl) setPhotoUrl(sample.url);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processImageUpload(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const fileList = Array.from(files) as File[];
+    fileList.forEach((file, index) => {
+      if (index === 0 && photoUrls.length === 0) {
+        processImageUpload(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (ev.target?.result) {
+            const url = ev.target.result as string;
+            setPhotoUrls(prev => prev.includes(url) ? prev : [...prev, url]);
+            if (!photoUrl) setPhotoUrl(url);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    const updated = photoUrls.filter((_, i) => i !== index);
+    setPhotoUrls(updated);
+    if (updated.length > 0) {
+      setPhotoUrl(updated[0]);
+    } else {
+      setPhotoUrl('');
+      setDetectionResult(null);
+      setStoredFileName('');
     }
   };
 
@@ -160,6 +194,8 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
     setIsSubmitting(true);
 
     const generatedTitle = title.trim() || `${category.toUpperCase()} issue at ${location}`;
+    const effectiveUrls = photoUrls.length > 0 ? photoUrls : photoUrl ? [photoUrl] : [samplePhotos[0].url];
+    const primaryImage = effectiveUrls[0];
 
     setTimeout(() => {
       onSubmitReport({
@@ -170,8 +206,9 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
         status: 'pending',
         location,
         coordinates: prefilledCoords,
-        imageUrl: photoUrl || samplePhotos[0].url,
-        beforeImageUrl: photoUrl || samplePhotos[0].url,
+        imageUrl: primaryImage,
+        imageUrls: effectiveUrls,
+        beforeImageUrl: primaryImage,
         garbageDetection: detectionResult || undefined,
         estimatedAmount: detectionResult?.estimatedAmount,
         estimatedAmountKg: detectionResult?.estimatedAmount?.weightKg,
@@ -187,7 +224,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
             author: 'Sunny Bharti',
             message: detectionResult?.isGarbageDetected
               ? `Report submitted with CV Waste Telemetry: ~${detectionResult.estimatedAmount.weightKg} kg (${detectionResult.estimatedAmount.volumeM3} m³) detected and stored.`
-              : 'Initial incident report logged into CSJMU maintenance system.'
+              : `Initial incident report logged into CSJMU maintenance system (${effectiveUrls.length} photos attached).`
           }
         ]
       });
@@ -198,6 +235,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
       setCategory('');
       setSeverity('normal');
       setPhotoUrl('');
+      setPhotoUrls([]);
       setDetectionResult(null);
       setStoredFileName('');
       onClose();
@@ -517,6 +555,57 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                     </div>
                   )
                 )}
+
+                {/* Multi-Photo Thumbnails Gallery */}
+                {photoUrls.length > 0 && (
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Attached Photos ({photoUrls.length})</span>
+                      </span>
+                      <label className="text-[11px] font-bold text-blue-700 hover:text-blue-900 cursor-pointer flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-blue-200">
+                        <Plus className="w-3 h-3" />
+                        <span>+ Add More Photos</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {photoUrls.map((url, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => setPhotoUrl(url)}
+                          className={`relative rounded-lg overflow-hidden border-2 cursor-pointer h-16 group ${
+                            photoUrl === url ? 'border-blue-600 ring-2 ring-blue-300' : 'border-slate-200 hover:border-slate-400'
+                          }`}
+                        >
+                          <img src={url} alt={`Attachment ${idx + 1}`} className="w-full h-full object-cover" />
+                          <span className="absolute bottom-0.5 left-0.5 px-1 bg-black/70 text-[9px] text-white font-bold rounded">
+                            #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemovePhoto(idx);
+                            }}
+                            className="absolute top-0.5 right-0.5 p-0.5 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 shadow-xs"
+                            title="Remove Photo"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -526,9 +615,23 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                   onDrop={(e) => {
                     e.preventDefault();
                     setIsDraggingFile(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file) {
-                      processImageUpload(file);
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                      (Array.from(files) as File[]).forEach((file, index) => {
+                        if (index === 0 && photoUrls.length === 0) {
+                          processImageUpload(file);
+                        } else {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            if (ev.target?.result) {
+                              const url = ev.target.result as string;
+                              setPhotoUrls(prev => prev.includes(url) ? prev : [...prev, url]);
+                              if (!photoUrl) setPhotoUrl(url);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      });
                     }
                   }}
                   className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
@@ -541,11 +644,12 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                     </div>
                     <div className="flex text-xs text-[#43474f] justify-center items-center gap-1">
                       <label htmlFor="file-upload" className="cursor-pointer font-bold text-[#001e40] hover:underline">
-                        <span>Upload photo of garbage</span>
+                        <span>Upload photo(s) of garbage</span>
                         <input
                           id="file-upload"
                           name="file-upload"
                           type="file"
+                          multiple
                           accept="image/*"
                           onChange={handleFileUpload}
                           className="sr-only"
@@ -553,14 +657,14 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                       </label>
                       <span>or drag and drop</span>
                     </div>
-                    <p className="text-[11px] text-[#737780]">PNG, JPG up to 10MB • Auto-stores & detects waste weight</p>
+                    <p className="text-[11px] text-[#737780]">Select 1 or multiple photos • PNG, JPG up to 10MB each</p>
                   </div>
                 </div>
 
                 {/* Preset quick sample photos for testing convenience */}
                 <div className="mt-2.5">
                   <p className="text-[11px] text-[#737780] mb-1 font-medium flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#003366]" /> Quick test photos (1-click AI detection):
+                    <Sparkles className="w-3 h-3 text-[#003366]" /> Quick test photos (Click to add):
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {samplePhotos.map((s, idx) => (

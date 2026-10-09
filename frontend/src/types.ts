@@ -156,8 +156,10 @@ export interface MaintenanceReport {
   slaMet?: boolean;
   timeAgo?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   beforeImageUrl?: string;
   afterImageUrl?: string | null;
+  aiComparisonResult?: AiCleanupComparison;
   verificationStatus?: 'AWAITING_CLEANUP' | 'TEAM_ON_SITE' | 'DISPATCHED_TO_BEAT' | 'VERIFIED_CLEAN';
   aiNotes?: string;
   garbageDetection?: GarbageDetectionResult;
@@ -176,6 +178,65 @@ export interface MaintenanceReport {
     message: string;
     statusChange?: ReportStatus;
   }[];
+}
+
+export interface AiCleanupComparison {
+  isClean: boolean;
+  cleanlinessScore: number;
+  debrisRemovedPct: number;
+  debrisDetectedAfter: boolean;
+  confidence: number;
+  verificationDetails: string;
+  verifiedAt: string;
+}
+
+export interface LeaveRequest {
+  id: string;
+  workerId: string;
+  workerName: string;
+  workerBadge: string;
+  startDate: string;
+  endDate: string;
+  daysCount: number;
+  type: 'sick' | 'casual' | 'emergency' | 'earned';
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedAt: string;
+  reviewedBy?: string;
+  reviewRemarks?: string;
+  reviewedAt?: string;
+}
+
+export interface ReassignmentRequest {
+  id: string;
+  reportId: string;
+  reportTitle: string;
+  location: string;
+  workerId: string;
+  workerName: string;
+  workerBadge: string;
+  currentBeat: string;
+  reason: 'equipment_needed' | 'safety_hazard' | 'out_of_zone' | 'shift_over' | 'medical_issue';
+  notes: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewRemarks?: string;
+  newAssignee?: string;
+}
+
+export interface UserCredential {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  pin: string;
+  agency: string;
+  department: string;
+  badgeNumber: string;
+  lastLogin?: string;
+  status: 'active' | 'suspended';
 }
 
 export interface CampusBlock {

@@ -14,7 +14,7 @@ import {
   EyeOff, 
   Sparkles 
 } from 'lucide-react';
-import { UserRole, UserProfile, DEFAULT_PROFILES } from '../types';
+import { UserRole, UserProfile, DEFAULT_PROFILES, UserCredential } from '../types';
 
 interface RoleAuthModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ interface RoleAuthModalProps {
   targetRole: UserRole;
   currentRole: UserRole;
   onSuccess: (role: UserRole, profile: UserProfile) => void;
+  credentials?: UserCredential[];
 }
 
 export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
@@ -29,7 +30,8 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
   onClose,
   targetRole,
   currentRole,
-  onSuccess
+  onSuccess,
+  credentials
 }) => {
   const [pin, setPin] = useState<string>('');
   const [showPin, setShowPin] = useState<boolean>(false);
@@ -44,9 +46,19 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
   const profile = DEFAULT_PROFILES[normalizedTarget];
   const isStudent = normalizedTarget === 'student';
 
+  // Find active dynamic credential for this role if configured by Super Admin
+  const targetCred = credentials?.find(c => c.role === normalizedTarget);
+  const activeExpectedPin = targetCred?.pin ?? profile.pin;
+  const isAccountSuspended = targetCred?.status === 'suspended';
+
   const handleVerify = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
+
+    if (isAccountSuspended) {
+      setError(`Access Denied: This role account has been suspended by Super Admin.`);
+      return;
+    }
 
     // Student role does not require PIN
     if (isStudent) {
@@ -55,7 +67,7 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
       return;
     }
 
-    if (pin.trim() === profile.pin) {
+    if (pin.trim() === activeExpectedPin.trim()) {
       onSuccess(normalizedTarget, profile);
       setPin('');
       onClose();
@@ -65,7 +77,7 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
   };
 
   const handleQuickFill = () => {
-    setPin(profile.pin);
+    setPin(activeExpectedPin);
     setError(null);
   };
 
@@ -218,7 +230,7 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
                 <div className="flex items-center gap-1.5 text-amber-900">
                   <Lock className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                   <span className="text-[11px]">
-                    Demo PIN: <strong className="font-mono font-bold text-amber-950">{profile.pin}</strong>
+                    Demo PIN: <strong className="font-mono font-bold text-amber-950">{activeExpectedPin}</strong>
                   </span>
                 </div>
                 <button

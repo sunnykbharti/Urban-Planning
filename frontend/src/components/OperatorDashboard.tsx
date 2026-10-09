@@ -28,6 +28,7 @@ import {
   Scale,
   Box
 } from 'lucide-react';
+import { LeafletCampusMap } from './LeafletCampusMap';
 
 interface OperatorDashboardProps {
   reports: MaintenanceReport[];
@@ -215,6 +216,17 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
           <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">SLA Compliance: 94.8%</p>
         </div>
       </div>
+
+      {/* Field Operator Leaflet Map with Red, Yellow, Green Severity */}
+      <LeafletCampusMap
+        reports={reports}
+        onSelectReport={onSelectReport}
+        userRole="operator"
+        compact={true}
+        height="420px"
+        title="CSJMU Beat Dispatch &amp; Route Triage Map"
+        subtitle="Geographic tracking of field maintenance tickets. Red pins mark critical hazards."
+      />
 
       {/* Work Orders Header & Filters */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">

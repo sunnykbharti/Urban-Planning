@@ -5,12 +5,19 @@ import {
   ActivityEvent, 
   ActiveTab, 
   UserRole, 
-  ReportStatus 
+  ReportStatus,
+  LeaveRequest,
+  ReassignmentRequest,
+  UserCredential,
+  AiCleanupComparison
 } from './types';
 import { 
   initialBlocks, 
   initialReports, 
-  initialActivities 
+  initialActivities,
+  initialLeaveRequests,
+  initialReassignmentRequests,
+  initialCredentials
 } from './data/mockData';
 import { TopNavBar } from './components/TopNavBar';
 import { SideNavBar } from './components/SideNavBar';
@@ -32,7 +39,7 @@ import { ManagementDashboard } from './components/ManagementDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RoleAuthModal } from './components/RoleAuthModal';
 import { DEFAULT_PROFILES, UserProfile } from './types';
-import { checkBackendHealth, fetchIncidentsFromBackend } from './api/client';
+import { checkBackendHealth, fetchIncidentsFromBackend, createIncidentAPI } from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
 
 export default function App() {
@@ -47,6 +54,21 @@ export default function App() {
   const [activities, setActivities] = useState<ActivityEvent[]>(() => {
     const saved = localStorage.getItem('csjmu_activities');
     return saved ? JSON.parse(saved) : initialActivities;
+  });
+
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(() => {
+    const saved = localStorage.getItem('csjmu_leave_requests');
+    return saved ? JSON.parse(saved) : initialLeaveRequests;
+  });
+
+  const [reassignmentRequests, setReassignmentRequests] = useState<ReassignmentRequest[]>(() => {
+    const saved = localStorage.getItem('csjmu_reassign_requests');
+    return saved ? JSON.parse(saved) : initialReassignmentRequests;
+  });
+
+  const [credentials, setCredentials] = useState<UserCredential[]>(() => {
+    const saved = localStorage.getItem('csjmu_credentials');
+    return saved ? JSON.parse(saved) : initialCredentials;
   });
 
   const [userRole, setUserRole] = useState<UserRole>(() => {
@@ -153,6 +175,18 @@ export default function App() {
     localStorage.setItem('csjmu_activities', JSON.stringify(activities));
   }, [activities]);
 
+  useEffect(() => {
+    localStorage.setItem('csjmu_leave_requests', JSON.stringify(leaveRequests));
+  }, [leaveRequests]);
+
+  useEffect(() => {
+    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(reassignmentRequests));
+  }, [reassignmentRequests]);
+
+  useEffect(() => {
+    localStorage.setItem('csjmu_credentials', JSON.stringify(credentials));
+  }, [credentials]);
+
   const showToast = (text: string, type: 'success' | 'urgent' | 'info' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3500);
@@ -201,7 +235,13 @@ export default function App() {
     showToast(`Report ${newReport.id} registered on CSJMU map`, newReport.severity === 'urgent' ? 'urgent' : 'success');
   };
 
-  const handleUpdateStatus = (reportId: string, newStatus: ReportStatus, note?: string) => {
+  const handleUpdateStatus = (
+    reportId: string, 
+    newStatus: ReportStatus, 
+    note?: string,
+    aiResult?: AiCleanupComparison,
+    afterImg?: string
+  ) => {
     setReports(prev => prev.map(r => {
       if (r.id === reportId) {
         const updatedUpdates = [...(r.updates || [])];
@@ -209,7 +249,7 @@ export default function App() {
           updatedUpdates.unshift({
             id: `up-${Date.now()}`,
             timestamp: 'Just now',
-            author: userRole === 'admin' ? 'Planning Division Desk' : 'Field Technician',
+            author: userRole === 'admin' ? 'Planning Division Desk' : 'Field Technician (BVG)',
             message: note || `Status updated from ${r.status} to ${newStatus}.`,
             statusChange: newStatus
           });
@@ -217,7 +257,9 @@ export default function App() {
         return {
           ...r,
           status: newStatus,
-          updates: updatedUpdates
+          updates: updatedUpdates,
+          ...(afterImg ? { afterImageUrl: afterImg } : {}),
+          ...(aiResult ? { aiComparisonResult: aiResult } : {})
         };
       }
       return r;
@@ -231,7 +273,7 @@ export default function App() {
       id: `act-${Date.now()}`,
       type: newStatus === 'resolved' ? 'resolved' : 'status_change',
       title: `${reportTitle} marked as ${newStatus.replace('_', ' ').toUpperCase()}`,
-      description: note || `Status transitioned to ${newStatus} by ${userRole === 'admin' ? 'Planning Desk' : 'Technician'}.`,
+      description: note || `Status transitioned to ${newStatus} by ${userRole === 'admin' ? 'Planning Desk' : 'BVG Staff'}.`,
       location: targetReport?.location || 'UIET Campus',
       timestamp: 'JUST NOW',
       actor: 'Maintenance Dispatch',
@@ -265,6 +307,89 @@ export default function App() {
     showToast(`${teamName} dispatched`, 'info');
   };
 
+  // Leave Handlers
+  const handleAddLeaveRequest = (req: Omit<LeaveRequest, 'id' | 'appliedAt' | 'status'>) => {
+    const newLeave: LeaveRequest = {
+      ...req,
+      id: `LV-${Date.now().toString().slice(-4)}`,
+      status: 'pending',
+      appliedAt: new Date().toISOString()
+    };
+    setLeaveRequests(prev => [newLeave, ...prev]);
+    showToast('Leave request submitted to Management', 'info');
+  };
+
+  const handleReviewLeave = (requestId: string, status: 'approved' | 'rejected', remarks?: string) => {
+    setLeaveRequests(prev => prev.map(l => {
+      if (l.id === requestId) {
+        return {
+          ...l,
+          status,
+          reviewedBy: 'Er. R. K. Sharma (Directorate)',
+          reviewRemarks: remarks,
+          reviewedAt: new Date().toISOString()
+        };
+      }
+      return l;
+    }));
+    showToast(`Leave request ${requestId} marked as ${status.toUpperCase()}`, status === 'approved' ? 'success' : 'info');
+  };
+
+  // Reassignment Handlers
+  const handleAddReassignmentRequest = (req: Omit<ReassignmentRequest, 'id' | 'requestedAt' | 'status'>) => {
+    const newReq: ReassignmentRequest = {
+      ...req,
+      id: `REASSIGN-${Date.now().toString().slice(-4)}`,
+      status: 'pending',
+      requestedAt: new Date().toISOString()
+    };
+    setReassignmentRequests(prev => [newReq, ...prev]);
+    showToast('Work reassignment request sent to Management', 'info');
+  };
+
+  const handleReviewReassignment = (requestId: string, status: 'approved' | 'rejected', remarks?: string, newAssignee?: string) => {
+    setReassignmentRequests(prev => prev.map(r => {
+      if (r.id === requestId) {
+        return {
+          ...r,
+          status,
+          reviewedBy: 'Estate Works Desk',
+          reviewRemarks: remarks,
+          reviewedAt: new Date().toISOString(),
+          newAssignee
+        };
+      }
+      return r;
+    }));
+
+    const targetReq = reassignmentRequests.find(r => r.id === requestId);
+    if (status === 'approved' && newAssignee && targetReq?.reportId) {
+      handleAssignTeam(targetReq.reportId, newAssignee);
+    }
+    showToast(`Reassignment request ${requestId} ${status.toUpperCase()}`, status === 'approved' ? 'success' : 'info');
+  };
+
+  // Credentials and Roles Handlers
+  const handleUpdateCredentials = (updatedList: UserCredential[]) => {
+    setCredentials(updatedList);
+    showToast('Credentials updated successfully', 'success');
+  };
+
+  const handleUpdateUserRole = (userId: string, newRole: UserRole, department?: string, pin?: string) => {
+    setCredentials(prev => prev.map(c => {
+      if (c.id === userId) {
+        return {
+          ...c,
+          role: newRole,
+          department: department || c.department,
+          pin: pin !== undefined ? pin : (newRole === 'student' ? '' : c.pin)
+        };
+      }
+      return c;
+    }));
+    showToast(`Role updated to ${newRole.toUpperCase()}`, 'success');
+  };
+
   const handleOpenReportDrawerWithLoc = (locName: string, coords: { x: number; y: number }) => {
     setReportDrawerLocation(locName);
     setReportDrawerCoords(coords);
@@ -274,8 +399,14 @@ export default function App() {
   const handleResetData = () => {
     localStorage.removeItem('csjmu_reports');
     localStorage.removeItem('csjmu_activities');
+    localStorage.removeItem('csjmu_leave_requests');
+    localStorage.removeItem('csjmu_reassign_requests');
+    localStorage.removeItem('csjmu_credentials');
     setReports(initialReports);
     setActivities(initialActivities);
+    setLeaveRequests(initialLeaveRequests);
+    setReassignmentRequests(initialReassignmentRequests);
+    setCredentials(initialCredentials);
     showToast('Demo data restored to initial state', 'info');
   };
 
@@ -379,6 +510,7 @@ export default function App() {
               }}
               onSelectReport={(rep) => setSelectedReportDetails(rep)}
               onNavigateToTab={(tab) => setActiveTab(tab)}
+              onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
             />
           )}
 
@@ -389,6 +521,10 @@ export default function App() {
               onUpdateStatus={handleUpdateStatus}
               onSelectReport={(rep) => setSelectedReportDetails(rep)}
               onNavigateToTab={(tab) => setActiveTab(tab)}
+              leaveRequests={leaveRequests}
+              onAddLeaveRequest={handleAddLeaveRequest}
+              reassignmentRequests={reassignmentRequests}
+              onAddReassignmentRequest={handleAddReassignmentRequest}
             />
           )}
 
@@ -399,6 +535,10 @@ export default function App() {
               onUpdateStatus={handleUpdateStatus}
               onSelectReport={(rep) => setSelectedReportDetails(rep)}
               onNavigateToTab={(tab) => setActiveTab(tab)}
+              reassignmentRequests={reassignmentRequests}
+              onReviewReassignment={handleReviewReassignment}
+              leaveRequests={leaveRequests}
+              onReviewLeave={handleReviewLeave}
             />
           )}
 
@@ -407,6 +547,11 @@ export default function App() {
               reports={displayedReports}
               blocks={blocks}
               activities={activities}
+              credentials={credentials}
+              onUpdateCredentials={handleUpdateCredentials}
+              onUpdateUserRole={handleUpdateUserRole}
+              onAssignTeam={handleAssignTeam}
+              onUpdateStatus={handleUpdateStatus}
               onOpenReportDrawer={() => {
                 setReportDrawerLocation('UIET Block 1');
                 setReportDrawerCoords({ x: 38, y: 38 });
@@ -439,6 +584,7 @@ export default function App() {
               blocks={blocks}
               onSelectReport={(rep) => setSelectedReportDetails(rep)}
               onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+              userRole={userRole}
             />
           )}
 
@@ -515,6 +661,7 @@ export default function App() {
         targetRole={targetAuthRole || 'student'}
         currentRole={userRole}
         onSuccess={handleAuthSuccess}
+        credentials={credentials}
       />
 
       {/* Toast Notification Alert Banner */}

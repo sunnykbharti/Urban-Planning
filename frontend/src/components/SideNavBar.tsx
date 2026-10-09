@@ -11,7 +11,6 @@ import {
   Building2,
   Home,
   Shield,
-  Radio,
   Flame,
   Layers,
   GraduationCap,
@@ -19,7 +18,9 @@ import {
   Award,
   TreeDeciduous,
   CheckCircle2,
-  Video
+  Calendar,
+  KeyRound,
+  UserCheck
 } from 'lucide-react';
 import { ActiveTab, UserRole } from '../types';
 
@@ -77,10 +78,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             </div>
             <div className="min-w-0">
               <h2 className="text-sm font-black text-[#001e40] leading-tight truncate">
-                {isStudent ? 'UIET Student' : isBvg ? 'BVG Cleaning Agency' : isManagement ? 'Estate Management' : 'Super Admin HQ'}
+                {isStudent ? 'Student Hub' : isBvg ? 'BVG Worker' : isManagement ? 'Management' : 'Super Admin'}
               </h2>
               <p className="text-[11px] text-[#737780] font-semibold truncate">
-                {isStudent ? 'Citizen Hub' : isBvg ? 'Beat 01 Field Staff' : isManagement ? 'Sanitation Oversight' : 'Master IT Terminal'}
+                {isStudent ? 'CSJMU Citizen' : isBvg ? 'Field Sanitation' : isManagement ? 'Estate Directorate' : 'Master IT HQ'}
               </p>
             </div>
           </div>
@@ -101,18 +102,18 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           >
             <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
             <span>
-              {isStudent ? 'Report Hazard' : isBvg ? 'Log Field Task' : 'New Incident'}
+              {isStudent ? 'Upload Hazard Photo' : isBvg ? 'Log Field Task' : 'New Incident'}
             </span>
           </button>
         </div>
 
-        {/* Navigation Tabs List - Filtered by User Role */}
+        {/* Navigation Tabs List - Simplified to exact user specifications */}
         <nav className="flex flex-col gap-1 px-3 overflow-y-auto max-h-[calc(100vh-290px)] custom-scrollbar">
           
           {/* ==================== 1. STUDENT ROLE NAVIGATION ==================== */}
-          {userRole === 'student' && (
+          {isStudent && (
             <>
-              {/* Student Hub / Dashboard */}
+              {/* Live Incident Dashboard */}
               <button
                 id="nav-student-hub"
                 onClick={() => onSelectTab('student_dashboard')}
@@ -123,10 +124,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 }`}
               >
                 <Home className={`w-4 h-4 ${activeTab === 'student_dashboard' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Student Hub</span>
+                <span>Incident Dashboard</span>
               </button>
 
-              {/* Campus Interactive Map */}
+              {/* Explore Campus Leaflet Map */}
               <button
                 id="nav-map-overview"
                 onClick={() => onSelectTab('map')}
@@ -137,10 +138,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 }`}
               >
                 <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Campus Map</span>
+                <span>Explore Campus</span>
               </button>
 
-              {/* Cool Havens & Heat Map */}
+              {/* Cool Havens */}
               <button
                 id="nav-heat-island"
                 onClick={() => onSelectTab('heatisland')}
@@ -155,22 +156,8 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                   <span>Cool Havens</span>
                 </div>
                 <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.5 rounded">
-                  COMFORT
+                  ECO
                 </span>
-              </button>
-
-              {/* Campus Community Feed */}
-              <button
-                id="nav-live-feed"
-                onClick={() => onSelectTab('feed')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'feed'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <LayoutGrid className={`w-4 h-4 ${activeTab === 'feed' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Campus Feed</span>
               </button>
             </>
           )}
@@ -178,9 +165,9 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           {/* ==================== 2. BVG WORKERS NAVIGATION ==================== */}
           {isBvg && (
             <>
-              {/* Field Work Orders */}
+              {/* BVG Worker Operations (Assigned Work, AI Status Update, Reassignments, Leave) */}
               <button
-                id="nav-operator-orders"
+                id="nav-bvg-operations"
                 onClick={() => onSelectTab('bvg_dashboard')}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
                   activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard'
@@ -190,7 +177,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
               >
                 <div className="flex items-center gap-3">
                   <HardHat className={`w-4 h-4 ${activeTab === 'bvg_dashboard' ? 'text-amber-700' : 'text-[#737780]'}`} />
-                  <span>BVG Work Orders</span>
+                  <span>Assigned Work</span>
                 </div>
                 {urgentCount > 0 && (
                   <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
@@ -198,57 +185,13 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                   </span>
                 )}
               </button>
-
-              {/* Field Route Map */}
-              <button
-                id="nav-map-overview"
-                onClick={() => onSelectTab('map')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'map'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Beat Route Map</span>
-              </button>
-
-              {/* Maintenance Log */}
-              <button
-                id="nav-maintenance-log"
-                onClick={() => onSelectTab('maintenance')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'maintenance'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Wrench className={`w-4 h-4 ${activeTab === 'maintenance' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                  <span>Beat Triage</span>
-                </div>
-              </button>
-
-              {/* Live Feed */}
-              <button
-                id="nav-live-feed"
-                onClick={() => onSelectTab('feed')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'feed'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <LayoutGrid className={`w-4 h-4 ${activeTab === 'feed' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Beat Feed</span>
-              </button>
             </>
           )}
 
           {/* ==================== 3. MANAGEMENT NAVIGATION ==================== */}
           {isManagement && (
             <>
-              {/* Management Oversight */}
+              {/* Management Terminal (Statistics, Request Management, Leave Request Management) */}
               <button
                 id="nav-management-overview"
                 onClick={() => onSelectTab('management_dashboard')}
@@ -261,236 +204,24 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 <Building2 className={`w-4 h-4 ${activeTab === 'management_dashboard' ? 'text-blue-700' : 'text-[#737780]'}`} />
                 <span>Management HQ</span>
               </button>
-
-              {/* Campus Master Map */}
-              <button
-                id="nav-map-overview"
-                onClick={() => onSelectTab('map')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'map'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Master Map</span>
-              </button>
-
-              {/* Heat Island Studio */}
-              <button
-                id="nav-heat-island"
-                onClick={() => onSelectTab('heatisland')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'heatisland'
-                    ? 'bg-[#fff1f2] text-[#be123c] border-r-4 border-[#be123c] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#fff1f2] hover:text-[#be123c]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Flame className="w-4 h-4 text-rose-600" />
-                  <span>Heat Island</span>
-                </div>
-              </button>
-
-              {/* ARE Pipeline */}
-              <button
-                id="nav-pipeline-visualizer"
-                onClick={() => onSelectTab('pipeline')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'pipeline'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Layers className={`w-4 h-4 ${activeTab === 'pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
-                  <span>ARE Pipeline</span>
-                </div>
-              </button>
-
-              {/* CCTV Garbage Pipeline */}
-              <button
-                id="nav-cctv-pipeline-operator"
-                onClick={() => onSelectTab('cctv_pipeline')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'cctv_pipeline'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-indigo-600 shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Video className={`w-4 h-4 ${activeTab === 'cctv_pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
-                  <span>CCTV Pipeline</span>
-                </div>
-              </button>
-
-              {/* Maintenance Log */}
-              <button
-                id="nav-maintenance-log"
-                onClick={() => onSelectTab('maintenance')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'maintenance'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Wrench className={`w-4 h-4 ${activeTab === 'maintenance' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                  <span>SLA Audit</span>
-                </div>
-              </button>
             </>
           )}
 
           {/* ==================== 4. SUPER ADMIN NAVIGATION ==================== */}
           {isSuperAdmin && (
             <>
-              {/* Executive Command */}
+              {/* Super Admin Console (BVG Assigned Work, Roles Management, Password & Login Credentials) */}
               <button
                 id="nav-admin-command"
                 onClick={() => onSelectTab('admin_dashboard')}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
                   activeTab === 'admin_dashboard'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
+                    ? 'bg-purple-50 text-purple-900 border-r-4 border-purple-700 shadow-xs'
+                    : 'text-[#43474f] hover:bg-purple-50/60 hover:text-purple-900'
                 }`}
               >
-                <Building2 className={`w-4 h-4 ${activeTab === 'admin_dashboard' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Command HQ</span>
-              </button>
-
-              {/* Master Campus Map */}
-              <button
-                id="nav-map-overview"
-                onClick={() => onSelectTab('map')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'map'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Master Map</span>
-              </button>
-
-              {/* Heat Island Studio */}
-              <button
-                id="nav-heat-island"
-                onClick={() => onSelectTab('heatisland')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'heatisland'
-                    ? 'bg-[#fff1f2] text-[#be123c] border-r-4 border-[#be123c] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#fff1f2] hover:text-[#be123c]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Flame className="w-4 h-4 text-rose-600" />
-                  <span className="font-extrabold">Heat Island</span>
-                </div>
-                <span className="bg-red-100 text-red-700 text-[9px] font-black px-1.5 py-0.5 rounded tracking-wider">
-                  STUDIO
-                </span>
-              </button>
-
-              {/* ARE Pipeline Visualizer */}
-              <button
-                id="nav-pipeline-visualizer"
-                onClick={() => onSelectTab('pipeline')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'pipeline'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Layers className={`w-4 h-4 ${activeTab === 'pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
-                  <span>ARE Pipeline</span>
-                </div>
-                <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                  5-STAGE
-                </span>
-              </button>
-
-              {/* CCTV Garbage Pipeline */}
-              <button
-                id="nav-cctv-pipeline"
-                onClick={() => onSelectTab('cctv_pipeline')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'cctv_pipeline'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-indigo-600 shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Video className={`w-4 h-4 ${activeTab === 'cctv_pipeline' ? 'text-indigo-600' : 'text-[#737780]'}`} />
-                  <span className="font-extrabold">CCTV Pipeline</span>
-                </div>
-                <span className="bg-indigo-100 text-indigo-800 text-[9px] font-black px-1.5 py-0.5 rounded tracking-wider">
-                  4X DAILY
-                </span>
-              </button>
-
-              {/* Maintenance Log */}
-              <button
-                id="nav-maintenance-log"
-                onClick={() => onSelectTab('maintenance')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'maintenance'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Wrench className={`w-4 h-4 ${activeTab === 'maintenance' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                  <span>Maintenance</span>
-                </div>
-                {urgentCount > 0 && (
-                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                    {urgentCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Planning Board */}
-              <button
-                id="nav-planning-board"
-                onClick={() => onSelectTab('planning')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'planning'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <Compass className={`w-4 h-4 ${activeTab === 'planning' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Planning Board</span>
-              </button>
-
-              {/* Analytics */}
-              <button
-                id="nav-analytics"
-                onClick={() => onSelectTab('analytics')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'analytics'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Analytics</span>
-              </button>
-
-              {/* Live Feed */}
-              <button
-                id="nav-live-feed"
-                onClick={() => onSelectTab('feed')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
-                  activeTab === 'feed'
-                    ? 'bg-[#f0f3ff] text-[#001e40] border-r-4 border-[#001e40] shadow-xs'
-                    : 'text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40]'
-                }`}
-              >
-                <LayoutGrid className={`w-4 h-4 ${activeTab === 'feed' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
-                <span>Live Feed</span>
+                <Shield className={`w-4 h-4 ${activeTab === 'admin_dashboard' ? 'text-purple-700' : 'text-[#737780]'}`} />
+                <span>Super Admin Console</span>
               </button>
             </>
           )}

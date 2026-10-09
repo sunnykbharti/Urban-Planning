@@ -1,4 +1,12 @@
-import { MaintenanceReport, CampusBlock, ActivityEvent, PlanningProject } from '../types';
+import { 
+  MaintenanceReport, 
+  CampusBlock, 
+  ActivityEvent, 
+  PlanningProject,
+  LeaveRequest,
+  ReassignmentRequest,
+  UserCredential
+} from '../types';
 
 export const initialBlocks: CampusBlock[] = [
   {
@@ -123,7 +131,8 @@ export const initialReports: MaintenanceReport[] = [
     status: 'pending',
     location: 'North Campus, Library Quad',
     blockId: 'library',
-    coordinates: { x: 61, y: 41 }, // near library marker from Image 1
+    coordinates: { x: 61, y: 41 },
+    gps: { latitude: 26.5043, longitude: 80.2686 },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     timeAgo: '2 hrs ago',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
@@ -148,6 +157,34 @@ export const initialReports: MaintenanceReport[] = [
     ]
   },
   {
+    id: 'REP-1098',
+    title: 'Uncapped Live Cable Box Near Sports Stadium',
+    description: 'Ground junction box lid shattered with exposed 415V wiring near spectator bleachers. High risk for athletes and evening joggers.',
+    category: 'safety',
+    severity: 'critical',
+    status: 'pending',
+    location: 'Sports Ground West Spectator Pavilion',
+    blockId: 'sports-complex',
+    coordinates: { x: 79, y: 26 },
+    gps: { latitude: 26.5057, longitude: 80.2715 },
+    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '1 hr ago',
+    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Team Beta (Electrical Maintenance)',
+    reportedBy: {
+      name: 'Captain Amit Yadav',
+      role: 'Sports Committee Coordinator',
+    },
+    updates: [
+      {
+        id: 'u-9',
+        timestamp: '1 hr ago',
+        author: 'Capt. Amit Yadav',
+        message: 'Caution perimeter cordoned off with cones.',
+      }
+    ]
+  },
+  {
     id: 'REP-1088',
     title: 'Minor Pipe Leak in Science Block B',
     description: 'Small drip noticed from overhead pipe in the basement corridor near lab B-12. Need a plumber to tighten fittings before water gathers on electrical conduits.',
@@ -157,6 +194,7 @@ export const initialReports: MaintenanceReport[] = [
     location: 'East Campus, Science Block B, Basement',
     blockId: 'science-block-b',
     coordinates: { x: 46, y: 26 },
+    gps: { latitude: 26.5051, longitude: 80.2666 },
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     timeAgo: '5 hrs ago',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBNz9kmKjs6xYEvNxTTRpzZZPl45MCRBjF5R8Y1Stw1P-6sNpm3xZvKlnHVVpTg6t55BMjLa7nxjO0HpMzHPTMJTbN1BB6vrIJWzoaPti2JTyECXgoOjODV9SnPsygTO7zq89eTelmoh4vZ1yZ9m-bc6LZtkf4SGKId8INwdgu73SbrbilYhDyQJyfD1S5BPpwYiNgo9VVFt5J2-Ry7vmNB4fwzldaPB0EFNg_suR-dzMo_uD8R1FEQ',
@@ -190,7 +228,8 @@ export const initialReports: MaintenanceReport[] = [
     status: 'resolved',
     location: 'North Campus Entrance & Athletic Gate',
     blockId: 'main-gate',
-    coordinates: { x: 81, y: 36 }, // green marker location from Image 1
+    coordinates: { x: 81, y: 36 },
+    gps: { latitude: 26.5066, longitude: 80.2647 },
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     timeAgo: '1 day ago',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
@@ -218,7 +257,8 @@ export const initialReports: MaintenanceReport[] = [
     status: 'pending',
     location: 'Central Mechanical Workshop, Bay 2',
     blockId: 'workshop',
-    coordinates: { x: 45, y: 59 }, // yellow marker from Image 1
+    coordinates: { x: 45, y: 59 },
+    gps: { latitude: 26.5013, longitude: 80.2654 },
     createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
     timeAgo: '7 hrs ago',
     imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
@@ -246,6 +286,7 @@ export const initialReports: MaintenanceReport[] = [
     location: 'UIET Block 1 West Corridor',
     blockId: 'block-1',
     coordinates: { x: 38, y: 44 },
+    gps: { latitude: 26.5029, longitude: 80.2660 },
     createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
     timeAgo: '9 hrs ago',
     imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
@@ -266,6 +307,7 @@ export const initialReports: MaintenanceReport[] = [
     location: 'Hostel Complex, Dorm 4, Room 108 Corridor',
     blockId: 'hostels',
     coordinates: { x: 72, y: 74 },
+    gps: { latitude: 26.5000, longitude: 80.2706 },
     createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     timeAgo: '1 hr ago',
     imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
@@ -293,6 +335,7 @@ export const initialReports: MaintenanceReport[] = [
     location: 'UIET Administrative Block, Seminar Hall 1',
     blockId: 'admin-block',
     coordinates: { x: 67, y: 55 },
+    gps: { latitude: 26.5033, longitude: 80.2693 },
     createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(),
     timeAgo: '14 hrs ago',
     imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
@@ -321,6 +364,7 @@ export const initialReports: MaintenanceReport[] = [
     location: 'Central Canteen & Student Plaza',
     blockId: 'block-2',
     coordinates: { x: 50, y: 65 },
+    gps: { latitude: 26.5024, longitude: 80.2679 },
     createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
     timeAgo: '18 hrs ago',
     imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
@@ -328,6 +372,27 @@ export const initialReports: MaintenanceReport[] = [
     reportedBy: {
       name: 'Vikas Mishra',
       role: 'Faculty Member',
+    },
+    updates: []
+  },
+  {
+    id: 'REP-1054',
+    title: 'Faded Directional Signpost at Central Concourse',
+    description: 'Wayfinding arrows towards Health Centre and UIET Block 3 have oxidized and are difficult for freshers to read.',
+    category: 'infrastructure',
+    severity: 'low',
+    status: 'pending',
+    location: 'Central Concourse Junction, Near Health Centre',
+    blockId: 'health-centre',
+    coordinates: { x: 58, y: 48 },
+    gps: { latitude: 26.5020, longitude: 80.2687 },
+    createdAt: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '1.5 days ago',
+    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Team Alpha (Signage & Paint)',
+    reportedBy: {
+      name: 'Swati Sachan',
+      role: '1st Year B.Tech Student',
     },
     updates: []
   }
@@ -475,5 +540,132 @@ export const samplePhotos = [
     url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
     category: 'electrical' as const,
     suggestedTitle: 'Flickering Light & Exposed Ballast'
+  }
+];
+
+export const initialLeaveRequests: LeaveRequest[] = [
+  {
+    id: 'LV-2026-08',
+    workerId: 'USR-BVG-204',
+    workerName: 'Ramesh Kumar',
+    workerBadge: 'BVG-IND-KNP-204',
+    startDate: '2026-10-12',
+    endDate: '2026-10-14',
+    daysCount: 3,
+    type: 'casual',
+    reason: 'Family wedding event in native village (Unnao). Backup assigned to Beat 02.',
+    status: 'pending',
+    appliedAt: '2026-10-07T09:30:00.000Z'
+  },
+  {
+    id: 'LV-2026-07',
+    workerId: 'USR-BVG-209',
+    workerName: 'Suresh Chandra',
+    workerBadge: 'BVG-IND-KNP-209',
+    startDate: '2026-10-10',
+    endDate: '2026-10-11',
+    daysCount: 2,
+    type: 'sick',
+    reason: 'Viral fever and monsoon flu. Prescription attached.',
+    status: 'pending',
+    appliedAt: '2026-10-08T06:15:00.000Z'
+  },
+  {
+    id: 'LV-2026-06',
+    workerId: 'USR-BVG-215',
+    workerName: 'Mahesh Pal',
+    workerBadge: 'BVG-IND-KNP-215',
+    startDate: '2026-10-03',
+    endDate: '2026-10-04',
+    daysCount: 2,
+    type: 'emergency',
+    reason: 'Household water pipe burst repair.',
+    status: 'approved',
+    appliedAt: '2026-10-02T14:00:00.000Z',
+    reviewedBy: 'Er. R. K. Sharma (Estate)',
+    reviewRemarks: 'Approved. Standby worker deputed.',
+    reviewedAt: '2026-10-02T16:30:00.000Z'
+  }
+];
+
+export const initialReassignmentRequests: ReassignmentRequest[] = [
+  {
+    id: 'REASSIGN-101',
+    reportId: 'REP-1098',
+    reportTitle: 'Uncapped Live Cable Box Near Sports Stadium',
+    location: 'Sports Ground West Spectator Pavilion',
+    workerId: 'USR-BVG-204',
+    workerName: 'Ramesh Kumar',
+    workerBadge: 'BVG-IND-KNP-204',
+    currentBeat: 'Beat 01 (Sanitation)',
+    reason: 'safety_hazard',
+    notes: 'Exposed 415V live wires present high electrocution risk. Requires licensed high-voltage electrician team (Team Beta) with insulated tools, not general sweepers.',
+    status: 'pending',
+    requestedAt: '2026-10-08T10:15:00.000Z'
+  },
+  {
+    id: 'REASSIGN-102',
+    reportId: 'REP-1077',
+    reportTitle: 'Heavy Waterlogging Near UIET Block 1 Lawn',
+    location: 'UIET Block 1 West Corridor',
+    workerId: 'USR-BVG-209',
+    workerName: 'Suresh Chandra',
+    workerBadge: 'BVG-IND-KNP-209',
+    currentBeat: 'Beat 02',
+    reason: 'equipment_needed',
+    notes: 'Deep sludge and water stagnation requires suction pump tanker (UP-78-TK) and desilting squad with safety waders.',
+    status: 'pending',
+    requestedAt: '2026-10-08T08:45:00.000Z'
+  }
+];
+
+export const initialCredentials: UserCredential[] = [
+  {
+    id: 'USR-STU-01',
+    name: 'Sunny Bharti',
+    email: 'sunny.student@csjmu.ac.in',
+    role: 'student',
+    pin: '',
+    agency: 'CSJMU Student Council',
+    department: 'Computer Science & Engineering (UIET)',
+    badgeNumber: 'CSJMU/UIET/2023/104',
+    lastLogin: 'Today, 01:15 PM',
+    status: 'active'
+  },
+  {
+    id: 'USR-BVG-204',
+    name: 'Ramesh Kumar',
+    email: 'ramesh.bvg@csjmu.facility.in',
+    role: 'bvg_worker',
+    pin: '1234',
+    agency: 'BVG India Ltd.',
+    department: 'Solid Waste Cleansing Beat 01',
+    badgeNumber: 'BVG-IND-KNP-204',
+    lastLogin: 'Today, 11:42 AM',
+    status: 'active'
+  },
+  {
+    id: 'USR-MGT-101',
+    name: 'Er. R. K. Sharma',
+    email: 'rksharma.estate@csjmu.ac.in',
+    role: 'management',
+    pin: '5678',
+    agency: 'CSJMU Directorate of Estate & Works',
+    department: 'Campus Works & Public Health Engineering',
+    badgeNumber: 'CSJMU-EST-019',
+    lastLogin: 'Today, 10:20 AM',
+    status: 'active'
+  },
+  {
+    id: 'USR-ADM-001',
+    name: 'Vice Chancellor / Registrar Secretariat',
+    email: 'registrar@csjmu.ac.in',
+    role: 'super_admin',
+    pin: '9999',
+    agency: 'CSJMU Central Secretariat',
+    department: 'Directorate of Campus Administration & IT',
+    badgeNumber: 'CSJMU-EXEC-001',
+    lastLogin: 'Today, 09:00 AM',
+    status: 'active'
   }
 ];

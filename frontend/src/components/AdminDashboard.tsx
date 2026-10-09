@@ -3,7 +3,9 @@ import {
   MaintenanceReport, 
   CampusBlock, 
   ActivityEvent,
-  ReportStatus 
+  ReportStatus,
+  UserCredential,
+  UserRole
 } from '../types';
 import { 
   Building2, 
@@ -18,21 +20,34 @@ import {
   TrendingUp, 
   Download, 
   Send, 
-  Radio, 
-  Compass, 
-  Plus, 
-  ArrowRight,
-  ExternalLink,
-  ChevronRight,
+  HardHat, 
+  UserCheck, 
+  KeyRound, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Edit3, 
+  UserPlus, 
+  Shield, 
+  Sparkles, 
+  Check, 
+  X, 
   RefreshCw,
-  Cpu,
-  Video
+  MapPin,
+  Filter
 } from 'lucide-react';
+import { LeafletCampusMap } from './LeafletCampusMap';
+import { initialCredentials } from '../data/mockData';
 
 interface AdminDashboardProps {
   reports: MaintenanceReport[];
   blocks: CampusBlock[];
   activities: ActivityEvent[];
+  credentials: UserCredential[];
+  onUpdateCredentials: (updatedList: UserCredential[]) => void;
+  onUpdateUserRole: (userId: string, newRole: UserRole, department?: string, pin?: string) => void;
+  onAssignTeam: (reportId: string, teamName: string) => void;
+  onUpdateStatus: (reportId: string, status: ReportStatus, note?: string) => void;
   onOpenReportDrawer: () => void;
   onSelectReport: (report: MaintenanceReport) => void;
   onNavigateToTab: (tab: any) => void;
@@ -42,410 +57,812 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   reports,
   blocks,
   activities,
+  credentials,
+  onUpdateCredentials,
+  onUpdateUserRole,
+  onAssignTeam,
+  onUpdateStatus,
   onOpenReportDrawer,
   onSelectReport,
   onNavigateToTab
 }) => {
-  const [exportNotice, setExportNotice] = useState<string | null>(null);
+  // Simplified 3 Tabs requested: BVG Assigned Work | Roles Change Updation & Management | Manage Password and Login Credentials
+  const [activeTab, setActiveTab] = useState<'bvg_work' | 'roles_management' | 'credentials_management'>('bvg_work');
 
-  const totalReports = reports.length;
-  const resolvedReports = reports.filter(r => r.status === 'resolved').length;
-  const urgentReports = reports.filter(r => r.severity === 'urgent' && r.status !== 'resolved').length;
-  const inProgressReports = reports.filter(r => r.status === 'in_progress').length;
-  const complianceRate = totalReports > 0 ? Math.round((resolvedReports / totalReports) * 100) : 94;
+  // Work filter
+  const [workFilter, setWorkFilter] = useState<'all' | 'urgent' | 'in_progress' | 'resolved'>('all');
 
-  const handleExportReport = () => {
-    setExportNotice('Exporting CSJMU-Municipal-Operations-Audit.pdf...');
-    setTimeout(() => {
-      setExportNotice('Report successfully generated & downloaded!');
-      setTimeout(() => setExportNotice(null), 3000);
-    }, 1200);
+  // Role edit modal state
+  const [editingUser, setEditingUser] = useState<UserCredential | null>(null);
+  const [newSelectedRole, setNewSelectedRole] = useState<UserRole>('bvg_worker');
+  const [newDepartment, setNewDepartment] = useState<string>('');
+
+  // Add user modal state
+  const [isAddUserOpen, setIsAddUserOpen] = useState<boolean>(false);
+  const [newUserName, setNewUserName] = useState<string>('');
+  const [newUserEmail, setNewUserEmail] = useState<string>('');
+  const [newUserRole, setNewUserRole] = useState<UserRole>('bvg_worker');
+  const [newUserAgency, setNewUserAgency] = useState<string>('BVG India Ltd.');
+  const [newUserDept, setNewUserDept] = useState<string>('Campus Sanitation Beat 03');
+  const [newUserBadge, setNewUserBadge] = useState<string>('');
+  const [newUserPin, setNewUserPin] = useState<string>('1234');
+
+  // Password / PIN edit state
+  const [editingPinUser, setEditingPinUser] = useState<UserCredential | null>(null);
+  const [tempPin, setTempPin] = useState<string>('');
+  const [visiblePins, setVisiblePins] = useState<Record<string, boolean>>({});
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  const togglePinVisibility = (id: string) => {
+    setVisiblePins(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const showFeedback = (msg: string) => {
+    setFeedbackMsg(msg);
+    setTimeout(() => setFeedbackMsg(null), 3000);
+  };
+
+  // Metrics
+  const totalTasks = reports.length;
+  const urgentTasks = reports.filter(r => r.severity === 'urgent' && r.status !== 'resolved').length;
+  const inProgressTasks = reports.filter(r => r.status === 'in_progress').length;
+  const resolvedTasks = reports.filter(r => r.status === 'resolved').length;
+
+  const filteredReports = reports.filter(r => {
+    if (workFilter === 'urgent') return r.severity === 'urgent' && r.status !== 'resolved';
+    if (workFilter === 'in_progress') return r.status === 'in_progress';
+    if (workFilter === 'resolved') return r.status === 'resolved';
+    return true;
+  });
+
+  const handleSaveRoleChange = () => {
+    if (!editingUser) return;
+    onUpdateUserRole(editingUser.id, newSelectedRole, newDepartment || editingUser.department);
+    showFeedback(`Role for ${editingUser.name} updated to ${newSelectedRole.toUpperCase()}`);
+    setEditingUser(null);
+  };
+
+  const handleSavePin = () => {
+    if (!editingPinUser) return;
+    const updated = credentials.map(c => {
+      if (c.id === editingPinUser.id) {
+        return { ...c, pin: tempPin };
+      }
+      return c;
+    });
+    onUpdateCredentials(updated);
+    showFeedback(`PIN for ${editingPinUser.name} successfully updated to ${tempPin}`);
+    setEditingPinUser(null);
+    setTempPin('');
+  };
+
+  const handleToggleAccountStatus = (id: string) => {
+    const updated = credentials.map(c => {
+      if (c.id === id) {
+        const nextStatus = c.status === 'active' ? 'suspended' : 'active';
+        return { ...c, status: nextStatus as 'active' | 'suspended' };
+      }
+      return c;
+    });
+    onUpdateCredentials(updated);
+    showFeedback('User account access status updated');
+  };
+
+  const handleResetDefaultPins = () => {
+    onUpdateCredentials(initialCredentials);
+    showFeedback('Factory default PINs restored (BVG: 1234, MGT: 5678, Super Admin: 9999)');
+  };
+
+  const handleAddNewUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim()) return;
+
+    const newCred: UserCredential = {
+      id: `USR-${Date.now().toString().slice(-5)}`,
+      name: newUserName.trim(),
+      email: newUserEmail.trim(),
+      role: newUserRole,
+      pin: newUserRole === 'student' ? '' : (newUserPin || '1234'),
+      agency: newUserAgency,
+      department: newUserDept,
+      badgeNumber: newUserBadge || `CSJMU-${Math.floor(100 + Math.random() * 900)}`,
+      lastLogin: 'Never',
+      status: 'active'
+    };
+
+    onUpdateCredentials([newCred, ...credentials]);
+    showFeedback(`New user ${newCred.name} added successfully`);
+    setIsAddUserOpen(false);
+    setNewUserName('');
+    setNewUserEmail('');
+    setNewUserBadge('');
   };
 
   return (
-    <div className="space-y-6">
-      {/* Admin Executive Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#001e40] via-[#002b5c] to-[#0a4074] text-white p-6 md:p-8 shadow-xl relative overflow-hidden border border-slate-700">
-        <div className="absolute right-0 top-0 bottom-0 w-96 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400/15 to-transparent pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-blue-500/20 text-blue-200 border border-blue-400/30 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-blue-300" />
-                <span>CSJMU ESTATE &amp; WORKS DIRECTORATE</span>
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* 1. Super Admin Command Header */}
+      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-[#001e40] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-purple-800/40">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 backdrop-blur-md text-purple-200 border border-white/10">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
+                CSJMU Central Secretariat &amp; IT Directorate
               </span>
-              <span className="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full font-semibold">
-                ARE 5-Stage Autonomous Engine: ACTIVE
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-200 border border-amber-400/30">
+                Master Super Admin Terminal
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
-              Campus Urban Planning &amp; Operations Command
+            <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white">
+              Super Admin Executive Console
             </h1>
-
-            <p className="text-blue-100/80 text-xs md:text-sm leading-relaxed">
-              Supervising institutional infrastructure, municipal ward coordination (Ward 42), automated CV detection feeds, 
-              and campus microclimate thermal resilience planning.
+            <p className="text-xs text-purple-100/80 max-w-2xl leading-relaxed">
+              Complete administrative authority over BVG contractor dispatch, role assignment permissions, security policies, and role login PIN credentials.
             </p>
-
-            <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-blue-200">
-              <span>Chief Town Planner: <strong className="text-white">Er. R. K. Agrawal</strong></span>
-              <span>&bull;</span>
-              <span>Division: <strong className="text-white">UIET Campus Planning &amp; Maintenance</strong></span>
-              <span>&bull;</span>
-              <span>Municipal Liaison: <strong className="text-white">Kanpur Nagar Nigam Zone 6</strong></span>
-            </div>
           </div>
 
-          {/* Executive Quick Actions */}
-          <div className="flex flex-wrap lg:flex-col gap-2.5 flex-shrink-0">
-            <button
-              onClick={handleExportReport}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
-            >
-              <Download className="w-4 h-4 text-blue-300" />
-              <span>Export Ward Audit PDF</span>
-            </button>
-            <button
-              onClick={() => onNavigateToTab('heatisland')}
-              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-            >
-              <Flame className="w-4 h-4 text-amber-200" />
-              <span>Open Heat Island Studio</span>
-            </button>
-            <button
-              onClick={() => onNavigateToTab('pipeline')}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
-            >
-              <Layers className="w-4 h-4 text-indigo-200" />
-              <span>ARE 5-Stage Pipeline</span>
-            </button>
-            <button
-              onClick={() => onNavigateToTab('cctv_pipeline')}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
-            >
-              <Video className="w-4 h-4 text-emerald-200" />
-              <span>CCTV 4-Sweep Pipeline</span>
-            </button>
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-3 gap-3 bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/10">
+            <div className="text-center px-2">
+              <div className="text-xl font-black text-amber-300">{urgentTasks}</div>
+              <div className="text-[9px] uppercase font-bold text-purple-200/80 tracking-wider">Urgent Tasks</div>
+            </div>
+            <div className="text-center px-2 border-l border-white/10">
+              <div className="text-xl font-black text-emerald-300">{credentials.length}</div>
+              <div className="text-[9px] uppercase font-bold text-purple-200/80 tracking-wider">Personnel</div>
+            </div>
+            <div className="text-center px-2 border-l border-white/10">
+              <div className="text-xl font-black text-purple-300">4</div>
+              <div className="text-[9px] uppercase font-bold text-purple-200/80 tracking-wider">Active Roles</div>
+            </div>
           </div>
         </div>
 
-        {exportNotice && (
-          <div className="mt-4 p-2.5 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-            <span>{exportNotice}</span>
+        {/* Feedback notification toast if active */}
+        {feedbackMsg && (
+          <div className="mt-4 p-2.5 bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs rounded-xl font-bold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{feedbackMsg}</span>
           </div>
         )}
-      </div>
 
-      {/* Macro KPI Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-500">Total Logged</span>
-            <span className="p-1.5 bg-blue-50 text-blue-700 rounded-lg">
-              <Building2 className="w-4 h-4" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-slate-800">{totalReports}</h3>
-          <p className="text-[11px] text-blue-600 font-semibold mt-0.5">Across 8 campus blocks</p>
-        </div>
+        {/* 3 Simplified Super Admin Tabs */}
+        <div className="flex items-center gap-2 mt-6 pt-4 border-t border-white/10 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('bvg_work')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'bvg_work'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400/40'
+                : 'bg-white/10 hover:bg-white/15 text-purple-100'
+            }`}
+          >
+            <HardHat className="w-4 h-4" />
+            <span>BVG Assigned Work</span>
+          </button>
 
-        <div className="bg-white p-4 rounded-xl border border-red-200 bg-red-50/20 shadow-xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-bold text-red-700">Urgent Hazards</span>
-            <span className="p-1.5 bg-red-100 text-red-700 rounded-lg animate-pulse">
-              <AlertTriangle className="w-4 h-4" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-red-700">{urgentReports}</h3>
-          <p className="text-[11px] text-red-600 font-semibold mt-0.5">Requires immediate squad</p>
-        </div>
+          <button
+            onClick={() => setActiveTab('roles_management')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'roles_management'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400/40'
+                : 'bg-white/10 hover:bg-white/15 text-purple-100'
+            }`}
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>Roles Change Updation &amp; Management</span>
+          </button>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-500">In Progress Triage</span>
-            <span className="p-1.5 bg-amber-50 text-amber-700 rounded-lg">
-              <Clock className="w-4 h-4" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-slate-800">{inProgressReports}</h3>
-          <p className="text-[11px] text-amber-600 font-semibold mt-0.5">Beat Alpha &amp; Beta</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-500">SLA Compliance</span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg">
-              <ShieldCheck className="w-4 h-4" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-emerald-700">94.8%</h3>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">Met 60-min deadline</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-500">UHI Heat Stress</span>
-            <span className="p-1.5 bg-rose-50 text-rose-700 rounded-lg">
-              <Flame className="w-4 h-4" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-rose-700">+4.8°C</h3>
-          <p className="text-[11px] text-rose-600 font-semibold mt-0.5">Peak surface delta</p>
+          <button
+            onClick={() => setActiveTab('credentials_management')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'credentials_management'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400/40'
+                : 'bg-white/10 hover:bg-white/15 text-purple-100'
+            }`}
+          >
+            <KeyRound className="w-4 h-4" />
+            <span>Manage Password &amp; Login Credentials</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Split Layout: Campus Facility Condition Matrix & Live Resolution Stream */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (2 Cols): Campus Blocks Condition Matrix */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {/* ========================================================================= */}
+      {/* TAB 1: BVG ASSIGNED WORK                                                  */}
+      {/* ========================================================================= */}
+      {activeTab === 'bvg_work' && (
+        <div className="space-y-6">
+          {/* Quick Filters & Stats */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
             <div>
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-blue-600" />
-                <span>UIET Campus Facility Condition Matrix</span>
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <HardHat className="w-4 h-4 text-amber-600" />
+                BVG Contractor Work Dispatch Board
               </h2>
-              <p className="text-xs text-slate-500">Spatial health status, active maintenance reports, and risk triage</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Master dispatch oversight: Assign sanitation squads, override task statuses, and monitor field work.
+              </p>
             </div>
-            <button
-              onClick={() => onNavigateToTab('map')}
-              className="text-xs text-blue-700 hover:text-blue-900 font-bold flex items-center gap-1 cursor-pointer"
-            >
-              <span>View On Master Map</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+              {(['all', 'urgent', 'in_progress', 'resolved'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setWorkFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
+                    workFilter === f
+                      ? 'bg-white text-purple-900 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {f.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {blocks.map((block) => (
-              <div
-                key={block.id}
-                onClick={() => onNavigateToTab('map')}
-                className="p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/30 transition-all cursor-pointer group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-extrabold text-slate-800 group-hover:text-blue-700 transition-colors">
-                      {block.name}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      block.condition === 'Good'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : block.condition === 'Fair'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {block.condition}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 line-clamp-1">{block.department}</p>
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className="text-slate-600 font-medium">
-                      Active: <strong className="text-slate-800">{block.activeReportsCount}</strong>
-                    </span>
-                    {block.urgentCount > 0 && (
-                      <span className="text-red-700 font-bold flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        {block.urgentCount} Urgent
-                      </span>
-                    )}
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Column (1 Col): ARE Automated Resolution Pipeline Stream */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-indigo-600" />
-                <h3 className="font-bold text-base text-slate-800">ARE Pipeline Activity</h3>
-              </div>
-              <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
-                LIVE POLLING
+          {/* Leaflet Map Preview */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <span className="text-xs font-black text-slate-800 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-purple-600" />
+                CSJMU Live Dispatch Beat Map (Red = Urgent &bull; Yellow = Medium &bull; Green = Low/Resolved)
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">
+                {reports.length} Map Waypoints
               </span>
             </div>
-
-            <div className="mt-3 space-y-3">
-              <div className="p-3 rounded-lg bg-indigo-50/60 border border-indigo-100 text-xs">
-                <span className="font-bold text-indigo-900 block mb-1">5-Module Architecture:</span>
-                <div className="flex items-center justify-between text-[11px] text-indigo-700 font-medium">
-                  <span>1. Detect (CV)</span>
-                  <span>&rarr;</span>
-                  <span>2. Geotag</span>
-                  <span>&rarr;</span>
-                  <span>3. ARE</span>
-                  <span>&rarr;</span>
-                  <span>4. Dispatch</span>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                {activities.slice(0, 5).map((act) => (
-                  <div key={act.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-                    <div className="flex items-center justify-between text-slate-500 mb-0.5 text-[10px]">
-                      <span className="font-bold text-slate-700">{act.type.toUpperCase()}</span>
-                      <span>{act.timestamp}</span>
-                    </div>
-                    <p className="font-semibold text-slate-800 line-clamp-1">{act.title}</p>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{act.description}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="h-[360px] w-full">
+              <LeafletCampusMap
+                reports={reports}
+                onSelectReport={onSelectReport}
+                filterSeverity="all"
+                height="100%"
+                center={[26.5030, 80.2678]}
+                zoom={16}
+              />
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 space-y-2">
-            <button
-              onClick={() => onNavigateToTab('maintenance')}
-              className="w-full py-2.5 px-3 bg-[#001e40] hover:bg-[#003366] text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-            >
-              <Wrench className="w-4 h-4" />
-              <span>Open Maintenance Matrix &amp; Triage</span>
-            </button>
-            <button
-              onClick={() => onNavigateToTab('analytics')}
-              className="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Comprehensive Analytics &amp; Reports</span>
-            </button>
+          {/* Master Work Dispatch Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">Ticket</th>
+                    <th className="py-3 px-4">Issue &amp; Location</th>
+                    <th className="py-3 px-4">Severity</th>
+                    <th className="py-3 px-4">Assigned Sanitation Squad</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredReports.map(report => {
+                    const isUrgent = report.severity === 'urgent';
+                    return (
+                      <tr key={report.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                          {report.id}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{report.title}</div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 text-slate-400" />
+                            <span>{report.location}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            isUrgent 
+                              ? 'bg-rose-100 text-rose-800 border border-rose-200' 
+                              : report.severity === 'medium'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          }`}>
+                            {report.severity}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <select
+                            value={report.assignedTeam || 'BVG Beat 01 UIET Sanitation'}
+                            onChange={(e) => onAssignTeam(report.id, e.target.value)}
+                            className="bg-white border border-slate-200 rounded-lg p-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                          >
+                            <option value="BVG Beat 01 UIET Sanitation">BVG Beat 01 (UIET & Labs)</option>
+                            <option value="BVG Beat 02 Admin Corridor">BVG Beat 02 (Admin & Central)</option>
+                            <option value="BVG Beat 03 Stadium & Hostel">BVG Beat 03 (Stadium & Hostels)</option>
+                            <option value="BVG Rapid Response Unit 02">BVG Rapid Response Unit 02</option>
+                            <option value="Suction Tanker & Desilting Squad">Suction Tanker &amp; Desilting Squad</option>
+                          </select>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            report.status === 'resolved'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : report.status === 'in_progress'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}>
+                            {report.status.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => onSelectReport(report)}
+                            className="px-3 py-1 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                          >
+                            Details
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Role-Based Access Control (RBAC) System Overview */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-          <div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-base font-bold text-slate-900">
-                Campus RBAC Authority Matrix (Role-Based Access Control)
+      {/* ========================================================================= */}
+      {/* TAB 2: ROLES CHANGE UPDATION & MANAGEMENT                                 */}
+      {/* ========================================================================= */}
+      {activeTab === 'roles_management' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div>
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-purple-600" />
+                Campus Personnel &amp; Roles Directory
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Assign and modify user roles across Student, BVG Field Worker, Management, and Super Admin.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsAddUserOpen(true)}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Add Personnel</span>
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">User</th>
+                    <th className="py-3 px-4">Current Role</th>
+                    <th className="py-3 px-4">Agency / Department</th>
+                    <th className="py-3 px-4">Badge / ID</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {credentials.map(user => {
+                    const isSuspended = user.status === 'suspended';
+                    return (
+                      <tr key={user.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{user.name}</div>
+                          <div className="text-[11px] text-slate-500 font-medium">{user.email}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            user.role === 'super_admin'
+                              ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                              : user.role === 'management'
+                              ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                              : user.role === 'bvg_worker'
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          }`}>
+                            {user.role.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-800">{user.agency}</div>
+                          <div className="text-[11px] text-slate-500">{user.department}</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                          {user.badgeNumber}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                            isSuspended ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {user.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => {
+                              setEditingUser(user);
+                              setNewSelectedRole(user.role);
+                              setNewDepartment(user.department);
+                            }}
+                            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1 ml-auto"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Change Role</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: MANAGE PASSWORD AND LOGIN CREDENTIALS                              */}
+      {/* ========================================================================= */}
+      {activeTab === 'credentials_management' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div>
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-purple-600" />
+                Access Control &amp; PIN Authentication Manager
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Update login PINs/passwords for BVG Field Workers, Management, and Super Admin. Changes apply immediately across all sessions.
+              </p>
+            </div>
+
+            <button
+              onClick={handleResetDefaultPins}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-slate-600" />
+              <span>Reset Factory PINs</span>
+            </button>
+          </div>
+
+          {/* Quick Overview Cards for the 4 Core Roles */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-emerald-200 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-emerald-700">Role 1: Student / Citizen</div>
+              <div className="text-sm font-black text-slate-900 mt-1">Open Access</div>
+              <div className="text-xs text-slate-500 mt-1">No PIN required &bull; Community reporting open to all students</div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-amber-700">Role 2: BVG Worker</div>
+              <div className="text-sm font-black text-slate-900 mt-1">
+                PIN: {credentials.find(c => c.role === 'bvg_worker')?.pin || '1234'}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Field staff beat assignments &amp; AI photo resolution</div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-blue-700">Role 3: Management</div>
+              <div className="text-sm font-black text-slate-900 mt-1">
+                PIN: {credentials.find(c => c.role === 'management')?.pin || '5678'}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Estate Directorate SLA oversight, reassignment &amp; leave approval</div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-purple-200 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-purple-700">Role 4: Super Admin</div>
+              <div className="text-sm font-black text-slate-900 mt-1">
+                PIN: {credentials.find(c => c.role === 'super_admin')?.pin || '9999'}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Full executive master dispatch and credential control</div>
+            </div>
+          </div>
+
+          {/* Credentials Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">Account / Personnel</th>
+                    <th className="py-3 px-4">Role Access</th>
+                    <th className="py-3 px-4">Current Login PIN / Passcode</th>
+                    <th className="py-3 px-4">Account Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {credentials.map(user => {
+                    const isVisible = visiblePins[user.id];
+                    const isStudent = user.role === 'student';
+                    return (
+                      <tr key={user.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{user.name}</div>
+                          <div className="text-[11px] text-slate-500">{user.email} &bull; {user.badgeNumber}</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold uppercase text-[11px] text-slate-800">
+                          {user.role.replace('_', ' ')}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {isStudent ? (
+                            <span className="text-slate-400 italic font-medium">None (Public Access)</span>
+                          ) : (
+                            <div className="flex items-center gap-2 font-mono">
+                              <span className="font-bold text-sm bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">
+                                {isVisible ? user.pin : '••••'}
+                              </span>
+                              <button
+                                onClick={() => togglePinVisibility(user.id)}
+                                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                              >
+                                {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <button
+                            onClick={() => handleToggleAccountStatus(user.id)}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase cursor-pointer transition-colors ${
+                              user.status === 'active'
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                            }`}
+                          >
+                            {user.status === 'active' ? 'Active' : 'Suspended'}
+                          </button>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          {!isStudent && (
+                            <button
+                              onClick={() => {
+                                setEditingPinUser(user);
+                                setTempPin(user.pin);
+                              }}
+                              className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1.5 ml-auto"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              <span>Update PIN</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT ROLE                                                          */}
+      {/* ========================================================================= */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-purple-600" />
+                Change User Role
               </h3>
+              <button
+                onClick={() => setEditingUser(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Strictly segmented privileges across 4 user profiles. PIN-authenticated transitions protect administrative endpoints.
-            </p>
-          </div>
-          <span className="text-[10px] font-mono bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-bold">
-            ENFORCED ON CLIENT &amp; BACKEND
-          </span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* 1. Student */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xl">👨‍🎓</span>
-              <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                Open Access
-              </span>
+            <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-200">
+              <div><strong>Name:</strong> {editingUser.name}</div>
+              <div><strong>Email:</strong> {editingUser.email}</div>
+              <div><strong>Badge:</strong> {editingUser.badgeNumber}</div>
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900">Student / Audience</h4>
-              <p className="text-[11px] text-slate-500 font-medium">CSJMU Students &amp; Public</p>
-            </div>
-            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-slate-200">
-              <div>✓ AI Garbage Reporting</div>
-              <div>✓ Live Progress Tracking</div>
-              <div>✓ Campus Cool Havens</div>
-              <div className="text-slate-400">✗ No Dispatch or Closures</div>
-            </div>
-          </div>
 
-          {/* 2. BVG Workers */}
-          <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xl">👷‍♂️</span>
-              <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded">
-                PIN: 1234
-              </span>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700">Select New Role:</label>
+              <select
+                value={newSelectedRole}
+                onChange={(e) => setNewSelectedRole(e.target.value as UserRole)}
+                className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="student">Student / Campus Citizen</option>
+                <option value="bvg_worker">BVG Sanitation Worker</option>
+                <option value="management">Estate Management &amp; SLA Oversight</option>
+                <option value="super_admin">Super Admin Executive</option>
+              </select>
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900">BVG Workers</h4>
-              <p className="text-[11px] text-amber-900 font-medium">Campus Cleaning Agency</p>
-            </div>
-            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-amber-200">
-              <div>✓ Assigned Beat Work Orders</div>
-              <div>✓ Start Cleaning Task</div>
-              <div>✓ &quot;After&quot; Photo Upload &amp; Close</div>
-              <div className="text-slate-400">✗ No Budget/System Config</div>
-            </div>
-          </div>
 
-          {/* 3. Management */}
-          <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xl">👨‍💼</span>
-              <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded">
-                PIN: 5678
-              </span>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700">Department / Division Assignment:</label>
+              <input
+                type="text"
+                value={newDepartment}
+                onChange={(e) => setNewDepartment(e.target.value)}
+                placeholder="E.g. Solid Waste Beat 02, Directorate Office..."
+                className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500"
+              />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900">Management</h4>
-              <p className="text-[11px] text-blue-900 font-medium">Estate Directorate &amp; Engineers</p>
-            </div>
-            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-blue-200">
-              <div>✓ BVG Contractor SLA Audit</div>
-              <div>✓ Re-route Beats &amp; Teams</div>
-              <div>✓ Heat Island Microclimate</div>
-              <div className="text-slate-400">✗ No Root Server Config</div>
-            </div>
-          </div>
 
-          {/* 4. Super Admin */}
-          <div className="bg-purple-50/60 border border-purple-200 rounded-xl p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xl">🏛️</span>
-              <span className="text-[10px] font-bold uppercase bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded">
-                PIN: 9999
-              </span>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900">Super Admin</h4>
-              <p className="text-[11px] text-purple-900 font-medium">Vice Chancellor / IT Admin</p>
-            </div>
-            <div className="text-[10px] text-slate-600 space-y-1 pt-2 border-t border-purple-200">
-              <div>✓ Full Unrestricted Access</div>
-              <div>✓ PostgreSQL Database Sync</div>
-              <div>✓ RBAC User &amp; PIN Manager</div>
-              <div>✓ ARE SLA Matrix Editor</div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setEditingUser(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveRoleChange}
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+              >
+                Save Role Change
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Urban Climate Interventions Snapshot */}
-      <div className="bg-gradient-to-r from-emerald-900 to-teal-950 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300">
-            <Flame className="w-4 h-4 text-amber-400" />
-            <span>Campus Urban Heat Island &amp; Microclimate Resilience</span>
+      {/* ========================================================================= */}
+      {/* MODAL: UPDATE PIN / PASSWORD                                              */}
+      {/* ========================================================================= */}
+      {editingPinUser && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-purple-600" />
+                Update Login PIN
+              </h3>
+              <button
+                onClick={() => setEditingPinUser(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-600">
+              Setting new security PIN for <strong>{editingPinUser.name}</strong> ({editingPinUser.role.toUpperCase()}).
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700">Enter New 4-Digit PIN / Passcode:</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={tempPin}
+                onChange={(e) => setTempPin(e.target.value)}
+                placeholder="E.g. 1234"
+                className="w-full text-center tracking-widest text-lg font-mono font-black p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setEditingPinUser(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePin}
+                disabled={!tempPin.trim()}
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+              >
+                Update PIN
+              </button>
+            </div>
           </div>
-          <h3 className="text-lg font-bold">Planned Interventions: 45 Shade Trees &bull; 800m Cool Pavement Retrofit</h3>
-          <p className="text-xs text-emerald-200/80">
-            Mitigate high surface temperatures (+4.8°C) detected at UIET parking lot &amp; Science quadrangle.
-          </p>
         </div>
+      )}
 
-        <button
-          onClick={() => onNavigateToTab('heatisland')}
-          className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-2 flex-shrink-0 transition-colors cursor-pointer shadow-xs"
-        >
-          <span>Launch Heat Studio</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
+      {/* ========================================================================= */}
+      {/* MODAL: ADD PERSONNEL                                                      */}
+      {/* ========================================================================= */}
+      {isAddUserOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-purple-600" />
+                Add New Campus Personnel
+              </h3>
+              <button
+                onClick={() => setIsAddUserOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNewUser} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700">Full Name:</label>
+                <input
+                  type="text"
+                  required
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  placeholder="E.g. Vikash Sharma"
+                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700">Official Email:</label>
+                <input
+                  type="email"
+                  required
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  placeholder="vikash@csjmu.ac.in"
+                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700">Role:</label>
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value as UserRole)}
+                    className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 mt-1"
+                  >
+                    <option value="student">Student</option>
+                    <option value="bvg_worker">BVG Worker</option>
+                    <option value="management">Management</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700">Initial PIN:</label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={newUserPin}
+                    onChange={(e) => setNewUserPin(e.target.value)}
+                    placeholder="1234"
+                    className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold focus:ring-2 focus:ring-purple-500 mt-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700">Agency / Organization:</label>
+                <input
+                  type="text"
+                  value={newUserAgency}
+                  onChange={(e) => setNewUserAgency(e.target.value)}
+                  placeholder="BVG India Ltd. or CSJMU Directorate"
+                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 mt-1"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+                >
+                  Create Personnel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
