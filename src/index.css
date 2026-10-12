@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @layer base {
   :root {
@@ -63,4 +64,37 @@
 
 .pulse-urgent {
   animation: urgent-pulse 2s infinite cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+/* Leaflet custom popup styling */
+.leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+  background: white;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+}
+
+.csjmu-landmark-div-icon,
+.csjmu-complaint-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Custom leaflet tooltip */
+.csjmu-boundary-tooltip {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 4px 8px;
 }

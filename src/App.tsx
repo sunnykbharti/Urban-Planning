@@ -5,12 +5,19 @@ import {
   ActivityEvent, 
   ActiveTab, 
   UserRole, 
-  ReportStatus 
+  ReportStatus,
+  LeaveRequest,
+  ReassignmentRequest,
+  UserCredential,
+  AiCleanupComparison
 } from './types';
 import { 
   initialBlocks, 
   initialReports, 
-  initialActivities 
+  initialActivities,
+  initialLeaveRequests,
+  initialReassignmentRequests,
+  initialCredentials
 } from './data/mockData';
 import { TopNavBar } from './components/TopNavBar';
 import { SideNavBar } from './components/SideNavBar';
@@ -22,7 +29,33 @@ import { LiveFeedView } from './components/LiveFeedView';
 import { PlanningBoardView } from './components/PlanningBoardView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SettingsModal } from './components/SettingsModal';
-import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { PipelineVisualizer } from './components/PipelineVisualizer';
+import { CctvPipelineDashboard } from './components/CctvPipelineDashboard';
+import { HeatIslandMapView } from './components/HeatIslandMapView';
+import { StudentDashboard } from './components/StudentDashboard';
+import { OperatorDashboard } from './components/OperatorDashboard';
+import { BvgWorkerDashboard } from './components/BvgWorkerDashboard';
+import { ManagementDashboard } from './components/ManagementDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
+import { RoleAuthModal } from './components/RoleAuthModal';
+import { DEFAULT_PROFILES, UserProfile } from './types';
+import { checkBackendHealth, fetchIncidentsFromBackend, createIncidentAPI } from './api/client';
+import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
+
+const SEED_DATA_VERSION = 'v3.0';
+
+// Check if seed version is up to date, otherwise initialize fresh seeded data
+if (typeof window !== 'undefined') {
+  const currentVer = localStorage.getItem('csjmu_seed_version');
+  if (currentVer !== SEED_DATA_VERSION) {
+    localStorage.setItem('csjmu_reports', JSON.stringify(initialReports));
+    localStorage.setItem('csjmu_activities', JSON.stringify(initialActivities));
+    localStorage.setItem('csjmu_leave_requests', JSON.stringify(initialLeaveRequests));
+    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(initialReassignmentRequests));
+    localStorage.setItem('csjmu_credentials', JSON.stringify(initialCredentials));
+    localStorage.setItem('csjmu_seed_version', SEED_DATA_VERSION);
+  }
+}
 
 export default function App() {
   // Application State
@@ -38,9 +71,74 @@ export default function App() {
     return saved ? JSON.parse(saved) : initialActivities;
   });
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('map');
-  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(() => {
+    const saved = localStorage.getItem('csjmu_leave_requests');
+    return saved ? JSON.parse(saved) : initialLeaveRequests;
+  });
+
+  const [reassignmentRequests, setReassignmentRequests] = useState<ReassignmentRequest[]>(() => {
+    const saved = localStorage.getItem('csjmu_reassign_requests');
+    return saved ? JSON.parse(saved) : initialReassignmentRequests;
+  });
+
+  const [credentials, setCredentials] = useState<UserCredential[]>(() => {
+    const saved = localStorage.getItem('csjmu_credentials');
+    return saved ? JSON.parse(saved) : initialCredentials;
+  });
+
+  const [userRole, setUserRole] = useState<UserRole>(() => {
+    const saved = localStorage.getItem('csjmu_user_role') as UserRole;
+    return (saved && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(saved)) ? saved : 'student';
+  });
+
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => {
+    const norm = (userRole === 'admin' ? 'super_admin' : userRole === 'operator' ? 'bvg_worker' : userRole) as any;
+    return DEFAULT_PROFILES[norm] || DEFAULT_PROFILES.student;
+  });
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    return userRole === 'student' ? 'student_dashboard' : userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' : userRole === 'management' ? 'management_dashboard' : 'admin_dashboard';
+  });
+
+  const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const handleRoleChange = (newRole: UserRole, newProfile?: UserProfile) => {
+    setUserRole(newRole);
+    localStorage.setItem('csjmu_user_role', newRole);
+    if (newProfile) {
+      setCurrentUserProfile(newProfile);
+    } else {
+      const norm = (newRole === 'admin' ? 'super_admin' : newRole === 'operator' ? 'bvg_worker' : newRole) as any;
+      if (DEFAULT_PROFILES[norm]) setCurrentUserProfile(DEFAULT_PROFILES[norm]);
+    }
+
+    if (newRole === 'student') {
+      setActiveTab('student_dashboard');
+    } else if (newRole === 'bvg_worker' || newRole === 'operator') {
+      setActiveTab('bvg_dashboard');
+    } else if (newRole === 'management') {
+      setActiveTab('management_dashboard');
+    } else {
+      setActiveTab('admin_dashboard');
+    }
+  };
+
+  const handleOpenAccountSwitcher = (target?: UserRole) => {
+    setTargetAuthRole(target || null);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = (authenticatedRole: UserRole, profile: UserProfile) => {
+    handleRoleChange(authenticatedRole, profile);
+    showToast(`Signed in as ${profile.name} (${profile.roleTitle})`, 'success');
+  };
+
+  const handleSignOut = () => {
+    handleRoleChange('student', DEFAULT_PROFILES.student);
+    showToast('Signed out. Active view: Student / Civic Hub', 'info');
+  };
   
   // Modals and Drawers
   const [isReportDrawerOpen, setIsReportDrawerOpen] = useState<boolean>(false);
@@ -52,6 +150,23 @@ export default function App() {
   // Toast Alert Notification state
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'urgent' | 'info' } | null>(null);
 
+  // Backend Connection Status
+  const [backendStatus, setBackendStatus] = useState<{ online: boolean; version?: string }>({ online: false });
+
+  // Check Flask backend health on load
+  useEffect(() => {
+    checkBackendHealth().then((status) => {
+      setBackendStatus(status);
+      if (status.online) {
+        fetchIncidentsFromBackend().then((apiIncidents) => {
+          if (apiIncidents && apiIncidents.length > 0) {
+            setReports(apiIncidents);
+          }
+        });
+      }
+    });
+  }, []);
+
   // Sync state to local storage
   useEffect(() => {
     localStorage.setItem('csjmu_reports', JSON.stringify(reports));
@@ -60,6 +175,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('csjmu_activities', JSON.stringify(activities));
   }, [activities]);
+
+  useEffect(() => {
+    localStorage.setItem('csjmu_leave_requests', JSON.stringify(leaveRequests));
+  }, [leaveRequests]);
+
+  useEffect(() => {
+    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(reassignmentRequests));
+  }, [reassignmentRequests]);
+
+  useEffect(() => {
+    localStorage.setItem('csjmu_credentials', JSON.stringify(credentials));
+  }, [credentials]);
 
   const showToast = (text: string, type: 'success' | 'urgent' | 'info' = 'success') => {
     setToastMessage({ text, type });
@@ -82,18 +209,40 @@ export default function App() {
       id: `act-${Date.now()}`,
       type: 'new_report',
       title: `New report filed: ${newReport.title}`,
-      description: `${newReport.description.slice(0, 80)}...`,
+      description: `${(newReport.description || '').slice(0, 80)}...`,
       location: newReport.location,
       timestamp: 'JUST NOW',
-      actor: newReport.reportedBy.name,
+      actor: newReport.reportedBy?.name || 'Campus Reporter',
       iconType: newReport.severity === 'urgent' ? 'report' : 'engineering'
     };
 
     setActivities([newAct, ...activities]);
+
+    if (backendStatus.online) {
+      createIncidentAPI({
+        title: newReport.title,
+        description: newReport.description,
+        category: newReport.category,
+        coordinates: newReport.coordinates,
+        detectionClass: newReport.detectionClass || (newReport.category === 'waterlogging' ? 'blocked_drain' : 'overflow'),
+        severity: newReport.severity,
+        imageUrl: newReport.imageUrl,
+        beforeImageUrl: newReport.imageUrl,
+        garbageDetection: newReport.garbageDetection,
+        estimatedAmount: newReport.estimatedAmount
+      });
+    }
+
     showToast(`Report ${newReport.id} registered on CSJMU map`, newReport.severity === 'urgent' ? 'urgent' : 'success');
   };
 
-  const handleUpdateStatus = (reportId: string, newStatus: ReportStatus, note?: string) => {
+  const handleUpdateStatus = (
+    reportId: string, 
+    newStatus: ReportStatus, 
+    note?: string,
+    aiResult?: AiCleanupComparison,
+    afterImg?: string
+  ) => {
     setReports(prev => prev.map(r => {
       if (r.id === reportId) {
         const updatedUpdates = [...(r.updates || [])];
@@ -101,7 +250,7 @@ export default function App() {
           updatedUpdates.unshift({
             id: `up-${Date.now()}`,
             timestamp: 'Just now',
-            author: userRole === 'admin' ? 'Planning Division Desk' : 'Field Technician',
+            author: userRole === 'admin' ? 'Planning Division Desk' : 'Field Technician (BVG)',
             message: note || `Status updated from ${r.status} to ${newStatus}.`,
             statusChange: newStatus
           });
@@ -109,7 +258,9 @@ export default function App() {
         return {
           ...r,
           status: newStatus,
-          updates: updatedUpdates
+          updates: updatedUpdates,
+          ...(afterImg ? { afterImageUrl: afterImg } : {}),
+          ...(aiResult ? { aiComparisonResult: aiResult } : {})
         };
       }
       return r;
@@ -123,7 +274,7 @@ export default function App() {
       id: `act-${Date.now()}`,
       type: newStatus === 'resolved' ? 'resolved' : 'status_change',
       title: `${reportTitle} marked as ${newStatus.replace('_', ' ').toUpperCase()}`,
-      description: note || `Status transitioned to ${newStatus} by ${userRole === 'admin' ? 'Planning Desk' : 'Technician'}.`,
+      description: note || `Status transitioned to ${newStatus} by ${userRole === 'admin' ? 'Planning Desk' : 'BVG Staff'}.`,
       location: targetReport?.location || 'UIET Campus',
       timestamp: 'JUST NOW',
       actor: 'Maintenance Dispatch',
@@ -157,6 +308,89 @@ export default function App() {
     showToast(`${teamName} dispatched`, 'info');
   };
 
+  // Leave Handlers
+  const handleAddLeaveRequest = (req: Omit<LeaveRequest, 'id' | 'appliedAt' | 'status'>) => {
+    const newLeave: LeaveRequest = {
+      ...req,
+      id: `LV-${Date.now().toString().slice(-4)}`,
+      status: 'pending',
+      appliedAt: new Date().toISOString()
+    };
+    setLeaveRequests(prev => [newLeave, ...prev]);
+    showToast('Leave request submitted to Management', 'info');
+  };
+
+  const handleReviewLeave = (requestId: string, status: 'approved' | 'rejected', remarks?: string) => {
+    setLeaveRequests(prev => prev.map(l => {
+      if (l.id === requestId) {
+        return {
+          ...l,
+          status,
+          reviewedBy: 'Er. R. K. Sharma (Directorate)',
+          reviewRemarks: remarks,
+          reviewedAt: new Date().toISOString()
+        };
+      }
+      return l;
+    }));
+    showToast(`Leave request ${requestId} marked as ${status.toUpperCase()}`, status === 'approved' ? 'success' : 'info');
+  };
+
+  // Reassignment Handlers
+  const handleAddReassignmentRequest = (req: Omit<ReassignmentRequest, 'id' | 'requestedAt' | 'status'>) => {
+    const newReq: ReassignmentRequest = {
+      ...req,
+      id: `REASSIGN-${Date.now().toString().slice(-4)}`,
+      status: 'pending',
+      requestedAt: new Date().toISOString()
+    };
+    setReassignmentRequests(prev => [newReq, ...prev]);
+    showToast('Work reassignment request sent to Management', 'info');
+  };
+
+  const handleReviewReassignment = (requestId: string, status: 'approved' | 'rejected', remarks?: string, newAssignee?: string) => {
+    setReassignmentRequests(prev => prev.map(r => {
+      if (r.id === requestId) {
+        return {
+          ...r,
+          status,
+          reviewedBy: 'Estate Works Desk',
+          reviewRemarks: remarks,
+          reviewedAt: new Date().toISOString(),
+          newAssignee
+        };
+      }
+      return r;
+    }));
+
+    const targetReq = reassignmentRequests.find(r => r.id === requestId);
+    if (status === 'approved' && newAssignee && targetReq?.reportId) {
+      handleAssignTeam(targetReq.reportId, newAssignee);
+    }
+    showToast(`Reassignment request ${requestId} ${status.toUpperCase()}`, status === 'approved' ? 'success' : 'info');
+  };
+
+  // Credentials and Roles Handlers
+  const handleUpdateCredentials = (updatedList: UserCredential[]) => {
+    setCredentials(updatedList);
+    showToast('Credentials updated successfully', 'success');
+  };
+
+  const handleUpdateUserRole = (userId: string, newRole: UserRole, department?: string, pin?: string) => {
+    setCredentials(prev => prev.map(c => {
+      if (c.id === userId) {
+        return {
+          ...c,
+          role: newRole,
+          department: department || c.department,
+          pin: pin !== undefined ? pin : (newRole === 'student' ? '' : c.pin)
+        };
+      }
+      return c;
+    }));
+    showToast(`Role updated to ${newRole.toUpperCase()}`, 'success');
+  };
+
   const handleOpenReportDrawerWithLoc = (locName: string, coords: { x: number; y: number }) => {
     setReportDrawerLocation(locName);
     setReportDrawerCoords(coords);
@@ -164,11 +398,18 @@ export default function App() {
   };
 
   const handleResetData = () => {
-    localStorage.removeItem('csjmu_reports');
-    localStorage.removeItem('csjmu_activities');
+    localStorage.setItem('csjmu_reports', JSON.stringify(initialReports));
+    localStorage.setItem('csjmu_activities', JSON.stringify(initialActivities));
+    localStorage.setItem('csjmu_leave_requests', JSON.stringify(initialLeaveRequests));
+    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(initialReassignmentRequests));
+    localStorage.setItem('csjmu_credentials', JSON.stringify(initialCredentials));
+    localStorage.setItem('csjmu_seed_version', SEED_DATA_VERSION);
     setReports(initialReports);
     setActivities(initialActivities);
-    showToast('Demo data restored to initial state', 'info');
+    setLeaveRequests(initialLeaveRequests);
+    setReassignmentRequests(initialReassignmentRequests);
+    setCredentials(initialCredentials);
+    showToast('Seed demo data reloaded for all roles', 'info');
   };
 
   const urgentCount = reports.filter(r => r.severity === 'urgent' && r.status !== 'resolved').length;
@@ -194,7 +435,10 @@ export default function App() {
         activities={activities}
         urgentCount={urgentCount}
         userRole={userRole}
-        onRoleChange={setUserRole}
+        currentProfile={currentUserProfile}
+        onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
+        onSignOut={handleSignOut}
+        backendOnline={backendStatus.online}
         onOpenReportDrawer={() => {
           setReportDrawerLocation('UIET Block 1');
           setReportDrawerCoords({ x: 38, y: 38 });
@@ -215,18 +459,135 @@ export default function App() {
           }}
           onOpenSettings={() => setIsSettingsOpen(true)}
           userRole={userRole}
-          onToggleRole={() => setUserRole(prev => prev === 'admin' ? 'student' : 'admin')}
+          currentProfile={currentUserProfile}
+          onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
           urgentCount={urgentCount}
         />
 
         {/* Main Content Area Canvas */}
         <main className="flex-1 ml-0 md:ml-[240px] p-4 md:p-8 max-w-[1600px] w-full min-h-[calc(100vh-4rem)] transition-all">
+          {/* Backend Status Notification Pill */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs px-3.5 py-2 rounded-lg border bg-white border-slate-200">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${backendStatus.online ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+              <span className="font-semibold text-slate-700">
+                {backendStatus.online ? `Flask Backend Connected (${backendStatus.version})` : 'Standalone Demo Mode (Flask API Offline)'}
+              </span>
+              <span className="text-slate-400 text-[11px] hidden sm:inline">&bull; 5-Module Operations Pipeline</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setActiveTab('heatisland')}
+                className={`text-[11px] font-extrabold px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'heatisland' 
+                    ? 'bg-rose-600 text-white shadow-xs' 
+                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>Heat Island Map</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('pipeline')}
+                className={`text-[11px] font-bold px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                  activeTab === 'pipeline' 
+                    ? 'bg-indigo-600 text-white' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                ARE Engine
+              </button>
+            </div>
+          </div>
+
+          {/* DEDICATED 4-ROLE DASHBOARDS */}
+          {activeTab === 'student_dashboard' && (
+            <StudentDashboard
+              reports={displayedReports}
+              blocks={blocks}
+              activities={activities}
+              onOpenReportDrawer={() => {
+                setReportDrawerLocation('UIET Block 1');
+                setReportDrawerCoords({ x: 38, y: 38 });
+                setIsReportDrawerOpen(true);
+              }}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+              onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+            />
+          )}
+
+          {(activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard') && (
+            <BvgWorkerDashboard
+              reports={displayedReports}
+              activities={activities}
+              onUpdateStatus={handleUpdateStatus}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+              leaveRequests={leaveRequests}
+              onAddLeaveRequest={handleAddLeaveRequest}
+              reassignmentRequests={reassignmentRequests}
+              onAddReassignmentRequest={handleAddReassignmentRequest}
+            />
+          )}
+
+          {activeTab === 'management_dashboard' && (
+            <ManagementDashboard
+              reports={displayedReports}
+              activities={activities}
+              onUpdateStatus={handleUpdateStatus}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+              reassignmentRequests={reassignmentRequests}
+              onReviewReassignment={handleReviewReassignment}
+              leaveRequests={leaveRequests}
+              onReviewLeave={handleReviewLeave}
+            />
+          )}
+
+          {activeTab === 'admin_dashboard' && (
+            <AdminDashboard
+              reports={displayedReports}
+              blocks={blocks}
+              activities={activities}
+              credentials={credentials}
+              onUpdateCredentials={handleUpdateCredentials}
+              onUpdateUserRole={handleUpdateUserRole}
+              onAssignTeam={handleAssignTeam}
+              onUpdateStatus={handleUpdateStatus}
+              onOpenReportDrawer={() => {
+                setReportDrawerLocation('UIET Block 1');
+                setReportDrawerCoords({ x: 38, y: 38 });
+                setIsReportDrawerOpen(true);
+              }}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {/* OTHER ROLE-SPECIFIC / SHARED MODULE VIEWS */}
+          {activeTab === 'heatisland' && (
+            <HeatIslandMapView />
+          )}
+
+          {activeTab === 'pipeline' && (
+            <PipelineVisualizer />
+          )}
+
+          {activeTab === 'cctv_pipeline' && (
+            <CctvPipelineDashboard
+              onNavigateToTab={(tab) => setActiveTab(tab)}
+              onSelectReport={(rep) => setSelectedReportDetails(rep)}
+            />
+          )}
+
           {activeTab === 'map' && (
             <CampusMap
               reports={displayedReports}
               blocks={blocks}
               onSelectReport={(rep) => setSelectedReportDetails(rep)}
               onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+              userRole={userRole}
             />
           )}
 
@@ -292,8 +653,19 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         userRole={userRole}
-        onRoleChange={setUserRole}
+        currentProfile={currentUserProfile}
+        onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onResetData={handleResetData}
+      />
+
+      {/* Role-Based Access Control (RBAC) Authentication Modal */}
+      <RoleAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        targetRole={targetAuthRole || 'student'}
+        currentRole={userRole}
+        onSuccess={handleAuthSuccess}
+        credentials={credentials}
       />
 
       {/* Toast Notification Alert Banner */}

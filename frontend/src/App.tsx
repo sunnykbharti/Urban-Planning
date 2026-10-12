@@ -42,6 +42,21 @@ import { DEFAULT_PROFILES, UserProfile } from './types';
 import { checkBackendHealth, fetchIncidentsFromBackend, createIncidentAPI } from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
 
+const SEED_DATA_VERSION = 'v3.0';
+
+// Check if seed version is up to date, otherwise initialize fresh seeded data
+if (typeof window !== 'undefined') {
+  const currentVer = localStorage.getItem('csjmu_seed_version');
+  if (currentVer !== SEED_DATA_VERSION) {
+    localStorage.setItem('csjmu_reports', JSON.stringify(initialReports));
+    localStorage.setItem('csjmu_activities', JSON.stringify(initialActivities));
+    localStorage.setItem('csjmu_leave_requests', JSON.stringify(initialLeaveRequests));
+    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(initialReassignmentRequests));
+    localStorage.setItem('csjmu_credentials', JSON.stringify(initialCredentials));
+    localStorage.setItem('csjmu_seed_version', SEED_DATA_VERSION);
+  }
+}
+
 export default function App() {
   // Application State
   const [reports, setReports] = useState<MaintenanceReport[]>(() => {
@@ -110,33 +125,19 @@ export default function App() {
     }
   };
 
-  const handleRequestRoleChange = (requestedRole: UserRole) => {
-    const normCurrent = userRole === 'admin' ? 'super_admin' : userRole === 'operator' ? 'bvg_worker' : userRole;
-    const normTarget = requestedRole === 'admin' ? 'super_admin' : requestedRole === 'operator' ? 'bvg_worker' : requestedRole;
-
-    if (normCurrent === normTarget) return;
-
-    // Student role is open access without PIN
-    if (normTarget === 'student') {
-      handleRoleChange('student', DEFAULT_PROFILES.student);
-      showToast('Switched to Student / Audience View (Civic Hub)', 'info');
-      return;
-    }
-
-    // Administrative / Agency roles require PIN authentication
-    setTargetAuthRole(normTarget);
+  const handleOpenAccountSwitcher = (target?: UserRole) => {
+    setTargetAuthRole(target || null);
     setIsAuthModalOpen(true);
   };
 
   const handleAuthSuccess = (authenticatedRole: UserRole, profile: UserProfile) => {
     handleRoleChange(authenticatedRole, profile);
-    showToast(`Access granted: ${profile.roleTitle} (${profile.name})`, 'success');
+    showToast(`Signed in as ${profile.name} (${profile.roleTitle})`, 'success');
   };
 
-  const handleToggleRole = () => {
-    const nextRole: UserRole = 
-      userRole === 'student' ? 'bvg_worker' : userRole === 'bvg_worker' || userRole === 'operator' ? 'management' : userRole === 'management' ? 'super_admin' : 'student';
-    handleRequestRoleChange(nextRole);
+  const handleSignOut = () => {
+    handleRoleChange('student', DEFAULT_PROFILES.student);
+    showToast('Signed out. Active view: Student / Civic Hub', 'info');
   };
   
   // Modals and Drawers
@@ -397,17 +398,18 @@ export default function App() {
   };
 
   const handleResetData = () => {
-    localStorage.removeItem('csjmu_reports');
-    localStorage.removeItem('csjmu_activities');
-    localStorage.removeItem('csjmu_leave_requests');
-    localStorage.removeItem('csjmu_reassign_requests');
-    localStorage.removeItem('csjmu_credentials');
+    localStorage.setItem('csjmu_reports', JSON.stringify(initialReports));
+    localStorage.setItem('csjmu_activities', JSON.stringify(initialActivities));
+    localStorage.setItem('csjmu_leave_requests', JSON.stringify(initialLeaveRequests));
+    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(initialReassignmentRequests));
+    localStorage.setItem('csjmu_credentials', JSON.stringify(initialCredentials));
+    localStorage.setItem('csjmu_seed_version', SEED_DATA_VERSION);
     setReports(initialReports);
     setActivities(initialActivities);
     setLeaveRequests(initialLeaveRequests);
     setReassignmentRequests(initialReassignmentRequests);
     setCredentials(initialCredentials);
-    showToast('Demo data restored to initial state', 'info');
+    showToast('Seed demo data reloaded for all roles', 'info');
   };
 
   const urgentCount = reports.filter(r => r.severity === 'urgent' && r.status !== 'resolved').length;
@@ -433,9 +435,10 @@ export default function App() {
         activities={activities}
         urgentCount={urgentCount}
         userRole={userRole}
-        onRoleChange={handleRoleChange}
-        onRequestRoleChange={handleRequestRoleChange}
         currentProfile={currentUserProfile}
+        onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
+        onSignOut={handleSignOut}
+        backendOnline={backendStatus.online}
         onOpenReportDrawer={() => {
           setReportDrawerLocation('UIET Block 1');
           setReportDrawerCoords({ x: 38, y: 38 });
@@ -456,8 +459,8 @@ export default function App() {
           }}
           onOpenSettings={() => setIsSettingsOpen(true)}
           userRole={userRole}
-          onToggleRole={handleToggleRole}
-          onRequestRoleChange={handleRequestRoleChange}
+          currentProfile={currentUserProfile}
+          onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
           urgentCount={urgentCount}
         />
 
@@ -650,7 +653,8 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         userRole={userRole}
-        onRoleChange={handleRoleChange}
+        currentProfile={currentUserProfile}
+        onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onResetData={handleResetData}
       />
 

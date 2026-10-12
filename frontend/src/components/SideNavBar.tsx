@@ -30,8 +30,8 @@ interface SideNavBarProps {
   onOpenReportDrawer: () => void;
   onOpenSettings: () => void;
   userRole: UserRole;
-  onToggleRole?: () => void;
-  onRequestRoleChange?: (role: UserRole) => void;
+  onOpenAccountSwitcher?: () => void;
+  currentProfile?: any;
   urgentCount: number;
 }
 
@@ -41,8 +41,8 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   onOpenReportDrawer,
   onOpenSettings,
   userRole,
-  onToggleRole,
-  onRequestRoleChange,
+  onOpenAccountSwitcher,
+  currentProfile,
   urgentCount
 }) => {
   const isStudent = userRole === 'student';
@@ -229,49 +229,41 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom Footer Actions */}
-      <div className="flex flex-col gap-1 px-3 border-t border-[#e7eeff] pt-3">
+      {/* Bottom Footer Actions & Authenticated Session Badge */}
+      <div className="flex flex-col gap-1.5 px-3 border-t border-[#e7eeff] pt-3">
         {/* Settings */}
         <button
           id="nav-settings"
           onClick={onOpenSettings}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40] transition-colors text-left"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40] transition-colors text-left cursor-pointer"
         >
           <Settings className="w-4 h-4 text-[#737780]" />
           <span>Settings</span>
         </button>
 
-        {/* Switch View Button triggering RBAC modal */}
-        <button
-          id="nav-switch-view"
-          onClick={() => {
-            if (onRequestRoleChange) {
-              const nextRole: UserRole = 
-                isStudent ? 'bvg_worker' : isBvg ? 'management' : isManagement ? 'super_admin' : 'student';
-              onRequestRoleChange(nextRole);
-            } else if (onToggleRole) {
-              onToggleRole();
-            }
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40] transition-colors text-left cursor-pointer"
-          title={`Click to authenticate and switch role (Current: ${userRole.toUpperCase()})`}
-        >
-          <div className="flex items-center gap-2.5">
-            <RefreshCw className="w-4 h-4 text-[#737780]" />
-            <span>Switch Role</span>
+        {/* Authenticated Identity Pill & Switch Account trigger */}
+        <div className="mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg flex-shrink-0">{currentProfile?.avatar || '👤'}</span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold text-slate-800 truncate leading-tight">
+                {currentProfile?.name || (isStudent ? 'Sunny Bharti' : isBvg ? 'Ramesh Kumar' : isManagement ? 'Er. R. K. Sharma' : 'Prof. A. K. Shukla')}
+              </p>
+              <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider truncate">
+                {isStudent ? 'Student' : isBvg ? 'BVG Worker' : isManagement ? 'Estate Mgmt' : 'Super Admin'}
+              </p>
+            </div>
           </div>
-          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${
-            isStudent
-              ? 'bg-emerald-100 text-emerald-800'
-              : isBvg
-              ? 'bg-amber-100 text-amber-900'
-              : isManagement
-              ? 'bg-blue-100 text-blue-900'
-              : 'bg-purple-100 text-purple-900'
-          }`}>
-            {isStudent ? 'Student' : isBvg ? 'BVG' : isManagement ? 'Mgmt' : 'Super Admin'}
-          </span>
-        </button>
+
+          <button
+            id="nav-switch-account"
+            onClick={onOpenAccountSwitcher}
+            className="p-1.5 text-slate-500 hover:text-[#001e40] hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+            title="Switch User Account"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -1,4 +1,12 @@
-import { MaintenanceReport, CampusBlock, ActivityEvent, PlanningProject } from '../types';
+import { 
+  MaintenanceReport, 
+  CampusBlock, 
+  ActivityEvent, 
+  PlanningProject,
+  LeaveRequest,
+  ReassignmentRequest,
+  UserCredential
+} from '../types';
 
 export const initialBlocks: CampusBlock[] = [
   {
@@ -116,85 +124,122 @@ export const initialBlocks: CampusBlock[] = [
 export const initialReports: MaintenanceReport[] = [
   {
     id: 'REP-1092',
-    title: 'Severely Cracked Walkway Near Library',
-    description: 'Large crack has developed on the main pathway approaching the central library. Presents a trip hazard for students, especially during evening hours.',
+    title: 'Severely Cracked Walkway Near Library Quad',
+    description: 'Deep fissure and dislodged paver blocks on the main approach walkway to Central Library. Poses severe trip hazard for students during evening hours.',
     category: 'infrastructure',
     severity: 'urgent',
-    status: 'pending',
-    location: 'North Campus, Library Quad',
+    status: 'in_progress',
+    location: 'North Campus, Library Quad Pathway',
     blockId: 'library',
-    coordinates: { x: 61, y: 41 }, // near library marker from Image 1
+    coordinates: { x: 61, y: 41 },
+    gps: { latitude: 26.5043, longitude: 80.2686 },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     timeAgo: '2 hrs ago',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
-    assignedTeam: 'Team Alpha (Civil)',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
-      name: 'Rohan Sharma',
-      role: 'B.Tech Student (IT 3rd Yr)',
+      name: 'Sunny Bharti',
+      role: 'UIET B.Tech Student / Citizen Reporter',
     },
     updates: [
       {
         id: 'u-1',
         timestamp: '2 hrs ago',
-        author: 'Rohan Sharma',
-        message: 'Report submitted with photo of walkway fissure.',
+        author: 'Sunny Bharti',
+        message: 'Report submitted with photo of paver dislocation near reading hall entrance.',
       },
       {
         id: 'u-2',
-        timestamp: '10 mins ago',
-        author: 'Admin (Planning Desk)',
-        message: 'Inspection team dispatched for immediate safety barricading.',
-      }
-    ]
-  },
-  {
-    id: 'REP-1088',
-    title: 'Minor Pipe Leak in Science Block B',
-    description: 'Small drip noticed from overhead pipe in the basement corridor near lab B-12. Need a plumber to tighten fittings before water gathers on electrical conduits.',
-    category: 'plumbing',
-    severity: 'normal',
-    status: 'in_progress',
-    location: 'East Campus, Science Block B, Basement',
-    blockId: 'science-block-b',
-    coordinates: { x: 46, y: 26 },
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '5 hrs ago',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBNz9kmKjs6xYEvNxTTRpzZZPl45MCRBjF5R8Y1Stw1P-6sNpm3xZvKlnHVVpTg6t55BMjLa7nxjO0HpMzHPTMJTbN1BB6vrIJWzoaPti2JTyECXgoOjODV9SnPsygTO7zq89eTelmoh4vZ1yZ9m-bc6LZtkf4SGKId8INwdgu73SbrbilYhDyQJyfD1S5BPpwYiNgo9VVFt5J2-Ry7vmNB4fwzldaPB0EFNg_suR-dzMo_uD8R1FEQ',
-    assignedTeam: 'Team Gamma (Plumbing & Sanitation)',
-    reportedBy: {
-      name: 'Dr. Anita Verma',
-      role: 'Assistant Professor, Chemistry',
-    },
-    updates: [
-      {
-        id: 'u-3',
-        timestamp: '5 hrs ago',
-        author: 'Dr. Anita Verma',
-        message: 'Report created. Bucket temporarily placed.',
-      },
-      {
-        id: 'u-4',
-        timestamp: '3 hrs ago',
-        author: 'Maintenance Coordinator',
-        message: 'Assigned to Team Gamma. Spare PVC joiner requisitioned.',
+        timestamp: '45 mins ago',
+        author: 'Er. R. K. Sharma (Estate)',
+        message: 'Dispatched to BVG Beat 01 (Lead: Ramesh Kumar) for safety cones and mortar leveling.',
         statusChange: 'in_progress'
       }
     ]
   },
   {
+    id: 'REP-1098',
+    title: 'Uncapped Live Cable Box Near Sports Stadium',
+    description: 'Ground junction box lid shattered with exposed 415V wiring near spectator bleachers. High electrocution hazard for athletes and evening joggers.',
+    category: 'safety',
+    severity: 'critical',
+    status: 'pending',
+    location: 'Sports Ground West Spectator Pavilion',
+    blockId: 'sports-complex',
+    coordinates: { x: 79, y: 26 },
+    gps: { latitude: 26.5057, longitude: 80.2715 },
+    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '1 hr ago',
+    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    reportedBy: {
+      name: 'Sunny Bharti',
+      role: 'UIET B.Tech Student / Citizen Reporter',
+    },
+    updates: [
+      {
+        id: 'u-9',
+        timestamp: '1 hr ago',
+        author: 'Sunny Bharti',
+        message: 'Spotted during football practice. Placed temporary safety branch over lid.',
+      },
+      {
+        id: 'u-10',
+        timestamp: '20 mins ago',
+        author: 'Ramesh Kumar (BVG Lead)',
+        message: 'Reassignment requested to High-Voltage Electrical Unit (Team Beta). Sweeper team lacks HV insulated gear.'
+      }
+    ]
+  },
+  {
+    id: 'REP-1088',
+    title: 'Overflowing Garbage Bins & Food Debris at Cafeteria Quad',
+    description: 'Post-lunch student rush caused twin bins to overflow. Residual food waste scattering on pedestrian plaza attracting stray monkeys and dogs.',
+    category: 'garbage',
+    severity: 'urgent',
+    status: 'pending',
+    location: 'Central Canteen & Student Activity Plaza',
+    blockId: 'block-2',
+    coordinates: { x: 50, y: 65 },
+    gps: { latitude: 26.5024, longitude: 80.2679 },
+    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '4 hrs ago',
+    imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    reportedBy: {
+      name: 'Sunny Bharti',
+      role: 'UIET B.Tech Student / Citizen Reporter',
+    },
+    updates: [
+      {
+        id: 'u-3',
+        timestamp: '4 hrs ago',
+        author: 'Sunny Bharti',
+        message: 'Report filed with photo of overflowing bio-bin.',
+      },
+      {
+        id: 'u-4',
+        timestamp: '2 hrs ago',
+        author: 'Estate Operations Desk',
+        message: 'SLA timer set to 90 mins. Beat 01 cart team en route.'
+      }
+    ]
+  },
+  {
     id: 'REP-1085',
-    title: 'Main Gate: Path Fixed & Resurfaced',
-    description: 'Crushed gravel and concrete paving at North Gate completed with drainage curb installation.',
+    title: 'North Gate Resurfacing & Drainage Curb Completed',
+    description: 'Crushed gravel and concrete paving at North Gate completed with stormwater drain curb installation.',
     category: 'infrastructure',
     severity: 'normal',
     status: 'resolved',
     location: 'North Campus Entrance & Athletic Gate',
     blockId: 'main-gate',
-    coordinates: { x: 81, y: 36 }, // green marker location from Image 1
+    coordinates: { x: 81, y: 36 },
+    gps: { latitude: 26.5066, longitude: 80.2647 },
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     timeAgo: '1 day ago',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
-    assignedTeam: 'Team Alpha (Civil Works)',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Campus Security Office',
       role: 'Estate Security Supervisor',
@@ -203,7 +248,7 @@ export const initialReports: MaintenanceReport[] = [
       {
         id: 'u-5',
         timestamp: '1 day ago',
-        author: 'Team Alpha',
+        author: 'Ramesh Kumar (BVG Lead)',
         message: 'Bitumen resurfacing and inspection completed. Verified safe.',
         statusChange: 'resolved'
       }
@@ -211,18 +256,19 @@ export const initialReports: MaintenanceReport[] = [
   },
   {
     id: 'REP-1081',
-    title: 'Workshop: Lighting & Distribution Panel',
-    description: 'Fluorescent fixture blinking and flickering in the CNC Milling section of Workshop. Requires ballast change.',
-    category: 'electrical',
-    severity: 'normal',
-    status: 'pending',
-    location: 'Central Mechanical Workshop, Bay 2',
+    title: 'Mechanical Workshop: Metal Scrap & Solvent Spill',
+    description: 'Lathe machining shavings and coolant lubricating oil spillage across Bay 2 walkway creating slipping hazard.',
+    category: 'safety',
+    severity: 'urgent',
+    status: 'in_progress',
+    location: 'Central Mechanical Workshop, Bay 2 Passage',
     blockId: 'workshop',
-    coordinates: { x: 45, y: 59 }, // yellow marker from Image 1
+    coordinates: { x: 45, y: 59 },
+    gps: { latitude: 26.5013, longitude: 80.2654 },
     createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
     timeAgo: '7 hrs ago',
     imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-    assignedTeam: 'Team Beta (Electrical Maintenance)',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Er. Sandeep Pandey',
       role: 'Workshop Lab Instructor',
@@ -232,104 +278,143 @@ export const initialReports: MaintenanceReport[] = [
         id: 'u-6',
         timestamp: '7 hrs ago',
         author: 'Er. Sandeep Pandey',
-        message: 'Report filed with photo of ballast spark.',
+        message: 'Machining coolant leaked during practical exam session.',
+      },
+      {
+        id: 'u-7',
+        timestamp: '3 hrs ago',
+        author: 'Ramesh Kumar (BVG)',
+        message: 'Sawdust applied to absorb oil. Sweeping in progress.',
+        statusChange: 'in_progress'
       }
     ]
   },
   {
     id: 'REP-1077',
     title: 'Heavy Waterlogging Near UIET Block 1 Lawn',
-    description: 'Rainwater accumulation due to blocked storm drain on the west pedestrian pathway of Block 1. Impeding wheelchair access.',
+    description: 'Monsoon rainwater accumulation due to choked perimeter drain along west pedestrian pathway. Impeding wheelchair and pedestrian access.',
     category: 'waterlogging',
     severity: 'urgent',
     status: 'pending',
-    location: 'UIET Block 1 West Corridor',
+    location: 'UIET Block 1 West Pedestrian Corridor',
     blockId: 'block-1',
     coordinates: { x: 38, y: 44 },
+    gps: { latitude: 26.5029, longitude: 80.2660 },
     createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
     timeAgo: '9 hrs ago',
     imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
-    assignedTeam: 'Team Delta (Drainage & Civil)',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
-      name: 'Pooja Gupta',
-      role: 'Student Council Representative',
-    },
-    updates: []
-  },
-  {
-    id: 'REP-1072',
-    title: 'Broken Window Glass at Dorm 4 First Floor',
-    description: 'Exterior window pane cracked by gust of wind; needs glass replacement to prevent rain ingress and safety risk.',
-    category: 'safety',
-    severity: 'normal',
-    status: 'in_progress',
-    location: 'Hostel Complex, Dorm 4, Room 108 Corridor',
-    blockId: 'hostels',
-    coordinates: { x: 72, y: 74 },
-    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '1 hr ago',
-    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-    assignedTeam: 'Team Alpha (Carpentry & Glass)',
-    reportedBy: {
-      name: 'Hostel Warden Office',
-      role: 'Hostel Supervisor',
-    },
-    updates: [
-      {
-        id: 'u-7',
-        timestamp: '1 hr ago',
-        author: 'Hostel Warden',
-        message: 'Hazard tape applied. Waiting for new cut glass sheet.',
-      }
-    ]
-  },
-  {
-    id: 'REP-1065',
-    title: 'HVAC Air Conditioning Failure in Main Auditorium',
-    description: 'Chiller compressor tripping after 10 minutes of runtime in the Central Seminar Hall.',
-    category: 'hvac',
-    severity: 'urgent',
-    status: 'resolved',
-    location: 'UIET Administrative Block, Seminar Hall 1',
-    blockId: 'admin-block',
-    coordinates: { x: 67, y: 55 },
-    createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '14 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
-    assignedTeam: 'Team Beta (HVAC Specialist)',
-    reportedBy: {
-      name: 'Planning Officer',
-      role: 'Estate Officer UIET',
+      name: 'Sunny Bharti',
+      role: 'UIET B.Tech Student / Citizen Reporter',
     },
     updates: [
       {
         id: 'u-8',
-        timestamp: '45 mins ago',
-        author: 'Team Beta',
-        message: 'Thermostat relay replaced and refrigerant gas topped up. Test run passed.',
+        timestamp: '9 hrs ago',
+        author: 'Sunny Bharti',
+        message: 'Water depth approximately 6 inches. Students forced to walk through mud.'
+      }
+    ]
+  },
+  {
+    id: 'REP-1072',
+    title: 'Broken Study Benches & Window in Hostel Reading Room',
+    description: 'Two study table fixtures broken and exterior window latch damaged in Dorm 4 common room causing cold drafts.',
+    category: 'infrastructure',
+    severity: 'normal',
+    status: 'resolved',
+    location: 'Hostel Complex, Dorm 4 Reading Room',
+    blockId: 'hostels',
+    coordinates: { x: 72, y: 74 },
+    gps: { latitude: 26.5000, longitude: 80.2706 },
+    createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '18 hrs ago',
+    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    reportedBy: {
+      name: 'Sunny Bharti',
+      role: 'UIET B.Tech Student / Citizen Reporter',
+    },
+    updates: [
+      {
+        id: 'u-11',
+        timestamp: '18 hrs ago',
+        author: 'Sunny Bharti',
+        message: 'Reported on behalf of hostel residents committee.'
+      },
+      {
+        id: 'u-12',
+        timestamp: '2 hrs ago',
+        author: 'Ramesh Kumar (BVG)',
+        message: 'Carpentry squad replaced table joints and refitted window latch. Cleaned room.',
         statusChange: 'resolved'
       }
     ]
   },
   {
-    id: 'REP-1060',
-    title: 'Overflowing Waste Bins at Cafeteria Quad',
-    description: 'Post-lunch waste bin overflow attracting stray animals near UIET Canteen courtyard.',
+    id: 'REP-1065',
+    title: 'Auditorium Bio-Waste & Food Wrappers Cleared',
+    description: 'Post-convocation event trash including carton packaging and disposable containers successfully sanitized.',
     category: 'garbage',
     severity: 'normal',
     status: 'resolved',
-    location: 'Central Canteen & Student Plaza',
-    blockId: 'block-2',
-    coordinates: { x: 50, y: 65 },
-    createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '18 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
-    assignedTeam: 'Team Sanitation Services',
+    location: 'Central Auditorium Plaza Entrance',
+    blockId: 'admin-block',
+    coordinates: { x: 67, y: 55 },
+    gps: { latitude: 26.5033, longitude: 80.2693 },
+    createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '20 hrs ago',
+    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
-      name: 'Vikas Mishra',
-      role: 'Faculty Member',
+      name: 'Er. R. K. Sharma',
+      role: 'Executive Sanitation Engineer',
     },
-    updates: []
+    updates: [
+      {
+        id: 'u-13',
+        timestamp: '5 hrs ago',
+        author: 'Ramesh Kumar (BVG Lead)',
+        message: 'Before & After AI photo verification passed with 97% cleanliness rating.',
+        statusChange: 'resolved'
+      }
+    ]
+  },
+  {
+    id: 'REP-1054',
+    title: 'Unlit Pedestrian Stretch on Girls Hostel Road',
+    description: 'Three consecutive street solar lamps non-operational between Health Centre and Girls Hostel. High student safety concern after 7 PM.',
+    category: 'safety',
+    severity: 'critical',
+    status: 'resolved',
+    location: 'Girls Hostel Access Road, Near Health Centre',
+    blockId: 'health-centre',
+    coordinates: { x: 58, y: 48 },
+    gps: { latitude: 26.5020, longitude: 80.2687 },
+    createdAt: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
+    timeAgo: '1.5 days ago',
+    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80',
+    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    reportedBy: {
+      name: 'Sunny Bharti',
+      role: 'UIET B.Tech Student / Citizen Reporter',
+    },
+    updates: [
+      {
+        id: 'u-14',
+        timestamp: '1.5 days ago',
+        author: 'Sunny Bharti',
+        message: 'Lodge urgent safety hazard for female students walking to library.'
+      },
+      {
+        id: 'u-15',
+        timestamp: '12 hrs ago',
+        author: 'Er. R. K. Sharma (Estate)',
+        message: 'Solar battery controller replaced. Illumination tested and verified safe.',
+        statusChange: 'resolved'
+      }
+    ]
   }
 ];
 
@@ -441,6 +526,24 @@ export const initialProjects: PlanningProject[] = [
 
 export const samplePhotos = [
   {
+    title: 'Severe Overflowing Waste Bin',
+    url: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
+    category: 'garbage' as const,
+    suggestedTitle: 'Critical Waste Bin Overflow & Ground Spillage'
+  },
+  {
+    title: 'Plastic Litter Pile on Lawn',
+    url: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=800&q=80',
+    category: 'garbage' as const,
+    suggestedTitle: 'Scattered Plastic Litter & Food Wrappers'
+  },
+  {
+    title: 'Blocked Drain Silt & Waste',
+    url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    category: 'waterlogging' as const,
+    suggestedTitle: 'Blocked Storm Drain Clogged with Solid Waste'
+  },
+  {
     title: 'Cracked Pavement / Road Hazard',
     url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
     category: 'infrastructure' as const,
@@ -453,15 +556,184 @@ export const samplePhotos = [
     suggestedTitle: 'Overhead Pipe Drip & Puddle'
   },
   {
-    title: 'Monsoon Waterlogging',
-    url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
-    category: 'waterlogging' as const,
-    suggestedTitle: 'Submerged Pedestrian Walkway'
-  },
-  {
     title: 'Electrical Panel / Wiring Spark',
     url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
     category: 'electrical' as const,
     suggestedTitle: 'Flickering Light & Exposed Ballast'
+  }
+];
+
+export const initialLeaveRequests: LeaveRequest[] = [
+  {
+    id: 'LV-2026-01',
+    workerId: 'USR-BVG-204',
+    workerName: 'Ramesh Kumar',
+    workerBadge: 'BVG-IND-KNP-204',
+    startDate: '2026-10-14',
+    endDate: '2026-10-15',
+    daysCount: 2,
+    type: 'sick',
+    reason: 'Acute viral bronchitis & monsoon fever. Medical prescription attached from CSJMU Health Centre.',
+    status: 'approved',
+    appliedAt: '2026-10-10T08:30:00.000Z',
+    reviewedBy: 'Er. R. K. Sharma (Executive Sanitation Engineer)',
+    reviewRemarks: 'Approved. Standby Beat Lead (Sunil Yadav) deputed to Beat 01 during absence.',
+    reviewedAt: '2026-10-10T11:00:00.000Z'
+  },
+  {
+    id: 'LV-2026-02',
+    workerId: 'USR-BVG-209',
+    workerName: 'Suresh Chandra',
+    workerBadge: 'BVG-IND-KNP-209',
+    startDate: '2026-10-16',
+    endDate: '2026-10-16',
+    daysCount: 1,
+    type: 'casual',
+    reason: 'Daughter school admission counseling and document verification at Kanpur Nagar board.',
+    status: 'pending',
+    appliedAt: '2026-10-12T07:15:00.000Z'
+  },
+  {
+    id: 'LV-2026-03',
+    workerId: 'USR-BVG-214',
+    workerName: 'Dharmendra Singh',
+    workerBadge: 'BVG-IND-KNP-214',
+    startDate: '2026-10-25',
+    endDate: '2026-10-28',
+    daysCount: 4,
+    type: 'earned',
+    reason: 'Annual Chhath Puja celebration in native village (Buxar, Bihar). Advance notice given.',
+    status: 'approved',
+    appliedAt: '2026-10-06T10:00:00.000Z',
+    reviewedBy: 'Er. R. K. Sharma (Estate)',
+    reviewRemarks: 'Approved. Advance beat roster adjusted with contractor BVG coordinator.',
+    reviewedAt: '2026-10-07T14:20:00.000Z'
+  },
+  {
+    id: 'LV-2026-04',
+    workerId: 'USR-BVG-218',
+    workerName: 'Sunil Yadav',
+    workerBadge: 'BVG-IND-KNP-218',
+    startDate: '2026-10-13',
+    endDate: '2026-10-14',
+    daysCount: 2,
+    type: 'emergency',
+    reason: 'Domestic sewer line rupture at residence causing sanitary emergency. Need urgent home repair.',
+    status: 'pending',
+    appliedAt: '2026-10-12T06:45:00.000Z'
+  }
+];
+
+export const initialReassignmentRequests: ReassignmentRequest[] = [
+  {
+    id: 'REASSIGN-101',
+    reportId: 'REP-1098',
+    reportTitle: 'Uncapped Live Cable Box Near Sports Stadium',
+    location: 'Sports Ground West Spectator Pavilion',
+    workerId: 'USR-BVG-204',
+    workerName: 'Ramesh Kumar',
+    workerBadge: 'BVG-IND-KNP-204',
+    currentBeat: 'Beat 01 (Sanitation)',
+    reason: 'safety_hazard',
+    notes: 'Exposed 415V live terminal carries lethal electrocution risk. BVG sanitation sweepers lack Class-0 insulating gloves and dielectric testing tools. Must be escalated to Licensed Electrical Division (Team Beta).',
+    status: 'pending',
+    requestedAt: '2026-10-12T09:15:00.000Z'
+  },
+  {
+    id: 'REASSIGN-102',
+    reportId: 'REP-1077',
+    reportTitle: 'Heavy Waterlogging Near UIET Block 1 Lawn',
+    location: 'UIET Block 1 West Pedestrian Corridor',
+    workerId: 'USR-BVG-209',
+    workerName: 'Suresh Chandra',
+    workerBadge: 'BVG-IND-KNP-209',
+    currentBeat: 'Beat 02 (Drainage)',
+    reason: 'equipment_needed',
+    notes: 'Standing silt and mud requires high-vacuum suction tanker (UP-78-TK) and hydro-jetting nozzle to de-clog underground 12-inch RCC culvert.',
+    status: 'pending',
+    requestedAt: '2026-10-12T08:30:00.000Z'
+  },
+  {
+    id: 'REASSIGN-103',
+    reportId: 'REP-1085',
+    reportTitle: 'Heavy Fallen Banyan Tree Limb Blocking Road',
+    location: 'North Campus Entrance & Athletic Gate',
+    workerId: 'USR-BVG-204',
+    workerName: 'Ramesh Kumar',
+    workerBadge: 'BVG-IND-KNP-204',
+    currentBeat: 'Beat 01 (Sanitation)',
+    reason: 'equipment_needed',
+    notes: 'Massive trunk branch (est. 1.2 tons) blocking ambulance passage. Requires industrial hydraulic boom crane and gasoline chainsaw crew.',
+    status: 'approved',
+    requestedAt: '2026-10-11T14:10:00.000Z',
+    reviewedBy: 'Er. R. K. Sharma (Estate)',
+    reviewedAt: '2026-10-11T15:00:00.000Z',
+    reviewRemarks: 'Approved. Deputed CSJMU Horticulture & Tree Management Crane Squad.',
+    newAssignee: 'Horticulture Heavy Crane Unit'
+  },
+  {
+    id: 'REASSIGN-104',
+    reportId: 'REP-1081',
+    reportTitle: 'Corrosive Chemical Reagent Spill in Chemistry Corridor',
+    location: 'Science Block B, Ground Floor Corridor',
+    workerId: 'USR-BVG-218',
+    workerName: 'Sunil Yadav',
+    workerBadge: 'BVG-IND-KNP-218',
+    currentBeat: 'Beat 03',
+    reason: 'safety_hazard',
+    notes: 'Hydrochloric acid vapors detected from cracked 5L carboy. BVG janitorial brooms cannot contact acid. Requires Chemical Spill Containment & Hazmat Unit with soda ash neutralizer.',
+    status: 'pending',
+    requestedAt: '2026-10-12T10:00:00.000Z'
+  }
+];
+
+export const initialCredentials: UserCredential[] = [
+  {
+    id: 'USR-STU-01',
+    name: 'Sunny Bharti',
+    email: 'sunny.student@csjmu.ac.in',
+    role: 'student',
+    pin: '',
+    agency: 'CSJMU Student Council',
+    department: 'Computer Science & Engineering (UIET)',
+    badgeNumber: 'CSJMU/UIET/2023/104',
+    lastLogin: 'Today, 01:15 PM',
+    status: 'active'
+  },
+  {
+    id: 'USR-BVG-204',
+    name: 'Ramesh Kumar',
+    email: 'ramesh.bvg@csjmu.facility.in',
+    role: 'bvg_worker',
+    pin: '1234',
+    agency: 'BVG India Ltd. (Facility Contractor)',
+    department: 'Solid Waste Cleansing Beat 01',
+    badgeNumber: 'BVG-IND-KNP-204',
+    lastLogin: 'Today, 11:42 AM',
+    status: 'active'
+  },
+  {
+    id: 'USR-MGT-101',
+    name: 'Er. R. K. Sharma',
+    email: 'rksharma.estate@csjmu.ac.in',
+    role: 'management',
+    pin: '5678',
+    agency: 'CSJMU Directorate of Estate & Works',
+    department: 'Campus Works & Public Health Engineering',
+    badgeNumber: 'CSJMU-EST-019',
+    lastLogin: 'Today, 10:20 AM',
+    status: 'active'
+  },
+  {
+    id: 'USR-ADM-001',
+    name: 'Prof. A. K. Shukla (Registrar)',
+    email: 'registrar@csjmu.ac.in',
+    role: 'super_admin',
+    pin: '9999',
+    agency: 'CSJMU Central Secretariat',
+    department: 'Directorate of Campus Administration & IT',
+    badgeNumber: 'CSJMU-ROOT-001',
+    lastLogin: 'Today, 09:00 AM',
+    status: 'active'
   }
 ];
