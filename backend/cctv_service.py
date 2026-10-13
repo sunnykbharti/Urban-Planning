@@ -13,7 +13,8 @@ CCTV Garbage Detection Pipeline Service
 
 import os
 import uuid
-import datetime
+import random
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 from authority_engine import authority_engine
 from detection_service import analyze_garbage_image, DETECTION_CLASSES, BULK_DENSITY_MAP
@@ -33,10 +34,16 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
         "ward": "Ward 4 - Academic Division",
         "coordinates": {"x": 38, "y": 42},
         "gps": {"latitude": 26.4952, "longitude": 80.2921},
-        "resolution": "4K (3840x2160)",
-        "fps": 30,
+        # Realistic university specs (2 MP bullet unit with sub-stream)
+        "resolution": "1080p (1920x1080)",
+        "inferenceInputSize": 640,
+        "streamType": "SUB_STREAM_RTSP",
+        "channelId": "102",
+        "fps": 15,
         "status": "ONLINE",
         "ipAddress": "10.20.4.101",
+        "snapshotUri": "http://10.20.4.101/ISAPI/Streaming/channels/101/picture",
+        "rtspSubstreamUri": "rtsp://admin:pass@10.20.4.101:554/Streaming/Channels/102",
         "installedHeightMeters": 4.5,
         "sampleImages": {
             "overflow": "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80",
@@ -54,9 +61,14 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
         "coordinates": {"x": 58, "y": 36},
         "gps": {"latitude": 26.4965, "longitude": 80.2940},
         "resolution": "1080p (1920x1080)",
-        "fps": 25,
+        "inferenceInputSize": 640,
+        "streamType": "SUB_STREAM_RTSP",
+        "channelId": "102",
+        "fps": 15,
         "status": "ONLINE",
         "ipAddress": "10.20.2.102",
+        "snapshotUri": "http://10.20.2.102/ISAPI/Streaming/channels/101/picture",
+        "rtspSubstreamUri": "rtsp://admin:pass@10.20.2.102:554/Streaming/Channels/102",
         "installedHeightMeters": 5.0,
         "sampleImages": {
             "overflow": "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80",
@@ -72,10 +84,16 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
         "ward": "Ward 5 - Industrial & Utilities",
         "coordinates": {"x": 26, "y": 58},
         "gps": {"latitude": 26.4938, "longitude": 80.2895},
-        "resolution": "1080p (1920x1080)",
-        "fps": 30,
+        # Older 1.3 MP / 720p dome camera
+        "resolution": "720p (1280x720)",
+        "inferenceInputSize": 640,
+        "streamType": "SUB_STREAM_RTSP",
+        "channelId": "102",
+        "fps": 15,
         "status": "ONLINE",
         "ipAddress": "10.20.5.103",
+        "snapshotUri": "http://10.20.5.103/ISAPI/Streaming/channels/101/picture",
+        "rtspSubstreamUri": "rtsp://admin:pass@10.20.5.103:554/Streaming/Channels/102",
         "installedHeightMeters": 4.0,
         "sampleImages": {
             "blocked_drain": "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=800&q=80",
@@ -91,10 +109,15 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
         "ward": "Ward 7 - Student Residences",
         "coordinates": {"x": 78, "y": 62},
         "gps": {"latitude": 26.4980, "longitude": 80.2985},
-        "resolution": "4K (3840x2160)",
-        "fps": 30,
+        "resolution": "1080p (1920x1080)",
+        "inferenceInputSize": 640,
+        "streamType": "SUB_STREAM_RTSP",
+        "channelId": "102",
+        "fps": 15,
         "status": "ONLINE",
         "ipAddress": "10.20.7.104",
+        "snapshotUri": "http://10.20.7.104/ISAPI/Streaming/channels/101/picture",
+        "rtspSubstreamUri": "rtsp://admin:pass@10.20.7.104:554/Streaming/Channels/102",
         "installedHeightMeters": 6.0,
         "sampleImages": {
             "litter_pile": "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80",
@@ -110,10 +133,15 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
         "ward": "Ward 6 - Recreation & Athletics",
         "coordinates": {"x": 82, "y": 30},
         "gps": {"latitude": 26.4945, "longitude": 80.2960},
-        "resolution": "1080p (1920x1080)",
-        "fps": 25,
+        "resolution": "720p (1280x720)",
+        "inferenceInputSize": 640,
+        "streamType": "SUB_STREAM_RTSP",
+        "channelId": "102",
+        "fps": 15,
         "status": "ONLINE",
         "ipAddress": "10.20.6.105",
+        "snapshotUri": "http://10.20.6.105/ISAPI/Streaming/channels/101/picture",
+        "rtspSubstreamUri": "rtsp://admin:pass@10.20.6.105:554/Streaming/Channels/102",
         "installedHeightMeters": 7.5,
         "sampleImages": {
             "overflow": "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80",
@@ -129,10 +157,15 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
         "ward": "Ward 2 - Central Secretariat",
         "coordinates": {"x": 52, "y": 28},
         "gps": {"latitude": 26.4970, "longitude": 80.2935},
-        "resolution": "4K (3840x2160)",
-        "fps": 30,
+        "resolution": "1080p (1920x1080)",
+        "inferenceInputSize": 640,
+        "streamType": "HTTP_SNAPSHOT_ISAPI",
+        "channelId": "101",
+        "fps": 15,
         "status": "ONLINE",
         "ipAddress": "10.20.2.106",
+        "snapshotUri": "http://10.20.2.106/ISAPI/Streaming/channels/101/picture",
+        "rtspSubstreamUri": "rtsp://admin:pass@10.20.2.106:554/Streaming/Channels/102",
         "installedHeightMeters": 5.5,
         "sampleImages": {
             "clean": "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"
@@ -141,51 +174,77 @@ CAMPUS_CCTV_CAMERAS: List[Dict[str, Any]] = [
 ]
 
 # -----------------------------------------------------------------------------
-# 2. Daily Scheduled Sweeps (4 Times / Day)
+# 2. Dynamic Stratified Random Sweep Scheduler
 # -----------------------------------------------------------------------------
 
-DAILY_SWEEPS = [
-    {
-        "slot": "06:00",
-        "name": "1st Sweep (Morning Pre-Class Audit)",
-        "description": "Inspects overnight bin overflow and hostel waste prior to student arrival",
-        "targetTime": "06:00 AM",
-        "status": "COMPLETED",
-        "lastRun": "Today at 06:00 AM",
-        "detectionsCount": 2,
-        "ticketsGenerated": 2
-    },
-    {
-        "slot": "12:00",
-        "name": "2nd Sweep (Noon Lunch & Canteen Peak)",
-        "description": "Scans food kiosks, UIET canteen perimeter, and student lawns",
-        "targetTime": "12:00 PM",
-        "status": "COMPLETED",
-        "lastRun": "Today at 12:00 PM",
-        "detectionsCount": 3,
-        "ticketsGenerated": 2
-    },
-    {
-        "slot": "16:00",
-        "name": "3rd Sweep (Post-Afternoon Dispersal)",
-        "description": "Audits sports pavilion, library walkway, and academic corridors",
-        "targetTime": "04:00 PM",
-        "status": "COMPLETED",
-        "lastRun": "Today at 04:00 PM",
-        "detectionsCount": 1,
-        "ticketsGenerated": 1
-    },
-    {
-        "slot": "20:00",
-        "name": "4th Sweep (Evening Campus Wrap-Up)",
-        "description": "Checks hostel mess perimeters, night library gates, and street bins",
-        "targetTime": "08:00 PM",
-        "status": "SCHEDULED",
-        "lastRun": "Scheduled in 2 hours",
-        "detectionsCount": 0,
-        "ticketsGenerated": 0
-    }
-]
+def generate_daily_stratified_random_sweeps(
+    n_sweeps: int = 4,
+    start_hour: int = 6,
+    end_hour: int = 22
+) -> List[Dict[str, Any]]:
+    """
+    Generates n random trigger timestamps distributed across operational campus shifts (06:00 to 22:00).
+    Stratified across 4 core operational quarters:
+      1. Morning Pre-Class & Hostel Audit (06:00 - 10:00)
+      2. Noon Lunch & Canteen Peak (10:00 - 14:00)
+      3. Post-Afternoon Dispersal (14:00 - 18:00)
+      4. Evening Campus Wrap-Up (18:00 - 22:00)
+    Ensures unpredictable audit timing while guaranteeing cleaning staff are actively on shift.
+    """
+    strata = [
+        {"name": "Morning Pre-Class Audit", "window": "06:00 - 10:00", "start": 6, "end": 10, "desc": "Inspects overnight bin overflow and hostel waste prior to student arrival"},
+        {"name": "Noon Lunch & Canteen Peak", "window": "10:00 - 14:00", "start": 10, "end": 14, "desc": "Scans food kiosks, UIET canteen perimeter, and student lawns"},
+        {"name": "Post-Afternoon Dispersal", "window": "14:00 - 18:00", "start": 14, "end": 18, "desc": "Audits sports pavilion, library walkway, and academic corridors"},
+        {"name": "Evening Campus Wrap-Up", "window": "18:00 - 22:00", "start": 18, "end": 22, "desc": "Checks hostel mess perimeters, night library gates, and street bins"}
+    ]
+    
+    today = datetime.now().date()
+    now = datetime.now()
+    sweeps = []
+    
+    for idx, s in enumerate(strata[:n_sweeps]):
+        window_minutes = (s["end"] - s["start"]) * 60
+        # Stratified random offset with 25-minute buffer so sweeps don't cluster at boundaries
+        offset = random.randint(25, window_minutes - 25)
+        target_dt = datetime.combine(today, datetime.min.time()) + timedelta(hours=s["start"], minutes=offset)
+        slot_str = target_dt.strftime("%H:%M")
+        display_time = target_dt.strftime("%I:%M %p")
+        
+        # Check if already passed today
+        if target_dt < now - timedelta(minutes=45):
+            status = "COMPLETED"
+            last_run = f"Today at {display_time}"
+            detections = random.choice([2, 3])
+            tickets = random.choice([1, 2])
+        elif target_dt <= now:
+            status = "COMPLETED"
+            last_run = "Completed recently"
+            detections = 2
+            tickets = 2
+        else:
+            diff_hours = (target_dt - now).total_seconds() / 3600
+            status = "SCHEDULED"
+            last_run = f"Scheduled in {round(diff_hours, 1)} hrs"
+            detections = 0
+            tickets = 0
+
+        sweeps.append({
+            "slot": slot_str,
+            "name": f"{idx + 1}{['st','nd','rd','th'][idx]} Sweep ({s['name']})",
+            "description": s["desc"],
+            "targetTime": display_time,
+            "window": s["window"],
+            "stratified": True,
+            "status": status,
+            "lastRun": last_run,
+            "detectionsCount": detections,
+            "ticketsGenerated": tickets
+        })
+        
+    return sweeps
+
+# Initialize today's stratified sweeps
+DAILY_SWEEPS = generate_daily_stratified_random_sweeps()
 
 # In-memory history of CCTV pipeline executions
 CCTV_PIPELINE_RUNS: List[Dict[str, Any]] = []
@@ -206,6 +265,11 @@ class CctvPipelineService:
         return None
 
     def get_sweeps(self) -> List[Dict[str, Any]]:
+        return self.sweeps
+
+    def randomize_sweeps(self) -> List[Dict[str, Any]]:
+        """Re-generates today's 4 stratified random sweep trigger times."""
+        self.sweeps = generate_daily_stratified_random_sweeps()
         return self.sweeps
 
     def get_pipeline_runs(self) -> List[Dict[str, Any]]:
@@ -328,7 +392,7 @@ class CctvPipelineService:
         if not camera:
             raise ValueError(f"Camera '{camera_id}' not found.")
 
-        timestamp_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        timestamp_iso = datetime.now(timezone.utc).isoformat()
         run_id = f"CCTV-RUN-{uuid.uuid4().hex[:8]}"
 
         # 1. Step 1 & 2: Frame Extraction & Preprocessing
@@ -411,7 +475,7 @@ class CctvPipelineService:
 
             incident_count = db_manager.get_incident_count()
             ticket_number = f"CSJMU-CCTV-{incident_count + 1050}"
-            now_iso = datetime.datetime.utcnow().isoformat() + "Z"
+            now_iso = datetime.now(timezone.utc).isoformat()
 
             new_incident_payload = {
                 "id": f"INC-CCTV-{incident_count + 1050}",
@@ -491,7 +555,7 @@ class CctvPipelineService:
     # -------------------------------------------------------------------------
     def run_scheduled_sweep(self, sweep_slot: str = "12:00") -> Dict[str, Any]:
         """Runs the automated CCTV sweep across all cameras for a designated time slot."""
-        sweep_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        sweep_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         results = []
         tickets_created = 0
 
@@ -517,12 +581,23 @@ class CctvPipelineService:
                 tickets_created += 1
 
         # Update sweep status
+        matched = False
         for s in self.sweeps:
             if s["slot"] == sweep_slot:
                 s["status"] = "COMPLETED"
                 s["lastRun"] = f"Just now ({sweep_time})"
                 s["detectionsCount"] = len(results)
                 s["ticketsGenerated"] = tickets_created
+                matched = True
+                break
+        if not matched:
+            for s in self.sweeps:
+                if s["status"] == "SCHEDULED":
+                    s["status"] = "COMPLETED"
+                    s["lastRun"] = f"Just now ({sweep_time})"
+                    s["detectionsCount"] = len(results)
+                    s["ticketsGenerated"] = tickets_created
+                    break
 
         return {
             "sweepSlot": sweep_slot,

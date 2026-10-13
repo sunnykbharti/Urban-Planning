@@ -561,6 +561,22 @@ export async function fetchCctvSweepsAPI(): Promise<any[]> {
   return [];
 }
 
+export async function randomizeCctvSweepsAPI(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/sweeps/randomize`, { 
+      method: 'POST',
+      signal: AbortSignal.timeout(3000) 
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.sweeps || [];
+    }
+  } catch (err) {
+    console.warn('Randomize sweeps API error', err);
+  }
+  return [];
+}
+
 export async function triggerCctvCaptureAPI(
   cameraId: string,
   detectionClass?: string,

@@ -460,9 +460,19 @@ def get_cctv_cameras():
 
 @app.route("/api/cctv/sweeps", methods=["GET"])
 def get_cctv_sweeps():
-    """Returns status of 4 daily scheduled sweeps (6 AM, 12 PM, 4 PM, 8 PM)."""
+    """Returns status of 4 daily scheduled sweeps."""
     return jsonify({
         "sweeps": cctv_service.get_sweeps()
+    }), 200
+
+@app.route("/api/cctv/sweeps/randomize", methods=["POST"])
+def randomize_cctv_sweeps():
+    """Dynamically recalculates 4 stratified random sweep windows across operational shift hours."""
+    updated_sweeps = cctv_service.randomize_sweeps()
+    return jsonify({
+        "success": True,
+        "message": "Stratified random sweep schedule recalculated across operational shifts",
+        "sweeps": updated_sweeps
     }), 200
 
 @app.route("/api/cctv/capture", methods=["POST"])

@@ -515,6 +515,11 @@ export interface CctvCamera {
   fps: number;
   status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE';
   ipAddress: string;
+  streamType?: string;
+  channelId?: string;
+  inferenceInputSize?: number;
+  snapshotUri?: string;
+  rtspSubstreamUri?: string;
   installedHeightMeters: number;
   sampleImages?: Record<string, string>;
 }
@@ -524,6 +529,8 @@ export interface CctvSweep {
   name: string;
   description: string;
   targetTime: string;
+  window?: string;
+  stratified?: boolean;
   status: 'COMPLETED' | 'IN_PROGRESS' | 'SCHEDULED' | 'PENDING';
   lastRun: string;
   detectionsCount: number;

@@ -24,7 +24,8 @@ import {
   ExternalLink,
   ChevronRight,
   Shield,
-  Activity
+  Activity,
+  Shuffle
 } from 'lucide-react';
 import { 
   CctvCamera, 
@@ -35,6 +36,7 @@ import {
 import { 
   fetchCctvCamerasAPI, 
   fetchCctvSweepsAPI, 
+  randomizeCctvSweepsAPI,
   triggerCctvCaptureAPI, 
   runScheduledSweepAPI, 
   fetchCctvRunsAPI 
@@ -151,11 +153,22 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
     }
   };
 
+  const handleRandomizeSweeps = async () => {
+    try {
+      const updated = await randomizeCctvSweepsAPI();
+      if (updated && updated.length > 0) {
+        setSweeps(updated);
+      }
+    } catch (err) {
+      console.error('Failed to randomize sweeps', err);
+    }
+  };
+
   const activeCamera = cameras.find(c => c.id === activeCameraId) || cameras[0];
 
   const PIPELINE_STAGES = [
-    { num: 1, title: 'CCTV Data Collection', desc: '4x Daily Captures (6 AM | 12 PM | 4 PM | 8 PM)', icon: Video, color: 'from-blue-600 to-indigo-600' },
-    { num: 2, title: 'Data Ingestion & Storage', desc: 'Frame extraction, aspect resize, privacy blur', icon: Layers, color: 'from-indigo-600 to-sky-600' },
+    { num: 1, title: 'CCTV Data Collection', desc: '4x Daily Captures (Stratified Shift Windows)', icon: Video, color: 'from-blue-600 to-indigo-600' },
+    { num: 2, title: 'Data Ingestion & Storage', desc: 'Sub-stream/Snapshot frame, aspect resize, privacy blur', icon: Layers, color: 'from-indigo-600 to-sky-600' },
     { num: 3, title: 'AI Detection (YOLOv11)', desc: 'Overflow, litter pile, drain clog, bin capacity', icon: Cpu, color: 'from-purple-600 to-pink-600' },
     { num: 4, title: 'Geotagging & GIS Mapping', desc: 'Camera ID → Fixed spatial coordinates & zone', icon: MapPin, color: 'from-amber-600 to-orange-600' },
     { num: 5, title: 'LLM-Assisted Parsing', desc: 'Converts detection into structured work order', icon: Bot, color: 'from-emerald-600 to-teal-600' },
@@ -181,14 +194,14 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
               CCTV-Based Garbage Detection Pipeline
             </h1>
             <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-              4 Times a Day Automated Sweeps: Fixed Campus Cameras &rarr; YOLOv11 Waste Segmenter &rarr; 
+              4x Daily Stratified Random Sweeps: Sub-Stream (1080p/720p) &rarr; YOLOv11 Tensor (640x640) &rarr; 
               Decision Deduplication Gate &rarr; LLM Ticket Dispatch &rarr; BVG Worker Cleaning Verification.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => handleRunBatchSweep('12:00')}
+              onClick={() => handleRunBatchSweep(sweeps[0]?.slot || '12:00')}
               disabled={isExecutingSweep}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:from-emerald-400 hover:to-teal-500 transition-all active:scale-95 disabled:opacity-50"
             >
@@ -200,7 +213,7 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
               ) : (
                 <>
                   <Play className="w-4 h-4 fill-white" />
-                  Trigger 12:00 PM Sweep Across Campus
+                  Trigger Campus-Wide Sweep Now
                 </>
               )}
             </button>
@@ -216,14 +229,19 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
 
         {/* 2. Daily Schedule Timeline Bar */}
         <div className="mt-8 pt-6 border-t border-slate-800/80">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <Clock className="w-3.5 h-3.5 text-indigo-400" />
-              Automated Campus Sweep Schedule (4x Daily)
+              Stratified Random Campus Sweeps (4x Operational Shift Quarters)
             </span>
-            <span className="text-xs text-indigo-300 font-medium">
-              Next Scheduled Sweep: 08:00 PM (Night Library & Mess)
-            </span>
+            <button
+              onClick={handleRandomizeSweeps}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-300 text-xs font-medium transition-colors"
+              title="Re-calculate 4 random trigger times across operational shift windows"
+            >
+              <Shuffle className="w-3 h-3 text-indigo-300" />
+              Re-Roll Random Shift Triggers
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -251,6 +269,11 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
                       {sweep.status}
                     </span>
                   </div>
+                  {sweep.window && (
+                    <div className="text-[10px] text-slate-400 font-mono mb-1">
+                      Window: <span className="text-indigo-300">{sweep.window}</span>
+                    </div>
+                  )}
                   <p className="text-slate-300 text-xs font-medium truncate">{sweep.name.replace(/^[0-9]+[a-z]+ Sweep \(/i, '').replace(/\)$/, '')}</p>
                   <div className="mt-2 pt-2 border-t border-slate-700/50 flex items-center justify-between text-[11px] text-slate-400">
                     <span>{sweep.detectionsCount} detections</span>
@@ -358,7 +381,10 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
                       <span className="text-xs text-slate-300 font-medium truncate max-w-[150px]">{cam.name}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono">
-                      <span>{cam.resolution}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 font-semibold text-[9px]">
+                        {cam.streamType === 'HTTP_SNAPSHOT_ISAPI' ? 'HTTP ISAPI' : 'RTSP Sub-Stream'}
+                      </span>
+                      <span>{cam.resolution.split(' ')[0]}</span>
                       <span>&bull;</span>
                       <span>{cam.fps}fps</span>
                     </div>
