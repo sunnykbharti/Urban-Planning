@@ -15,7 +15,43 @@ import {
   EstimatedAmount
 } from '../types';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+const getApiBaseUrl = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl) return envUrl.replace(/\/+$/, '');
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isViteDev = window.location.port === '3000' || window.location.port === '5173';
+    // When running in production builds or non-dev environments, route via same origin /api
+    if (!isLocalhost || !isViteDev) {
+      return '/api';
+    }
+  }
+  return 'http://localhost:5000/api';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+
+/**
+ * Resolves media URLs (e.g. /uploads/...) so they correctly point to backend host in production.
+ */
+export function resolveMediaUrl(url?: string | null): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  if (url.startsWith('/uploads') || url.startsWith('/api')) {
+    if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+      try {
+        const origin = new URL(API_BASE_URL).origin;
+        return `${origin}${url}`;
+      } catch {
+        return url;
+      }
+    }
+  }
+  return url;
+}
 
 export async function checkBackendHealth(): Promise<{ 
   online: boolean; 
@@ -557,6 +593,22 @@ export async function fetchCctvSweepsAPI(): Promise<any[]> {
     }
   } catch (err) {
     console.warn('CCTV sweeps API offline, using fallback');
+  }
+  return [];
+}
+
+export async function randomizeCctvSweepsAPI(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/sweeps/randomize`, { 
+      method: 'POST',
+      signal: AbortSignal.timeout(3000) 
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.sweeps || [];
+    }
+  } catch (err) {
+    console.warn('Randomize sweeps API error', err);
   }
   return [];
 }

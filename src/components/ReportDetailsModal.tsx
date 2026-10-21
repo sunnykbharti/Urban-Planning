@@ -22,6 +22,7 @@ import {
   HardHat
 } from 'lucide-react';
 import { MaintenanceReport, ReportStatus } from '../types';
+import { resolveMediaUrl } from '../api/client';
 
 interface ReportDetailsModalProps {
   report: MaintenanceReport | null;
@@ -145,9 +146,12 @@ export const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
             {report.imageUrl && (
               <div className="md:col-span-6 relative rounded-xl overflow-hidden border border-[#c3c6d1] bg-[#111c2d] min-h-[220px]">
                 <img
-                  src={report.imageUrl}
+                  src={resolveMediaUrl(report.imageUrl)}
                   alt={report.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80';
+                  }}
                 />
 
                 {/* Bounding Box Overlays */}

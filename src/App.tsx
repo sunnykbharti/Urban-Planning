@@ -38,8 +38,15 @@ import { BvgWorkerDashboard } from './components/BvgWorkerDashboard';
 import { ManagementDashboard } from './components/ManagementDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RoleAuthModal } from './components/RoleAuthModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { DEFAULT_PROFILES, UserProfile } from './types';
-import { checkBackendHealth, fetchIncidentsFromBackend, createIncidentAPI } from './api/client';
+import { 
+  checkBackendHealth, 
+  fetchIncidentsFromBackend, 
+  createIncidentAPI,
+  updateIncidentStatusAPI,
+  verifyAndCloseAPI 
+} from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
 
 const SEED_DATA_VERSION = 'v3.0';
@@ -103,6 +110,7 @@ export default function App() {
   const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const handleRoleChange = (newRole: UserRole, newProfile?: UserProfile) => {
     setUserRole(newRole);
@@ -230,7 +238,19 @@ export default function App() {
         beforeImageUrl: newReport.imageUrl,
         garbageDetection: newReport.garbageDetection,
         estimatedAmount: newReport.estimatedAmount
-      });
+      }).then((created) => {
+        if (created) {
+          setReports(prev => prev.map(r => r.id === newReport.id ? { 
+            ...r, 
+            id: created.id, 
+            ticketNumber: created.ticketNumber,
+            zoneName: created.zoneName,
+            ward: created.ward,
+            authority: created.authority,
+            department: created.department
+          } : r));
+        }
+      }).catch(err => console.warn('Failed to persist incident to backend:', err));
     }
 
     showToast(`Report ${newReport.id} registered on CSJMU map`, newReport.severity === 'urgent' ? 'urgent' : 'success');
@@ -265,6 +285,26 @@ export default function App() {
       }
       return r;
     }));
+
+    // Sync with backend API if online
+    if (backendStatus.online) {
+      if (newStatus === 'resolved' && afterImg) {
+        verifyAndCloseAPI(reportId, afterImg).catch(err => {
+          console.warn('Backend verify API error:', err);
+        });
+      } else {
+        const statusMap: Record<string, string> = {
+          'dispatched': 'DISPATCHED',
+          'in_progress': 'IN_PROGRESS',
+          'resolved': 'RESOLVED',
+          'pending': 'DISPATCHED'
+        };
+        const backendStatusVal = statusMap[newStatus] || newStatus.toUpperCase();
+        updateIncidentStatusAPI(reportId, backendStatusVal, note).catch(err => {
+          console.warn('Backend status update error:', err);
+        });
+      }
+    }
 
     const targetReport = reports.find(r => r.id === reportId);
     const reportTitle = targetReport?.title || reportId;
@@ -439,6 +479,8 @@ export default function App() {
         onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onSignOut={handleSignOut}
         backendOnline={backendStatus.online}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         onOpenReportDrawer={() => {
           setReportDrawerLocation('UIET Block 1');
           setReportDrawerCoords({ x: 38, y: 38 });
@@ -462,6 +504,8 @@ export default function App() {
           currentProfile={currentUserProfile}
           onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
           urgentCount={urgentCount}
+          isMobileOpen={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Main Content Area Canvas */}
@@ -500,130 +544,132 @@ export default function App() {
             </div>
           </div>
 
-          {/* DEDICATED 4-ROLE DASHBOARDS */}
-          {activeTab === 'student_dashboard' && (
-            <StudentDashboard
-              reports={displayedReports}
-              blocks={blocks}
-              activities={activities}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
-            />
-          )}
+          {/* DEDICATED 4-ROLE DASHBOARDS PROTECTED BY ERROR BOUNDARY */}
+          <ErrorBoundary fallbackTitle="Dashboard Display Error">
+            {activeTab === 'student_dashboard' && (
+              <StudentDashboard
+                reports={displayedReports}
+                blocks={blocks}
+                activities={activities}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+              />
+            )}
 
-          {(activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard') && (
-            <BvgWorkerDashboard
-              reports={displayedReports}
-              activities={activities}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              leaveRequests={leaveRequests}
-              onAddLeaveRequest={handleAddLeaveRequest}
-              reassignmentRequests={reassignmentRequests}
-              onAddReassignmentRequest={handleAddReassignmentRequest}
-            />
-          )}
+            {(activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard') && (
+              <BvgWorkerDashboard
+                reports={displayedReports}
+                activities={activities}
+                onUpdateStatus={handleUpdateStatus}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                leaveRequests={leaveRequests}
+                onAddLeaveRequest={handleAddLeaveRequest}
+                reassignmentRequests={reassignmentRequests}
+                onAddReassignmentRequest={handleAddReassignmentRequest}
+              />
+            )}
 
-          {activeTab === 'management_dashboard' && (
-            <ManagementDashboard
-              reports={displayedReports}
-              activities={activities}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              reassignmentRequests={reassignmentRequests}
-              onReviewReassignment={handleReviewReassignment}
-              leaveRequests={leaveRequests}
-              onReviewLeave={handleReviewLeave}
-            />
-          )}
+            {activeTab === 'management_dashboard' && (
+              <ManagementDashboard
+                reports={displayedReports}
+                activities={activities}
+                onUpdateStatus={handleUpdateStatus}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                reassignmentRequests={reassignmentRequests}
+                onReviewReassignment={handleReviewReassignment}
+                leaveRequests={leaveRequests}
+                onReviewLeave={handleReviewLeave}
+              />
+            )}
 
-          {activeTab === 'admin_dashboard' && (
-            <AdminDashboard
-              reports={displayedReports}
-              blocks={blocks}
-              activities={activities}
-              credentials={credentials}
-              onUpdateCredentials={handleUpdateCredentials}
-              onUpdateUserRole={handleUpdateUserRole}
-              onAssignTeam={handleAssignTeam}
-              onUpdateStatus={handleUpdateStatus}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-            />
-          )}
+            {activeTab === 'admin_dashboard' && (
+              <AdminDashboard
+                reports={displayedReports}
+                blocks={blocks}
+                activities={activities}
+                credentials={credentials}
+                onUpdateCredentials={handleUpdateCredentials}
+                onUpdateUserRole={handleUpdateUserRole}
+                onAssignTeam={handleAssignTeam}
+                onUpdateStatus={handleUpdateStatus}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+              />
+            )}
 
-          {/* OTHER ROLE-SPECIFIC / SHARED MODULE VIEWS */}
-          {activeTab === 'heatisland' && (
-            <HeatIslandMapView />
-          )}
+            {/* OTHER ROLE-SPECIFIC / SHARED MODULE VIEWS */}
+            {activeTab === 'heatisland' && (
+              <HeatIslandMapView />
+            )}
 
-          {activeTab === 'pipeline' && (
-            <PipelineVisualizer />
-          )}
+            {activeTab === 'pipeline' && (
+              <PipelineVisualizer />
+            )}
 
-          {activeTab === 'cctv_pipeline' && (
-            <CctvPipelineDashboard
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-            />
-          )}
+            {activeTab === 'cctv_pipeline' && (
+              <CctvPipelineDashboard
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              />
+            )}
 
-          {activeTab === 'map' && (
-            <CampusMap
-              reports={displayedReports}
-              blocks={blocks}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
-              userRole={userRole}
-            />
-          )}
+            {activeTab === 'map' && (
+              <CampusMap
+                reports={displayedReports}
+                blocks={blocks}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+                userRole={userRole}
+              />
+            )}
 
-          {activeTab === 'maintenance' && (
-            <MaintenanceManagementPanel
-              reports={displayedReports}
-              activities={activities}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-            />
-          )}
+            {activeTab === 'maintenance' && (
+              <MaintenanceManagementPanel
+                reports={displayedReports}
+                activities={activities}
+                onUpdateStatus={handleUpdateStatus}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+              />
+            )}
 
-          {activeTab === 'feed' && (
-            <LiveFeedView
-              reports={displayedReports}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-            />
-          )}
+            {activeTab === 'feed' && (
+              <LiveFeedView
+                reports={displayedReports}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+              />
+            )}
 
-          {activeTab === 'planning' && (
-            <PlanningBoardView />
-          )}
+            {activeTab === 'planning' && (
+              <PlanningBoardView />
+            )}
 
-          {activeTab === 'analytics' && (
-            <AnalyticsView reports={reports} />
-          )}
+            {activeTab === 'analytics' && (
+              <AnalyticsView reports={reports} />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 

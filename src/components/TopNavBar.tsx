@@ -16,7 +16,8 @@ import {
   LogOut,
   Shield,
   BadgeCheck,
-  Server
+  Server,
+  Menu
 } from 'lucide-react';
 import { ActivityEvent, UserRole, UserProfile } from '../types';
 
@@ -31,6 +32,8 @@ interface TopNavBarProps {
   onOpenAccountSwitcher?: () => void;
   onSignOut?: () => void;
   backendOnline?: boolean;
+  isMobileMenuOpen?: boolean;
+  onToggleMobileMenu?: () => void;
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = ({
@@ -43,7 +46,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   currentProfile,
   onOpenAccountSwitcher,
   onSignOut,
-  backendOnline
+  backendOnline,
+  isMobileMenuOpen,
+  onToggleMobileMenu
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -92,8 +97,17 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   return (
     <header className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 md:px-8 h-16 bg-[#ffffff] border-b border-[#c3c6d1] shadow-xs">
       {/* Brand Logo / Title & Active Persona Badge */}
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs ${roleMeta.iconColor}`}>
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Mobile Sidebar Hamburger Toggle */}
+        <button
+          onClick={onToggleMobileMenu}
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 md:hidden cursor-pointer mr-1"
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs flex-shrink-0 ${roleMeta.iconColor}`}>
           {userRole === 'student' ? (
             <GraduationCap className="w-5 h-5" />
           ) : userRole === 'bvg_worker' || userRole === 'operator' ? (

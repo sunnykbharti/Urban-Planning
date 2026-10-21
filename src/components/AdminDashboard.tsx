@@ -265,6 +265,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>Manage Password &amp; Login Credentials</span>
           </button>
         </div>
+
+        {/* Quick Access to Operational Intelligence */}
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 overflow-x-auto text-[11px]">
+          <span className="text-purple-300/80 font-bold uppercase tracking-wider text-[10px] mr-1 flex-shrink-0">
+            Direct Jump:
+          </span>
+          <button
+            onClick={() => onNavigateToTab('cctv_pipeline')}
+            className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-400/20 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <Layers className="w-3 h-3 text-indigo-300" />
+            <span>CCTV AI Pipeline</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('map')}
+            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-white border border-white/10 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <MapPin className="w-3 h-3 text-purple-300" />
+            <span>Campus GIS Map</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('heatisland')}
+            className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/20 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <Flame className="w-3 h-3 text-rose-300" />
+            <span>Heat Island Analysis</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('analytics')}
+            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/20 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <BarChart3 className="w-3 h-3 text-emerald-300" />
+            <span>SWM Analytics</span>
+          </button>
+        </div>
       </div>
 
       {/* ========================================================================= */}

@@ -30,6 +30,7 @@ import {
   Scan
 } from 'lucide-react';
 import { LeafletCampusMap } from './LeafletCampusMap';
+import { resolveMediaUrl } from '../api/client';
 
 interface StudentDashboardProps {
   reports: MaintenanceReport[];
@@ -439,9 +440,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div className="relative rounded-lg overflow-hidden bg-slate-100 aspect-video border border-slate-200">
                           <img 
-                            src={report.beforeImageUrl || report.imageUrl || 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'} 
+                            src={resolveMediaUrl(report.beforeImageUrl || report.imageUrl) || 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'} 
                             alt="Before" 
                             className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80';
+                            }}
                           />
                           <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                             BEFORE
@@ -452,9 +456,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           {isResolved ? (
                             <>
                               <img 
-                                src={report.afterImageUrl || 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=600&q=80'} 
+                                src={resolveMediaUrl(report.afterImageUrl) || 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=600&q=80'} 
                                 alt="After Verification" 
                                 className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=600&q=80';
+                                }}
                               />
                               <span className="absolute bottom-1 left-1 bg-emerald-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                 <ShieldCheck className="w-2.5 h-2.5" /> VERIFIED

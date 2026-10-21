@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { MaintenanceReport } from '../types';
+import { resolveMediaUrl } from '../api/client';
 
 interface LiveFeedViewProps {
   reports: MaintenanceReport[];
@@ -104,9 +105,12 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
               <div className="relative h-44 bg-[#dee8ff] overflow-hidden">
                 {(report.beforeImageUrl || report.imageUrl) ? (
                   <img
-                    src={report.beforeImageUrl || report.imageUrl}
+                    src={resolveMediaUrl(report.beforeImageUrl || report.imageUrl)}
                     alt={report.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80';
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#737780]">

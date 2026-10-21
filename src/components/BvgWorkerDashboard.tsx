@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { LeafletCampusMap } from './LeafletCampusMap';
 import { samplePhotos } from '../data/mockData';
+import { resolveMediaUrl } from '../api/client';
 
 interface BvgWorkerDashboardProps {
   reports: MaintenanceReport[];
@@ -378,7 +379,14 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                         {/* Thumbnail */}
                         <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 relative">
                           {report.imageUrl ? (
-                            <img src={report.imageUrl} alt={report.title} className="w-full h-full object-cover" />
+                            <img 
+                              src={resolveMediaUrl(report.imageUrl)} 
+                              alt={report.title} 
+                              className="w-full h-full object-cover" 
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80';
+                              }}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400">
                               <Camera className="w-5 h-5" />
@@ -687,7 +695,14 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                   </div>
                   <div className="h-44 rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
                     {ticketToVerify.imageUrl ? (
-                      <img src={ticketToVerify.imageUrl} alt="Before cleanup" className="w-full h-full object-cover" />
+                      <img 
+                        src={resolveMediaUrl(ticketToVerify.imageUrl)} 
+                        alt="Before cleanup" 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
                         No before photo

@@ -15,6 +15,7 @@ import {
   getReportSeverityColor, 
   getReportLatLng 
 } from '../data/csjmuGeoData';
+import { resolveMediaUrl } from '../api/client';
 import { 
   Layers, 
   Compass, 
@@ -373,7 +374,7 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
           ${report.imageUrl ? `
             <div class="mb-2.5 rounded-lg overflow-hidden border border-slate-200 h-28 bg-slate-100">
-              <img src="${report.imageUrl}" alt="${report.title}" class="w-full h-full object-cover" />
+              <img src="${resolveMediaUrl(report.imageUrl)}" alt="${report.title}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'" />
             </div>
           ` : ''}
 
