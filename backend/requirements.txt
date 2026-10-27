@@ -5,4 +5,7 @@ python-dotenv==1.0.1
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.9
 pillow>=10.0.0
-numpy>=1.24.0
+numpy>=1.24.0,<2.1.0
+opencv-python-headless>=4.8.0
+onnxruntime>=1.16.0
+pyyaml>=6.0.0

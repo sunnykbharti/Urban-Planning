@@ -170,7 +170,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5057, longitude: 80.2715 },
     createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     timeAgo: '1 hr ago',
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/pavement_debris.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Sunny Bharti',
@@ -204,7 +204,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5024, longitude: 80.2679 },
     createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
     timeAgo: '4 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/overflow_bin.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Sunny Bharti',
@@ -267,7 +267,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5013, longitude: 80.2654 },
     createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
     timeAgo: '7 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/pavement_debris.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Er. Sandeep Pandey',
@@ -302,7 +302,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5029, longitude: 80.2660 },
     createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
     timeAgo: '9 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/drain_silt.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Sunny Bharti',
@@ -330,7 +330,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5000, longitude: 80.2706 },
     createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
     timeAgo: '18 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/cctv_bench.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Sunny Bharti',
@@ -365,7 +365,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5033, longitude: 80.2693 },
     createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
     timeAgo: '20 hrs ago',
-    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/overflow_bin.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Er. R. K. Sharma',
@@ -394,7 +394,7 @@ export const initialReports: MaintenanceReport[] = [
     gps: { latitude: 26.5020, longitude: 80.2687 },
     createdAt: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
     timeAgo: '1.5 days ago',
-    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/sample-incidents/drain_silt.jpg',
     assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
     reportedBy: {
       name: 'Sunny Bharti',
@@ -527,39 +527,27 @@ export const initialProjects: PlanningProject[] = [
 export const samplePhotos = [
   {
     title: 'Severe Overflowing Waste Bin',
-    url: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
+    url: '/sample-incidents/overflow_bin.jpg',
     category: 'garbage' as const,
     suggestedTitle: 'Critical Waste Bin Overflow & Ground Spillage'
   },
   {
-    title: 'Plastic Litter Pile on Lawn',
-    url: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=800&q=80',
-    category: 'garbage' as const,
-    suggestedTitle: 'Scattered Plastic Litter & Food Wrappers'
-  },
-  {
     title: 'Blocked Drain Silt & Waste',
-    url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    url: '/sample-incidents/drain_silt.jpg',
     category: 'waterlogging' as const,
-    suggestedTitle: 'Blocked Storm Drain Clogged with Solid Waste'
+    suggestedTitle: 'Blocked Storm Drain Clogged with Solid Silt'
   },
   {
-    title: 'Cracked Pavement / Road Hazard',
-    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
+    title: 'Bench & Campus Fixture Damage',
+    url: '/sample-incidents/cctv_bench.jpg',
     category: 'infrastructure' as const,
-    suggestedTitle: 'Cracked Walkway Fissure'
+    suggestedTitle: 'Campus Pathway Fixture Defect'
   },
   {
-    title: 'Basement Pipe Drip / Plumbing',
-    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBNz9kmKjs6xYEvNxTTRpzZZPl45MCRBjF5R8Y1Stw1P-6sNpm3xZvKlnHVVpTg6t55BMjLa7nxjO0HpMzHPTMJTbN1BB6vrIJWzoaPti2JTyECXgoOjODV9SnPsygTO7zq89eTelmoh4vZ1yZ9m-bc6LZtkf4SGKId8INwdgu73SbrbilYhDyQJyfD1S5BPpwYiNgo9VVFt5J2-Ry7vmNB4fwzldaPB0EFNg_suR-dzMo_uD8R1FEQ',
-    category: 'plumbing' as const,
-    suggestedTitle: 'Overhead Pipe Drip & Puddle'
-  },
-  {
-    title: 'Electrical Panel / Wiring Spark',
-    url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-    category: 'electrical' as const,
-    suggestedTitle: 'Flickering Light & Exposed Ballast'
+    title: 'Pavement Debris & Construction Hazard',
+    url: '/sample-incidents/pavement_debris.jpg',
+    category: 'infrastructure' as const,
+    suggestedTitle: 'Pavement Hazard & Masonry Waste'
   }
 ];
 

@@ -92,15 +92,15 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
   const cleanSamplePhotos = [
     {
       title: 'Cleaned Pathway & Bagged Waste',
-      url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80'
+      url: '/sample-incidents/pavement_debris.jpg'
     },
     {
       title: 'Empty Washed Waste Container',
-      url: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80'
+      url: '/sample-incidents/overflow_bin.jpg'
     },
     {
       title: 'Desilted Dry Drain Basin',
-      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'
+      url: '/sample-incidents/drain_silt.jpg'
     }
   ];
 
@@ -315,7 +315,7 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                   </span>
                 </h3>
                 <p className="text-xs text-slate-500">
-                  ⚠️ Status can ONLY be resolved after uploading proof and passing AI Image Verification.
+                  Mandatory: Status can only be resolved after uploading proof and passing AI Image Verification.
                 </p>
               </div>
 
@@ -384,7 +384,7 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                               alt={report.title} 
                               className="w-full h-full object-cover" 
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80';
+                                (e.target as HTMLImageElement).src = '/sample-incidents/overflow_bin.jpg';
                               }}
                             />
                           ) : (
@@ -593,10 +593,10 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                 <p className="text-xl font-black text-amber-900 mt-0.5">3 Days</p>
                 <span className="text-[10px] text-amber-600">Available</span>
               </div>
-              <div className="bg-purple-50/60 border border-purple-200 p-3 rounded-xl text-center">
-                <span className="text-[10px] uppercase font-bold text-purple-700">Duty Shifts</span>
-                <p className="text-xl font-black text-purple-900 mt-0.5">26/30</p>
-                <span className="text-[10px] text-purple-600">Present</span>
+              <div className="bg-slate-100/70 border border-slate-200 p-3 rounded-xl text-center">
+                <span className="text-[10px] uppercase font-bold text-slate-700">Duty Shifts</span>
+                <p className="text-xl font-black text-slate-900 mt-0.5">26/30</p>
+                <span className="text-[10px] text-slate-600">Present</span>
               </div>
             </div>
 
@@ -637,14 +637,14 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                         )}
                       </div>
 
-                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-center ${
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md whitespace-nowrap self-start sm:self-center ${
                         req.status === 'approved' 
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
                           : req.status === 'rejected'
                           ? 'bg-red-100 text-red-800 border border-red-300'
                           : 'bg-amber-100 text-amber-800 border border-amber-300'
                       }`}>
-                        {req.status === 'approved' ? '✓ Approved' : req.status === 'rejected' ? '✕ Rejected' : '⏳ Pending Approval'}
+                        {req.status === 'approved' ? 'Approved' : req.status === 'rejected' ? 'Rejected' : 'Pending Approval'}
                       </span>
                     </div>
                   ))
@@ -700,7 +700,7 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
                         alt="Before cleanup" 
                         className="w-full h-full object-cover" 
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80';
+                          (e.target as HTMLImageElement).src = '/sample-incidents/overflow_bin.jpg';
                         }}
                       />
                     ) : (

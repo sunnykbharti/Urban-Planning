@@ -1,0 +1,223 @@
+# ==============================================================================
+# CSJMU Kanpur (UIET) Civic Operations - CCTV AI Pipeline Configuration
+# Standard University Deployment: CPU only, 8GB RAM, Offline Capable
+# ==============================================================================
+
+system:
+  demo_mode: false                    # Set true to use sample images if cameras are unreachable
+  timezone: "Asia/Kolkata"             # Enforced consistent timezone
+  random_seed: 42                      # Deterministic RNG seed for stratified scheduler
+  device: "cpu"
+  thread_pool_workers: 4               # Parallel camera sweep workers
+
+model:
+  model_path: "models/yolov8n.onnx"
+  model_name: "YOLOv8n-ONNX"
+  model_version: "v8.4.58-cpu"
+  input_size: 640
+  classes:
+    - "bin_empty"
+    - "bin_partial"
+    - "bin_full"
+    - "overflow"
+    - "litter_pile"
+    - "blocked_drain"
+
+  confidence_thresholds:
+    overflow: 0.60
+    litter_pile: 0.55
+    blocked_drain: 0.55
+    bin_full: 0.65
+    bin_partial: 0.60
+    bin_empty: 0.70
+
+  tiling:
+    enabled: true                      # Slice wide-angle CCTV shots into overlapping tiles
+    tile_size: 640
+    overlap_ratio: 0.20
+    nms_iou_threshold: 0.45
+
+frame_acquisition:
+  burst_size: 3                        # Grab 3 frames per sweep per camera
+  burst_interval_seconds: 6            # ~6 seconds between burst frames
+  temporal_iou_threshold: 0.30         # Min IoU for matching detection in temporal burst
+  min_confirmed_frames: 2              # Need detection in >= 2 of 3 frames to confirm
+  connection_timeout_seconds: 4        # Per-camera connection timeout
+  read_timeout_seconds: 4
+  max_retries: 2
+  backoff_seconds: 0.5
+
+  quality_filter:
+    min_laplacian_variance: 50.0       # Below this = blurred frame
+    min_mean_luminance: 25.0           # Below this = night/IR low light
+    max_mean_luminance: 240.0          # Above this = over-exposed
+
+privacy:
+  anonymize_faces: true                # Blur human faces & pedestrians before saving
+  captures_dir: "captures"
+  retention_days: 7                    # Auto-delete captures older than 7 days
+  ticket_expiry_hours: 48              # Old open incidents do not block cameras forever
+
+scheduler:
+  start_hour: 6
+  end_hour: 22
+  edge_buffer_minutes: 25
+  schedule_persistence_path: "data/cctv_sweeps_schedule.json"
+  strata:
+    - name: "Morning Pre-Class Audit"
+      start: 6
+      end: 10
+      window: "06:00 - 10:00"
+      desc: "Inspects overnight bin overflow and hostel waste prior to student arrival"
+    - name: "Noon Lunch & Canteen Peak"
+      start: 10
+      end: 14
+      window: "10:00 - 14:00"
+      desc: "Scans food kiosks, UIET canteen perimeter, and student lawns"
+    - name: "Post-Afternoon Dispersal"
+      start: 14
+      end: 18
+      window: "14:00 - 18:00"
+      desc: "Audits sports pavilion, library walkway, and academic corridors"
+    - name: "Evening Campus Wrap-Up"
+      start: 18
+      end: 22
+      window: "18:00 - 22:00"
+      desc: "Checks hostel mess perimeters, night library gates, and street bins"
+
+credentials:
+  default_username: "${CCTV_USER:-admin}"
+  default_password: "${CCTV_PASS:-pass123}"
+
+cameras:
+  - id: "CAM-UIET-01"
+    name: "UIET Block-3 Canteen & Concourse Camera"
+    location: "UIET Block-3 Canteen Exit"
+    zoneId: "zone-academic"
+    zoneName: "Academic Precinct (UIET Campus)"
+    ward: "Ward 4 - Academic Division"
+    coordinates: { x: 38, y: 42 }
+    gps: { latitude: 26.4952, longitude: 80.2921 }
+    resolution: "1080p (1920x1080)"
+    inferenceInputSize: 640
+    streamType: "SUB_STREAM_RTSP"
+    channelId: "102"
+    fps: 15
+    status: "ONLINE"
+    ipAddress: "10.20.4.101"
+    installedHeightMeters: 4.5
+    metersPerPixel: 0.0075             # Ground resolution at focal area (~7.5mm/px)
+    roiPolygon: [[0.05, 0.20], [0.95, 0.20], [0.95, 0.95], [0.05, 0.95]]
+    sampleImages:
+      overflow: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80"
+      litter_pile: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=800&q=80"
+      clean: "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"
+
+  - id: "CAM-LIB-02"
+    name: "Central Library Plaza & Front Lawn Cam"
+    location: "Central Library Main Entrance Plaza"
+    zoneId: "zone-library"
+    zoneName: "Central Library & Administrative Block"
+    ward: "Ward 2 - Central Secretariat"
+    coordinates: { x: 58, y: 36 }
+    gps: { latitude: 26.4965, longitude: 80.2940 }
+    resolution: "1080p (1920x1080)"
+    inferenceInputSize: 640
+    streamType: "SUB_STREAM_RTSP"
+    channelId: "102"
+    fps: 15
+    status: "ONLINE"
+    ipAddress: "10.20.2.102"
+    installedHeightMeters: 5.0
+    metersPerPixel: 0.0085
+    roiPolygon: [[0.05, 0.15], [0.95, 0.15], [0.95, 0.95], [0.05, 0.95]]
+    sampleImages:
+      overflow: "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80"
+      clean: "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"
+
+  - id: "CAM-WS-03"
+    name: "Workshop Gate & Storm Drainage Cam"
+    location: "Central Mechanical Workshop North Drain"
+    zoneId: "zone-workshop"
+    zoneName: "Engineering Workshop & Utility Precinct"
+    ward: "Ward 5 - Industrial & Utilities"
+    coordinates: { x: 26, y: 58 }
+    gps: { latitude: 26.4938, longitude: 80.2895 }
+    resolution: "720p (1280x720)"
+    inferenceInputSize: 640
+    streamType: "SUB_STREAM_RTSP"
+    channelId: "102"
+    fps: 15
+    status: "ONLINE"
+    ipAddress: "10.20.5.103"
+    installedHeightMeters: 4.0
+    metersPerPixel: 0.0090
+    roiPolygon: [[0.00, 0.10], [1.00, 0.10], [1.00, 1.00], [0.00, 1.00]]
+    sampleImages:
+      blocked_drain: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=800&q=80"
+      clean: "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"
+
+  - id: "CAM-HST-04"
+    name: "Ramanujan Boys Hostel Mess Quadrangle Cam"
+    location: "Hostel Sector Dining Hall Walkway"
+    zoneId: "zone-hostels"
+    zoneName: "Residential & Student Hostels Sector"
+    ward: "Ward 7 - Student Residences"
+    coordinates: { x: 78, y: 62 }
+    gps: { latitude: 26.4980, longitude: 80.2985 }
+    resolution: "1080p (1920x1080)"
+    inferenceInputSize: 640
+    streamType: "SUB_STREAM_RTSP"
+    channelId: "102"
+    fps: 15
+    status: "ONLINE"
+    ipAddress: "10.20.7.104"
+    installedHeightMeters: 6.0
+    metersPerPixel: 0.0100
+    roiPolygon: [[0.10, 0.20], [0.90, 0.20], [0.90, 0.95], [0.10, 0.95]]
+    sampleImages:
+      litter_pile: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80"
+      clean: "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"
+
+  - id: "CAM-STAD-05"
+    name: "University Stadium & Sports Pavilion Cam"
+    location: "Main Sports Pavilion South Bleachers"
+    zoneId: "zone-sports"
+    zoneName: "Campus Sports Complex & Grounds"
+    ward: "Ward 6 - Recreation & Athletics"
+    coordinates: { x: 82, y: 30 }
+    gps: { latitude: 26.4945, longitude: 80.2960 }
+    resolution: "720p (1280x720)"
+    inferenceInputSize: 640
+    streamType: "SUB_STREAM_RTSP"
+    channelId: "102"
+    fps: 15
+    status: "ONLINE"
+    ipAddress: "10.20.6.105"
+    installedHeightMeters: 7.5
+    metersPerPixel: 0.0120
+    roiPolygon: [[0.05, 0.25], [0.95, 0.25], [0.95, 0.95], [0.05, 0.95]]
+    sampleImages:
+      overflow: "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80"
+      clean: "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"
+
+  - id: "CAM-ADMIN-06"
+    name: "VC Secretariat & Administrative Courtyard Cam"
+    location: "Administrative Building VIP Porch"
+    zoneId: "zone-library"
+    zoneName: "Central Library & Administrative Block"
+    ward: "Ward 2 - Central Secretariat"
+    coordinates: { x: 52, y: 28 }
+    gps: { latitude: 26.4970, longitude: 80.2935 }
+    resolution: "1080p (1920x1080)"
+    inferenceInputSize: 640
+    streamType: "HTTP_SNAPSHOT_ISAPI"
+    channelId: "101"
+    fps: 15
+    status: "ONLINE"
+    ipAddress: "10.20.2.106"
+    installedHeightMeters: 5.5
+    metersPerPixel: 0.0080
+    roiPolygon: [[0.05, 0.15], [0.95, 0.15], [0.95, 0.95], [0.05, 0.95]]
+    sampleImages:
+      clean: "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80"

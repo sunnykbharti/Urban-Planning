@@ -20,7 +20,12 @@ import {
   CheckCircle2,
   Calendar,
   KeyRound,
-  UserCheck
+  UserCheck,
+  Scale,
+  FileText,
+  ShieldCheck,
+  Activity,
+  Video
 } from 'lucide-react';
 import { ActiveTab, UserRole } from '../types';
 
@@ -69,7 +74,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         />
       )}
 
-      <aside className={`fixed left-0 top-0 h-full w-[240px] z-40 pt-20 pb-6 flex flex-col justify-between bg-[#ffffff] border-r border-[#c3c6d1] transition-transform duration-200 ${
+      <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-[240px] z-40 pt-4 pb-6 flex flex-col justify-between bg-[#ffffff] border-r border-[#c3c6d1] transition-transform duration-200 ${
         isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
       }`}>
         {/* Top Section */}
@@ -79,12 +84,12 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-xs overflow-hidden flex-shrink-0 ${
                 isStudent 
-                  ? 'bg-gradient-to-br from-emerald-600 to-teal-700' 
+                  ? 'bg-[#001e40]' 
                   : isBvg
-                  ? 'bg-gradient-to-br from-amber-600 to-orange-700'
+                  ? 'bg-amber-600'
                   : isManagement
-                  ? 'bg-gradient-to-br from-blue-700 to-indigo-900'
-                  : 'bg-gradient-to-br from-purple-800 to-slate-900'
+                  ? 'bg-blue-700'
+                  : 'bg-slate-900 border border-slate-700'
               }`}>
                 {isStudent ? (
                   <GraduationCap className="w-5 h-5 text-white" />
@@ -93,15 +98,15 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 ) : isManagement ? (
                   <Building2 className="w-5 h-5 text-blue-200" />
                 ) : (
-                  <span className="text-base">👑</span>
+                  <ShieldCheck className="w-5 h-5 text-slate-200" />
                 )}
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-black text-[#001e40] leading-tight truncate">
-                  {isStudent ? 'Student Hub' : isBvg ? 'BVG Worker' : isManagement ? 'Management' : 'Super Admin'}
+                  {isStudent ? 'Citizen Portal' : isBvg ? 'Field Operations' : isManagement ? 'Estate Directorate' : 'Campus Operations'}
                 </h2>
                 <p className="text-[11px] text-[#737780] font-semibold truncate">
-                  {isStudent ? 'CSJMU Citizen' : isBvg ? 'Field Sanitation' : isManagement ? 'Estate Directorate' : 'Master IT HQ'}
+                  UIET Kanpur Precinct
                 </p>
               </div>
             </div>
@@ -147,6 +152,24 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 >
                   <Home className={`w-4 h-4 ${activeTab === 'student_dashboard' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
                   <span>Incident Dashboard</span>
+                </button>
+
+                <button
+                  id="nav-operations-console"
+                  onClick={() => handleTabClick('operations')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                    activeTab === 'operations'
+                      ? 'bg-blue-50 text-blue-900 border-r-4 border-blue-700 shadow-xs'
+                      : 'text-[#43474f] hover:bg-blue-50/60 hover:text-blue-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Activity className={`w-4 h-4 ${activeTab === 'operations' ? 'text-blue-700' : 'text-[#737780]'}`} />
+                    <span>Operations Console</span>
+                  </div>
+                  <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded">
+                    LIVE
+                  </span>
                 </button>
 
                 <button
@@ -206,6 +229,21 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 </button>
 
                 <button
+                  id="nav-bvg-operations-console"
+                  onClick={() => handleTabClick('operations')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
+                    activeTab === 'operations'
+                      ? 'bg-amber-50 text-amber-900 border-r-4 border-amber-600 shadow-xs'
+                      : 'text-[#43474f] hover:bg-amber-50/60 hover:text-amber-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Activity className={`w-4 h-4 ${activeTab === 'operations' ? 'text-amber-700' : 'text-[#737780]'}`} />
+                    <span>Operations Hub</span>
+                  </div>
+                </button>
+
+                <button
                   id="nav-bvg-map"
                   onClick={() => handleTabClick('map')}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
@@ -246,11 +284,11 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                   onClick={() => handleTabClick('admin_dashboard')}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all text-left ${
                     activeTab === 'admin_dashboard'
-                      ? 'bg-purple-50 text-purple-900 border-r-4 border-purple-700 shadow-xs'
-                      : 'text-[#43474f] hover:bg-purple-50/60 hover:text-purple-900'
+                      ? 'bg-slate-100 text-slate-900 border-r-4 border-[#001e40] shadow-xs'
+                      : 'text-[#43474f] hover:bg-slate-100/70 hover:text-slate-900'
                   }`}
                 >
-                  <Shield className={`w-4 h-4 ${activeTab === 'admin_dashboard' ? 'text-purple-700' : 'text-[#737780]'}`} />
+                  <Shield className={`w-4 h-4 ${activeTab === 'admin_dashboard' ? 'text-[#001e40]' : 'text-[#737780]'}`} />
                   <span>Admin Console</span>
                 </button>
               </>
@@ -343,22 +381,46 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           </nav>
         </div>
 
-      {/* Bottom Footer Actions & Authenticated Session Badge */}
-      <div className="flex flex-col gap-1.5 px-3 border-t border-[#e7eeff] pt-3">
+      {/* Bottom Footer Actions & Policy Links */}
+      <div className="flex flex-col gap-1 px-3 border-t border-[#e7eeff] pt-2.5">
+        <button
+          id="nav-terms"
+          onClick={() => handleTabClick('terms')}
+          className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide text-left transition-colors cursor-pointer ${
+            activeTab === 'terms' ? 'bg-[#001e40] text-white font-bold' : 'text-[#43474f] hover:bg-slate-100 hover:text-[#001e40]'
+          }`}
+        >
+          <Scale className="w-3.5 h-3.5 text-slate-500" />
+          <span>Terms &amp; Conditions</span>
+        </button>
+
+        <button
+          id="nav-privacy"
+          onClick={() => handleTabClick('privacy')}
+          className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide text-left transition-colors cursor-pointer ${
+            activeTab === 'privacy' ? 'bg-[#001e40] text-white font-bold' : 'text-[#43474f] hover:bg-slate-100 hover:text-[#001e40]'
+          }`}
+        >
+          <Shield className="w-3.5 h-3.5 text-slate-500" />
+          <span>Privacy Policy</span>
+        </button>
+
         {/* Settings */}
         <button
           id="nav-settings"
           onClick={onOpenSettings}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase text-[#43474f] hover:bg-[#e7eeff] hover:text-[#001e40] transition-colors text-left cursor-pointer"
+          className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide text-[#43474f] hover:bg-slate-100 hover:text-[#001e40] transition-colors text-left cursor-pointer"
         >
-          <Settings className="w-4 h-4 text-[#737780]" />
-          <span>Settings</span>
+          <Settings className="w-3.5 h-3.5 text-slate-500" />
+          <span>Portal Settings</span>
         </button>
 
-        {/* Authenticated Identity Pill & Switch Account trigger */}
+        {/* Authenticated Identity Card & Switch Account trigger */}
         <div className="mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-lg flex-shrink-0">{currentProfile?.avatar || '👤'}</span>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-[#001e40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+              {currentProfile?.avatar || (isStudent ? 'SB' : isBvg ? 'RK' : isManagement ? 'RS' : 'VC')}
+            </div>
             <div className="min-w-0">
               <p className="text-[11px] font-bold text-slate-800 truncate leading-tight">
                 {currentProfile?.name || (isStudent ? 'Sunny Bharti' : isBvg ? 'Ramesh Kumar' : isManagement ? 'Er. R. K. Sharma' : 'Prof. A. K. Shukla')}
@@ -380,6 +442,56 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         </div>
       </div>
     </aside>
+
+    {/* Mobile Bottom Navigation Bar (visible only on mobile < md) */}
+    <nav className="fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-slate-200 z-30 flex items-center justify-around px-2 md:hidden">
+      <button
+        onClick={() => handleTabClick(isStudent ? 'student_dashboard' : isBvg ? 'bvg_dashboard' : isManagement ? 'management_dashboard' : 'admin_dashboard')}
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-semibold transition-colors ${
+          activeTab.includes('dashboard') ? 'text-blue-700' : 'text-slate-500 hover:text-slate-900'
+        }`}
+      >
+        <LayoutGrid className="w-4 h-4" />
+        <span>Hub</span>
+      </button>
+
+      <button
+        onClick={() => handleTabClick('map')}
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-semibold transition-colors ${
+          activeTab === 'map' ? 'text-blue-700' : 'text-slate-500 hover:text-slate-900'
+        }`}
+      >
+        <MapIcon className="w-4 h-4" />
+        <span>Map</span>
+      </button>
+
+      {/* Central Report Action Button */}
+      <button
+        onClick={onOpenReportDrawer}
+        aria-label="Report waste incident"
+        className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-700 hover:bg-blue-800 text-white shadow-md -mt-4 border-2 border-white cursor-pointer active:scale-95 transition-transform"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+
+      <button
+        onClick={() => handleTabClick('feed')}
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-semibold transition-colors ${
+          activeTab === 'feed' ? 'text-blue-700' : 'text-slate-500 hover:text-slate-900'
+        }`}
+      >
+        <Compass className="w-4 h-4" />
+        <span>Alerts</span>
+      </button>
+
+      <button
+        onClick={onOpenSettings}
+        className="flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+      >
+        <Settings className="w-4 h-4" />
+        <span>Settings</span>
+      </button>
+    </nav>
     </>
   );
 };

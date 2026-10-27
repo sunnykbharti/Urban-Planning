@@ -417,33 +417,38 @@ def get_stats():
 @app.route("/api/microclimate/sectors", methods=["GET"])
 def get_microclimate_sectors():
     """Retrieve spatial sectors mapped by LST, Tree Canopy, Density, Pavement, Water, and Pedestrians."""
+    season = request.args.get("season", "pre_monsoon")
     return jsonify({
-        "sectors": heat_island_service.get_sectors()
+        "sectors": heat_island_service.get_sectors(season=season)
     }), 200
 
 @app.route("/api/microclimate/interventions", methods=["GET"])
 def get_microclimate_interventions():
-    """Retrieve 4 Actionable Urban Planning Recommendations."""
+    """Retrieve Actionable Urban Planning Recommendations with site checklists."""
     return jsonify(heat_island_service.get_interventions()), 200
 
 @app.route("/api/microclimate/summary", methods=["GET"])
 def get_microclimate_summary():
-    """Aggregated UHI metrics, temperature ranges, and intervention targets."""
-    return jsonify(heat_island_service.get_summary_metrics()), 200
+    """Aggregated UHI metrics, temperature ranges, and acquisition provenance."""
+    season = request.args.get("season", "pre_monsoon")
+    return jsonify(heat_island_service.get_summary_metrics(season=season)), 200
 
 @app.route("/api/microclimate/simulate", methods=["POST"])
 def simulate_microclimate_mitigation():
     data = request.get_json() or {}
     sector_id = data.get("sectorId", "sec-uiet-courtyard")
     added_trees = int(data.get("addedTrees", 20))
-    cool_pave_pct = float(data.get("coolPavePct", 50.0))
+    # Support physical coolPaveSqm or legacy percentage
+    cool_pave_sqm = float(data.get("coolPaveSqm") or (float(data.get("coolPavePct", 50.0)) * 10.0))
     shade_sqm = float(data.get("shadeSqm", 150.0))
+    season = data.get("season", "pre_monsoon")
 
     simulation_result = heat_island_service.simulate_mitigation(
         sector_id=sector_id,
         added_trees=added_trees,
-        cool_pave_pct=cool_pave_pct,
-        shade_sqm=shade_sqm
+        cool_pave_sqm=cool_pave_sqm,
+        shade_sqm=shade_sqm,
+        season=season
     )
     return jsonify(simulation_result), 200
 
@@ -513,6 +518,6 @@ def get_cctv_pipeline_runs():
     }), 200
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     print(f"🚀 CSJMU Urban Planning Backend (Flask) running on http://127.0.0.1:{port}")
     app.run(host="0.0.0.0", port=port, debug=True)

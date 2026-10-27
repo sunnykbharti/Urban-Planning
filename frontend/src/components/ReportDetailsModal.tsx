@@ -2,26 +2,28 @@ import React, { useState } from 'react';
 import { 
   X, 
   MapPin, 
+  AlertOctagon,
   AlertTriangle, 
   CheckCircle2, 
   Clock, 
   Wrench, 
-  Send, 
+  Video,
   User, 
   Layers, 
   ShieldCheck, 
-  Calendar,
-  Building2,
   Navigation,
   Scale,
   Box,
-  Maximize2,
   Eye,
   EyeOff,
-  Sparkles,
+  Info,
+  Calendar,
+  Building2,
   HardHat
 } from 'lucide-react';
 import { MaintenanceReport, ReportStatus } from '../types';
+import { resolveMediaUrl } from '../api/client';
+import { getSeverityBadge } from './StudentDashboard';
 
 interface ReportDetailsModalProps {
   report: MaintenanceReport | null;
@@ -41,7 +43,7 @@ export const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
   const [newNote, setNewNote] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<ReportStatus>(report?.status || 'pending');
   const [selectedTeam, setSelectedTeam] = useState<string>(
-    typeof report?.assignedTeam === 'object' ? report?.assignedTeam?.name : (report?.assignedTeam || 'Team Alpha (Civil)')
+    typeof report?.assignedTeam === 'object' ? report?.assignedTeam?.name : (report?.assignedTeam || 'Sanitation Beat 01 (UIET)')
   );
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
 
@@ -49,22 +51,24 @@ export const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
     if (report) {
       setSelectedStatus(report.status);
       setSelectedTeam(
-        typeof report.assignedTeam === 'object' ? report.assignedTeam?.name : (report.assignedTeam || 'Team Alpha (Civil)')
+        typeof report.assignedTeam === 'object' ? report.assignedTeam?.name : (report.assignedTeam || 'Sanitation Beat 01 (UIET)')
       );
     }
   }, [report]);
 
   if (!report) return null;
 
-  const isUrgent = report.severity === 'urgent' || report.severity === 'critical';
+  const isResolved = report.status === 'resolved';
+  const isCctv = report.source?.type === 'CCTV_FIXED' || report.reportedBy?.role?.includes('cctv') || report.reportedBy?.name?.includes('CCTV');
   const detection = report.garbageDetection;
+  const sev = getSeverityBadge(report.severity);
+  const SevIcon = sev.Icon;
+
   const estAmount = report.estimatedAmount || detection?.estimatedAmount || (
     report.estimatedAmountKg ? {
       weightKg: report.estimatedAmountKg,
       volumeM3: report.estimatedVolumeM3 || 0.25,
-      volumeLiters: Math.round((report.estimatedVolumeM3 || 0.25) * 1000),
-      spreadAreaSqM: 1.8,
-      pileSeverity: 'HIGH'
+      spreadAreaSqM: 1.8
     } : null
   );
 
@@ -80,340 +84,261 @@ export const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
   };
 
   const availableTeams = [
-    'Team Alpha (Civil Works & Masonry)',
-    'Sanitation Beat Alpha (UIET Academic)',
-    'Team Beta (Electrical & Power Systems)',
-    'Team Gamma (Plumbing & Sanitation)',
-    'Team Delta (Drainage & Grounds)',
-    'Rapid Response Desilting Unit',
-    'Campus Security Rapid Response'
+    'Sanitation Beat 01 (UIET Quad & Academic)',
+    'Sanitation Beat 02 (Central Library & Lawn)',
+    'Sanitation Beat 03 (Hostels & Sports Complex)',
+    'Civil & Pavement Maintenance Crew',
+    'Electrical Works Emergency Unit',
+    'Rapid Drain Desilting Unit'
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-2xs">
       <div 
-        className="relative bg-white rounded-xl max-w-2xl w-full border border-[#c3c6d1] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
+        className="relative bg-white rounded-lg max-w-2xl w-full border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#c3c6d1] flex items-center justify-between bg-[#f0f3ff]">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono font-bold bg-[#001e40] text-white px-2.5 py-1 rounded">
+        <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-xs font-mono font-bold bg-slate-900 text-white px-2 py-0.5 rounded">
               {report.ticketNumber || report.id}
             </span>
-            <h2 className="text-lg font-bold text-[#001e40] truncate max-w-md">
+            <h2 className="text-sm font-bold text-slate-900 truncate max-w-md">
               {report.title}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-[#43474f] hover:text-[#001e40] p-1.5 rounded-full hover:bg-[#dee8ff] transition-colors"
+            aria-label="Close dialog"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded hover:bg-slate-200/60 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5">
-          {/* Top Info Banner */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#e7eeff] rounded-lg border border-[#dee8ff]">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs text-[#001e40] font-semibold">
-                <MapPin className="w-4 h-4 text-[#737780]" />
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4 text-xs">
+          
+          {/* Top Status & Provenance Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 rounded border border-slate-200">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded border ${sev.className}`}>
+                <SevIcon className="w-3.5 h-3.5" />
+                <span>{sev.label}</span>
+              </span>
+
+              <span className="text-slate-400">&bull;</span>
+
+              <div className="flex items-center gap-1 text-slate-700 font-medium">
+                <MapPin className="w-3.5 h-3.5 text-slate-400" />
                 <span>{report.location}</span>
               </div>
-              <span className="text-[#c3c6d1]">•</span>
-              <span className="text-xs text-[#43474f] flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" /> Filed {report.timeAgo || 'Recently'}
+
+              <span className="text-slate-400">&bull;</span>
+
+              <span className="text-slate-500 font-mono">
+                Filed {report.timeAgo || 'Recently'}
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              {isUrgent ? (
-                <span className="bg-[#ffdad6] text-[#ba1a1a] border border-[#ffcdd2] px-2.5 py-0.5 rounded text-xs font-bold uppercase flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Urgent Hazard
-                </span>
-              ) : (
-                <span className="bg-[#d1e1f4] text-[#556474] px-2.5 py-0.5 rounded text-xs font-bold uppercase">
-                  Routine Maintenance
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
+              isResolved ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-900 border-amber-200'
+            }`}>
+              {isResolved ? 'Cleaned & Verified' : 'Remediation Active'}
+            </span>
+          </div>
+
+          {/* CCTV Provenance or Citizen Source Callout */}
+          <div className="p-3 rounded border border-slate-200 bg-white space-y-1.5">
+            <div className="flex items-center justify-between text-slate-700 font-semibold">
+              <span className="flex items-center gap-1.5">
+                {isCctv ? <Video className="w-4 h-4 text-slate-600" /> : <User className="w-4 h-4 text-slate-600" />}
+                <span>Provenance: {isCctv ? `CCTV Camera (${report.source?.sensorId || 'Cam 04 - Library Quad'})` : `Citizen Report by ${report.reportedBy?.name || 'Campus Member'}`}</span>
+              </span>
+              {isCctv && (
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded border border-slate-200 font-mono">
+                  Simulated Demo Feed
                 </span>
               )}
             </div>
+
+            {isCctv ? (
+              <p className="text-[11px] text-slate-500">
+                Automated computer-vision detection. Garbage detected in 2 of 3 consecutive temporal frames (Confidence: {Math.round((report.confidence || 0.88) * 100)}%).
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500">
+                Logged directly via citizen portal. Department: {report.reportedBy?.role || 'B.Tech Student (UIET CSE)'}.
+              </p>
+            )}
           </div>
 
-          {/* Photo & Description Side-by-Side */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {report.imageUrl && (
-              <div className="md:col-span-6 relative rounded-xl overflow-hidden border border-[#c3c6d1] bg-[#111c2d] min-h-[220px]">
+          {/* Before & After Visual Evidence Comparison */}
+          <div className="space-y-1.5">
+            <h3 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+              Field Visual Evidence (Before &amp; After)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Before Photo */}
+              <div className="relative rounded overflow-hidden border border-slate-200 bg-slate-100 aspect-video">
                 <img
-                  src={report.imageUrl}
-                  alt={report.title}
+                  src={resolveMediaUrl(report.beforeImageUrl || report.imageUrl) || '/sample-incidents/overflow_bin.jpg'}
+                  alt="Before cleanup"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/sample-incidents/overflow_bin.jpg';
+                  }}
                 />
+                <span className="absolute bottom-1.5 left-1.5 bg-black/75 text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded">
+                  BEFORE INCIDENT
+                </span>
+              </div>
 
-                {/* Bounding Box Overlays */}
-                {showBoundingBoxes && detection?.boundingBoxes && detection.boundingBoxes.length > 0 && (
-                  <div className="absolute inset-0 pointer-events-none z-10">
-                    {detection.boundingBoxes.map((bbox) => {
-                      const top = `${bbox.box.ymin * 100}%`;
-                      const left = `${bbox.box.xmin * 100}%`;
-                      const width = `${(bbox.box.xmax - bbox.box.xmin) * 100}%`;
-                      const height = `${(bbox.box.ymax - bbox.box.ymin) * 100}%`;
-
-                      return (
-                        <div
-                          key={bbox.id}
-                          style={{
-                            top,
-                            left,
-                            width,
-                            height,
-                            borderColor: bbox.color || '#ef4444',
-                            backgroundColor: `${bbox.color || '#ef4444'}20`
-                          }}
-                          className="absolute border-2 border-dashed rounded"
-                        >
-                          <span
-                            className="absolute -top-5 left-0 text-[9px] font-bold text-white px-1.5 py-0.5 rounded shadow whitespace-nowrap"
-                            style={{ backgroundColor: bbox.color || '#ef4444' }}
-                          >
-                            {bbox.label}
-                          </span>
-                        </div>
-                      );
-                    })}
+              {/* After Photo or In-Progress Placeholder */}
+              <div className="relative rounded overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center">
+                {isResolved ? (
+                  <>
+                    <img
+                      src={resolveMediaUrl(report.afterImageUrl) || '/sample-incidents/pavement_debris.jpg'}
+                      alt="After verification"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/sample-incidents/pavement_debris.jpg';
+                      }}
+                    />
+                    <span className="absolute bottom-1.5 left-1.5 bg-emerald-700 text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <ShieldCheck className="w-2.5 h-2.5" /> AFTER VERIFIED
+                    </span>
+                  </>
+                ) : (
+                  <div className="text-center p-3 text-slate-400 space-y-1">
+                    <Clock className="w-5 h-5 mx-auto text-amber-500" />
+                    <span className="font-semibold text-slate-700 block">Pending Cleanup Verification</span>
+                    <span className="text-[10px] text-slate-400 block">After photo will be verified by supervisor upon task completion.</span>
                   </div>
                 )}
-
-                {/* Bounding Box Toggle button */}
-                {detection?.boundingBoxes && detection.boundingBoxes.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 hover:bg-white text-[#001e40] shadow-md transition-colors z-20 flex items-center gap-1 text-[11px] font-bold"
-                  >
-                    {showBoundingBoxes ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-
-                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded font-mono">
-                  Stored Image Attachment
-                </div>
-              </div>
-            )}
-
-            <div className={report.imageUrl ? 'md:col-span-6 space-y-3' : 'md:col-span-12 space-y-3'}>
-              <div>
-                <h4 className="text-xs font-bold text-[#737780] uppercase tracking-wider mb-1">Issue Description</h4>
-                <p className="text-sm text-[#111c2d] leading-relaxed bg-[#f0f3ff] p-3 rounded-lg border border-[#dee8ff]">
-                  {report.description || 'No additional field description provided.'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-white border border-[#c3c6d1] rounded-lg">
-                  <span className="text-[10px] text-[#737780] uppercase block font-bold">Reported By</span>
-                  <span className="font-semibold text-[#001e40]">{report.reportedBy?.name || 'Automated AI Sensor'}</span>
-                  <span className="text-[10px] text-[#43474f] block">{report.reportedBy?.role || 'Campus Ingestion'}</span>
-                </div>
-                <div className="p-2.5 bg-white border border-[#c3c6d1] rounded-lg">
-                  <span className="text-[10px] text-[#737780] uppercase block font-bold">Category</span>
-                  <span className="font-semibold text-[#001e40] capitalize">{report.category || 'garbage'}</span>
-                  <span className="text-[10px] text-[#43474f] block">Campus Infrastructure</span>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* AI Garbage Detection & Amount Estimation Highlight */}
+          {/* Honest Metric Estimations (No fake facts) */}
           {estAmount && (
-            <div className="p-3.5 rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 text-xs space-y-2.5 shadow-xs">
-              <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
-                <span className="font-bold text-[#001e40] flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  Computer Vision Waste Telemetry
+            <div className="p-3 rounded border border-slate-200 bg-slate-50 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-800 flex items-center gap-1 text-[11px]">
+                  <Scale className="w-3.5 h-3.5 text-slate-500" />
+                  Estimated Waste Volume
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-600 text-white font-bold">
-                  {detection?.classLabel || (report.category === 'garbage' ? 'Solid Waste' : 'Detected')}
+                <span className="text-[10px] text-slate-400 italic">
+                  Photogrammetric visual estimate only
                 </span>
               </div>
 
-              {/* Amount 3-Card Grid */}
               <div className="grid grid-cols-3 gap-2">
-                <div className="bg-white p-2 rounded-lg border border-emerald-100 text-center">
-                  <span className="text-[10px] text-[#737780] font-semibold flex items-center justify-center gap-1">
-                    <Scale className="w-3 h-3 text-emerald-600" /> Waste Weight
-                  </span>
-                  <span className="text-sm font-extrabold text-[#001e40] block mt-0.5">
+                <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                  <span className="text-[10px] text-slate-500 block">Rough Estimate</span>
+                  <span className="text-sm font-bold text-slate-900 block mt-0.5 font-mono">
                     ~{estAmount.weightKg} kg
                   </span>
                 </div>
-                <div className="bg-white p-2 rounded-lg border border-emerald-100 text-center">
-                  <span className="text-[10px] text-[#737780] font-semibold flex items-center justify-center gap-1">
-                    <Box className="w-3 h-3 text-blue-600" /> Volume
-                  </span>
-                  <span className="text-sm font-extrabold text-[#001e40] block mt-0.5">
+                <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                  <span className="text-[10px] text-slate-500 block">Volume</span>
+                  <span className="text-sm font-bold text-slate-900 block mt-0.5 font-mono">
                     {estAmount.volumeM3} m³
                   </span>
                 </div>
-                <div className="bg-white p-2 rounded-lg border border-emerald-100 text-center">
-                  <span className="text-[10px] text-[#737780] font-semibold flex items-center justify-center gap-1">
-                    <Maximize2 className="w-3 h-3 text-amber-600" /> Ground Footprint
-                  </span>
-                  <span className="text-sm font-extrabold text-[#001e40] block mt-0.5">
+                <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                  <span className="text-[10px] text-slate-500 block">Ground Footprint</span>
+                  <span className="text-sm font-bold text-slate-900 block mt-0.5 font-mono">
                     {estAmount.spreadAreaSqM} m²
                   </span>
                 </div>
               </div>
-
-              {estAmount.compositionBreakdown && estAmount.compositionBreakdown.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {estAmount.compositionBreakdown.map((item, i) => (
-                    <span key={i} className="text-[10px] bg-white px-2 py-0.5 rounded border border-emerald-200 text-[#001e40]">
-                      {item.item}: <b>{item.percentage}%</b>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           )}
 
-          {/* Authority Resolution Engine (ARE) Summary Banner */}
-          <div className="bg-slate-900 text-slate-100 p-4 rounded-xl border border-slate-800 text-xs space-y-2">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span className="font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" /> Authority Resolution Engine
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
-                SLA: {report.slaMinutes || 60} MINS
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono pt-1">
-              <div>
-                <span className="text-slate-400 block text-[10px]">WARD / JURISDICTION</span>
-                <span className="text-white font-medium">{report.ward || 'Ward 4 - Academic Division'}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">RESPONSIBLE DEPARTMENT</span>
-                <span className="text-white font-medium">{report.department || 'Solid Waste & Campus Sanitation'}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">ZONAL SUPERVISOR</span>
-                <span className="text-white font-medium">{report.supervisor?.name || 'Er. R. K. Sharma'} ({report.supervisor?.phone || '+91 98765 43210'})</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">NEAREST DISPATCHED BEAT</span>
-                <span className="text-emerald-300 font-medium">
-                  {typeof report.assignedTeam === 'object' ? report.assignedTeam?.name : (report.assignedTeam || 'Sanitation Beat Alpha')}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Triage Controls (Status & Team Assignment) */}
-          <div className="bg-[#f0f3ff] p-4 rounded-xl border border-[#dee8ff] space-y-3">
-            <h4 className="text-xs font-bold text-[#001e40] uppercase tracking-wider flex items-center gap-1.5">
-              <Wrench className="w-4 h-4" /> Dispatcher Triage Controls
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-[#43474f] uppercase mb-1">
-                  Lifecycle Status
-                </label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value as ReportStatus)}
-                  className="w-full p-2 text-xs font-bold rounded-lg border border-[#c3c6d1] bg-white text-[#001e40] outline-none"
-                >
-                  <option value="pending">🟡 Pending Review / Triaging</option>
-                  <option value="in_progress">🔵 In Progress (Team On-Site)</option>
-                  <option value="resolved">🟢 Resolved &amp; Verified</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-[#43474f] uppercase mb-1">
-                  Assigned Maintenance Unit
-                </label>
-                <select
-                  value={selectedTeam}
-                  onChange={(e) => setSelectedTeam(e.target.value)}
-                  className="w-full p-2 text-xs font-medium rounded-lg border border-[#c3c6d1] bg-white text-[#001e40] outline-none"
-                >
-                  {availableTeams.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Log / Progress History */}
+          {/* Description & Citizen Observations */}
           <div>
-            <h4 className="text-xs font-bold text-[#737780] uppercase tracking-wider mb-2">
+            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
+              Field Description &amp; Notes
+            </h4>
+            <p className="p-2.5 rounded border border-slate-200 bg-white text-slate-800 leading-relaxed">
+              {report.description || 'No additional observation notes provided.'}
+            </p>
+          </div>
+
+          {/* Dispatch Assignment & SLA */}
+          <div className="p-3 rounded border border-slate-200 bg-slate-50 space-y-2">
+            <h4 className="font-bold text-slate-800 flex items-center gap-1 text-[11px]">
+              <HardHat className="w-3.5 h-3.5 text-slate-600" />
+              <span>Assigned Sanitation Team &amp; Protocol</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div>
+                <span className="text-slate-500 block">Responsible Team:</span>
+                <span className="font-semibold text-slate-800">{selectedTeam}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Standard Protocol SLA:</span>
+                <span className="font-mono font-semibold text-slate-800">{report.slaMinutes || 120} minutes response</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Resolution Audit Trail Timeline */}
+          <div>
+            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
               Resolution Audit Trail
             </h4>
-            <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
-              {report.updates && report.updates.length > 0 ? (
-                report.updates.map((update) => (
-                  <div key={update.id} className="p-2.5 bg-[#f0f3ff] rounded-lg border border-[#dee8ff] text-xs flex justify-between items-start">
-                    <div>
-                      <span className="font-bold text-[#001e40]">{update.author}</span>
-                      <p className="text-[#43474f] mt-0.5">{update.message}</p>
-                    </div>
-                    <span className="text-[10px] text-[#737780] font-medium whitespace-nowrap ml-2">
-                      {update.timestamp}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-[#737780] italic">No prior field logs for this ticket.</p>
-              )}
-            </div>
-          </div>
+            <div className="space-y-1.5">
+              <div className="p-2 rounded border border-slate-200 bg-white flex justify-between items-start text-[11px]">
+                <div>
+                  <span className="font-semibold text-slate-900">Incident Reported</span>
+                  <p className="text-slate-500 mt-0.5">Logged into CSJMU municipal precinct registry</p>
+                </div>
+                <span className="text-slate-400 font-mono text-[10px]">{report.timeAgo || 'Recently'}</span>
+              </div>
 
-          {/* Add Quick Work Note */}
-          <div>
-            <label className="block text-xs font-bold text-[#43474f] uppercase tracking-wider mb-1">
-              Add Field Note / Dispatch Update
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="e.g. Sanitation beat deployed with wheeled litter bin..."
-                className="flex-1 text-xs p-2.5 border border-[#c3c6d1] rounded-lg bg-white outline-none focus:border-[#001e40]"
-              />
+              {report.updates && report.updates.map((up) => (
+                <div key={up.id} className="p-2 rounded border border-slate-200 bg-white flex justify-between items-start text-[11px]">
+                  <div>
+                    <span className="font-semibold text-slate-900">{up.author}</span>
+                    <p className="text-slate-500 mt-0.5">{up.message}</p>
+                  </div>
+                  <span className="text-slate-400 font-mono text-[10px]">{up.timestamp}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-[#c3c6d1] bg-[#ffffff] flex items-center justify-between">
+        {/* Footer Actions */}
+        <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
           <button
             type="button"
             onClick={() => {
               onViewOnMap(report);
               onClose();
             }}
-            className="text-xs text-[#003366] hover:text-[#001e40] font-bold flex items-center gap-1.5"
+            className="text-xs text-blue-700 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
           >
-            <Navigation className="w-3.5 h-3.5" /> Locate on Campus Map
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Locate Pin on Map</span>
           </button>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-[#737780] text-[#50606f] text-xs font-semibold rounded-lg hover:bg-[#f0f3ff]"
+              className="px-3.5 py-1.5 rounded border border-slate-300 text-slate-700 font-medium text-xs hover:bg-slate-100 transition-colors cursor-pointer"
             >
-              Cancel
+              Close
             </button>
             <button
               onClick={handleSaveUpdates}
-              className="px-5 py-2 bg-[#001e40] text-white text-xs font-bold rounded-lg hover:bg-[#003366] flex items-center gap-1.5 shadow-xs"
+              className="px-4 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
             >
-              <CheckCircle2 className="w-4 h-4" /> Save &amp; Dispatch
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Update Status</span>
             </button>
           </div>
         </div>

@@ -76,7 +76,7 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
           <button
             key={cat}
             onClick={() => setCategoryFilter(cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
               categoryFilter === cat
                 ? 'bg-[#001e40] text-white'
                 : 'bg-white border border-[#c3c6d1] text-[#43474f] hover:bg-[#dee8ff]'
@@ -109,7 +109,7 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
                     alt={report.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80';
+                      (e.target as HTMLImageElement).src = '/sample-incidents/overflow_bin.jpg';
                     }}
                   />
                 ) : (

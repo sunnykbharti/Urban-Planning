@@ -149,7 +149,7 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
     // Boundary tooltip
     boundary.bindTooltip(
-      '<div class="font-bold text-xs text-blue-900">🏛️ CSJMU Kanpur University Perimeter</div>',
+      '<div class="font-bold text-xs text-blue-900">CSJMU Kanpur University Perimeter</div>',
       { sticky: true, className: 'csjmu-boundary-tooltip' }
     );
 
@@ -208,12 +208,29 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
     container.addEventListener('click', handlePopupClick);
 
-    // Fix leaflet tile rendering on initial layout mount
-    setTimeout(() => {
+    // Set campus bounds so UIET, central library, and southern hostels are all in view
+    try {
+      const bounds = L.polygon(CSJMU_CAMPUS_BOUNDARY).getBounds();
+      map.fitBounds(bounds, { padding: [24, 24], maxZoom: 17 });
+    } catch (e) {
+      // fallback
+    }
+
+    // Fix leaflet tile rendering whenever the container resizes
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    });
+    resizeObserver.observe(container);
+
+    const initialTimer = setTimeout(() => {
       map.invalidateSize();
-    }, 250);
+    }, 200);
 
     return () => {
+      clearTimeout(initialTimer);
+      resizeObserver.disconnect();
       container.removeEventListener('click', handlePopupClick);
       map.remove();
       mapRef.current = null;
@@ -262,7 +279,7 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
       marker.bindPopup(`
         <div class="p-1 max-w-[240px]">
           <div class="flex items-center gap-1.5 mb-1 text-blue-900 font-bold text-xs">
-            <span class="text-sm">🏛️</span>
+            <span class="text-xs font-bold text-blue-800 bg-blue-100 px-1 py-0.5 rounded">CIVIC</span>
             <span>${landmark.name}</span>
           </div>
           <p class="text-[11px] text-slate-600 mb-2 leading-relaxed">${landmark.description}</p>
@@ -276,68 +293,91 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
     });
   }, [showLandmarks]);
 
-  // Update Complaint Markers with Red / Yellow / Green Severity Styling
+  // Update Complaint Markers with Red / Yellow / Green Severity Styling & Coordinate Clustering
   useEffect(() => {
     if (!markersLayerRef.current || !mapRef.current) return;
     markersLayerRef.current.clearLayers();
 
-    filteredReports.forEach(report => {
-      const coords = getReportLatLng(report);
-      const sevColor = getReportSeverityColor(report);
-      const config = SEVERITY_CONFIGS[sevColor];
+    // Group reports by proximity key to prevent overlapping markers from occluding each other
+    const coordGroups: Record<string, MaintenanceReport[]> = {};
+    filteredReports.forEach(r => {
+      const raw = getReportLatLng(r);
+      const key = `${raw[0].toFixed(3)}_${raw[1].toFixed(3)}`;
+      if (!coordGroups[key]) coordGroups[key] = [];
+      coordGroups[key].push(r);
+    });
 
-      // Custom HTML Marker matching Severity Color (Red, Yellow, Green)
-      // Red: Urgent pulsing aura
-      // Yellow: Warning beacon
-      // Green: Verified safe / low ring
-      const isUrgent = sevColor === 'red';
-      const isYellow = sevColor === 'yellow';
-      const isGreen = sevColor === 'green';
+    Object.values(coordGroups).forEach(group => {
+      group.forEach((report, indexInGroup) => {
+        const rawCoords = getReportLatLng(report);
+        // Distribute markers in a small petal offset if more than 1 at identical coords
+        let coords: [number, number] = rawCoords;
+        if (group.length > 1) {
+          const angle = (indexInGroup / group.length) * 2 * Math.PI;
+          const offsetRadius = 0.0003; // ~25 meters geographical separation
+          coords = [
+            rawCoords[0] + Math.sin(angle) * offsetRadius,
+            rawCoords[1] + Math.cos(angle) * offsetRadius
+          ];
+        }
 
-      const pulseRing = isUrgent
-        ? `<div class="absolute -inset-2.5 rounded-full bg-red-500/40 animate-ping"></div>`
-        : '';
+        const sevColor = getReportSeverityColor(report);
+        const config = SEVERITY_CONFIGS[sevColor];
 
-      const markerBadgeIcon = isUrgent 
-        ? '!' 
-        : isYellow 
-        ? '⚡' 
-        : '✓';
+        const isUrgent = sevColor === 'red';
+        const isYellow = sevColor === 'yellow';
 
-      const customMarkerHtml = `
-        <div class="relative flex items-center justify-center cursor-pointer group" style="width: 38px; height: 38px;">
-          ${pulseRing}
-          <!-- Outer Halo -->
-          <div 
-            class="absolute inset-0 rounded-full transition-transform group-hover:scale-125 duration-200"
-            style="background: ${config.glowHex}; border: 2px solid ${config.borderHex};"
-          ></div>
-          
-          <!-- Inner Core Pin -->
-          <div 
-            class="relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-white font-extrabold text-xs shadow-lg"
-            style="background: ${config.hex};"
-          >
-            <span>${markerBadgeIcon}</span>
+        const pulseRing = isUrgent
+          ? `<div class="absolute -inset-2.5 rounded-full bg-red-500/40 animate-ping"></div>`
+          : '';
+
+        const markerBadgeIcon = isUrgent 
+          ? '!' 
+          : isYellow 
+          ? '▲' 
+          : '✓';
+
+        const clusterBadge = group.length > 1 && indexInGroup === 0 ? `
+          <div class="absolute -top-2 -right-2 z-20 px-1 py-0.2 bg-slate-900 text-white text-[9px] font-bold rounded-full border border-white">
+            ${group.length}
           </div>
+        ` : '';
 
-          <!-- Bottom Point Indicator -->
-          <div 
-            class="absolute -bottom-1 z-0 w-2 h-2 rotate-45"
-            style="background: ${config.hex};"
-          ></div>
-        </div>
-      `;
+        const customMarkerHtml = `
+          <div class="relative flex items-center justify-center cursor-pointer group" style="width: 38px; height: 38px;">
+            ${pulseRing}
+            ${clusterBadge}
+            <!-- Outer Halo -->
+            <div 
+              class="absolute inset-0 rounded-full transition-transform group-hover:scale-125 duration-200"
+              style="background: ${config.glowHex}; border: 2px solid ${config.borderHex};"
+            ></div>
+            
+            <!-- Inner Core Pin -->
+            <div 
+              class="relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-white font-extrabold text-xs shadow-lg"
+              style="background: ${config.hex};"
+            >
+              <span>${markerBadgeIcon}</span>
+            </div>
 
-      const customIcon = L.divIcon({
-        html: customMarkerHtml,
-        className: `csjmu-complaint-icon csjmu-${sevColor}-icon`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
-        popupAnchor: [0, -20]
-      });
+            <!-- Bottom Point Indicator -->
+            <div 
+              class="absolute -bottom-1 z-0 w-2 h-2 rotate-45"
+              style="background: ${config.hex};"
+            ></div>
+          </div>
+        `;
 
-      const marker = L.marker(coords, { icon: customIcon });
+        const customIcon = L.divIcon({
+          html: customMarkerHtml,
+          className: `csjmu-complaint-icon csjmu-${sevColor}-icon`,
+          iconSize: [38, 38],
+          iconAnchor: [19, 19],
+          popupAnchor: [0, -20]
+        });
+
+        const marker = L.marker(coords, { icon: customIcon });
 
       // Severity Banner Label
       const severityBanner = `
@@ -368,13 +408,13 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
           </h3>
 
           <div class="flex items-center gap-1.5 text-xs text-slate-600 mb-2">
-            <span class="text-slate-400">📍</span>
+            <span class="text-slate-500 font-bold text-[10px]">LOC:</span>
             <span class="font-medium">${report.location}</span>
           </div>
 
           ${report.imageUrl ? `
             <div class="mb-2.5 rounded-lg overflow-hidden border border-slate-200 h-28 bg-slate-100">
-              <img src="${resolveMediaUrl(report.imageUrl)}" alt="${report.title}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'" />
+              <img src="${resolveMediaUrl(report.imageUrl)}" alt="${report.title}" class="w-full h-full object-cover" onerror="this.src='/sample-incidents/overflow_bin.jpg'" />
             </div>
           ` : ''}
 
@@ -409,6 +449,7 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
       });
 
       markersLayerRef.current?.addLayer(marker);
+      });
     });
   }, [filteredReports]);
 
@@ -426,15 +467,12 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg md:text-xl font-black text-[#001e40] tracking-tight">
-              {title || (userRole === 'student' ? 'CSJMU Campus Infrastructure & Hazard Map' : userRole === 'bvg_worker' ? 'CSJMU Beat 01 Route & Waste Triage Map' : userRole === 'management' ? 'CSJMU Campus Spatial Triage & SLA Map' : 'CSJMU Municipal Operations Command Map')}
+            <h2 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
+              {title || (userRole === 'student' ? 'Campus Infrastructure & Waste Map' : userRole === 'bvg_worker' ? 'Sanitation Beat Route & Incident Map' : userRole === 'management' ? 'Campus Spatial Triage & Work Orders' : 'CSJMU Operations Command Map')}
             </h2>
-            <span className="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Leaflet &bull; Kanpur
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            {subtitle || 'Interactive geographic map of CSJMU Kanpur (Kalyanpur). Markers color-coded by complaint severity.'}
+            {subtitle || 'Geospatial view of CSJMU Kalyanpur campus. Markers color-coded by incident severity.'}
           </p>
         </div>
 
@@ -619,7 +657,7 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
             <span className="text-slate-700 font-medium">Red: Urgent / Critical Hazard</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-amber-500 shadow-xs flex items-center justify-center text-[8px] text-slate-900 font-black">⚡</span>
+            <span className="w-3 h-3 rounded-full bg-amber-500 shadow-xs flex items-center justify-center text-[8px] text-slate-900 font-black">▲</span>
             <span className="text-slate-700 font-medium">Yellow: Medium / Normal Active</span>
           </div>
           <div className="flex items-center gap-2">

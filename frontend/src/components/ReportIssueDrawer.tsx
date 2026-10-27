@@ -23,7 +23,13 @@ import {
   Clock,
   ShieldCheck,
   FileCheck,
-  Plus
+  Plus,
+  Waves,
+  Hammer,
+  Droplet,
+  Zap,
+  ShieldAlert,
+  Info
 } from 'lucide-react';
 import { ReportCategory, ReportSeverity, MaintenanceReport, GarbageDetectionResult, BoundingBox } from '../types';
 import { samplePhotos } from '../data/mockData';
@@ -251,89 +257,30 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
         className="absolute inset-0 bg-[#111c2d]/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
       />
 
-      {/* Slide-over Panel matching Image 3 */}
-      <div className="relative z-10 w-full max-w-lg h-full bg-white border-l border-[#c3c6d1] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      {/* Slide-over Panel (Full-screen sheet on mobile, slide-out drawer on desktop) */}
+      <div className="relative z-10 w-full max-w-full md:max-w-lg h-full bg-white md:border-l border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <header className="px-6 py-4 border-b border-[#c3c6d1] flex items-center justify-between bg-white">
+        <header className="px-5 sm:px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-[#001e40]">Report an Issue</h2>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-[#e7eeff] text-[#001e40] rounded-full border border-[#c3c6d1]">
-                AI Vision SWM
-              </span>
-            </div>
-            <p className="text-xs text-[#43474f] mt-0.5">Capture garbage, estimate volume & route to campus beats.</p>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Report Waste / Civic Issue</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Submit location and photo to dispatch campus sanitation crew.</p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-[#43474f] hover:bg-[#f0f3ff] hover:text-[#001e40] rounded-full p-2 transition-colors focus:outline-none"
+            className="text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-lg p-2 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </header>
 
         {/* Form Content */}
-        <form id="report-issue-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5">
-          {/* Location Field */}
+        <form id="report-issue-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
+          {/* 1. Photo Upload & Visual Evidence (FIRST) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="location-input" className="block text-xs font-bold text-[#43474f] uppercase tracking-wider">
-                Location
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowLocationPicker(!showLocationPicker)}
-                className="text-xs text-[#001e40] hover:underline flex items-center gap-1 font-semibold"
-              >
-                <span>Select from campus list</span>
-                <ChevronDown className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#737780]">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <input
-                id="location-input"
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. UIET Block 1, Central Library Lawn"
-                required
-                className="block w-full pl-9 pr-3 py-2 border border-[#c3c6d1] rounded-lg bg-white text-[#111c2d] text-sm focus:ring-1 focus:ring-[#001e40] focus:border-[#001e40] outline-none"
-              />
-            </div>
-
-            {showLocationPicker && (
-              <div className="mt-2 p-2 bg-[#f0f3ff] rounded-lg border border-[#c3c6d1] space-y-1 max-h-40 overflow-y-auto custom-scrollbar">
-                <p className="text-[11px] font-bold text-[#43474f] px-2 py-0.5">Common Campus Hotspots:</p>
-                {campusLocations.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => {
-                      setLocation(loc);
-                      setShowLocationPicker(false);
-                    }}
-                    className={`w-full text-left px-2 py-1 text-xs rounded transition-colors flex items-center justify-between ${
-                      location === loc ? 'bg-[#001e40] text-white font-medium' : 'hover:bg-[#dee8ff] text-[#111c2d]'
-                    }`}
-                  >
-                    <span>{loc}</span>
-                    {location === loc && <Check className="w-3 h-3" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Photo Upload & AI Detection Zone */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-bold text-[#43474f] uppercase tracking-wider">
-                Photo of Garbage or Issue
+              <label className="block text-xs font-bold text-slate-700">
+                1. Photo Evidence
               </label>
               {storedFileName && (
                 <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-mono flex items-center gap-1">
@@ -405,7 +352,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
-                        className={`p-1.5 rounded-full text-xs font-semibold shadow-md transition-colors flex items-center gap-1 ${
+                        className={`p-1.5 rounded-lg text-xs font-semibold shadow-md transition-colors flex items-center gap-1 ${
                           showBoundingBoxes ? 'bg-[#001e40] text-white hover:bg-[#003366]' : 'bg-white/90 text-[#111c2d] hover:bg-white'
                         }`}
                         title={showBoundingBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
@@ -421,7 +368,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                         setDetectionResult(null);
                         setStoredFileName('');
                       }}
-                      className="p-1.5 bg-[#ba1a1a] text-white rounded-full hover:bg-[#93000a] shadow-md transition-colors"
+                      className="p-1.5 bg-[#ba1a1a] text-white rounded-lg hover:bg-[#93000a] shadow-md transition-colors"
                       title="Remove Photo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -510,7 +457,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                           {detectionResult.estimatedAmount.compositionBreakdown.map((item, i) => (
                             <span 
                               key={i} 
-                              className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-emerald-200 text-[#001e40] font-medium"
+                              className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-[#001e40] font-medium"
                             >
                               {item.item} ({item.percentage}%)
                             </span>
@@ -596,7 +543,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                               e.stopPropagation();
                               handleRemovePhoto(idx);
                             }}
-                            className="absolute top-0.5 right-0.5 p-0.5 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 shadow-xs"
+                            className="absolute top-0.5 right-0.5 p-0.5 bg-red-600 text-white rounded-md opacity-80 hover:opacity-100 shadow-xs"
                             title="Remove Photo"
                           >
                             <X className="w-2.5 h-2.5" />
@@ -639,7 +586,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                   }`}
                 >
                   <div className="flex flex-col items-center justify-center space-y-1.5">
-                    <div className="w-10 h-10 rounded-full bg-[#f0f3ff] flex items-center justify-center text-[#001e40] mb-1">
+                    <div className="w-10 h-10 rounded-lg bg-[#f0f3ff] flex items-center justify-center text-[#001e40] mb-1">
                       <Camera className="w-5 h-5" />
                     </div>
                     <div className="flex text-xs text-[#43474f] justify-center items-center gap-1">
@@ -661,123 +608,153 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                   </div>
                 </div>
 
-                {/* Preset quick sample photos for testing convenience */}
-                <div className="mt-2.5">
-                  <p className="text-[11px] text-[#737780] mb-1 font-medium flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#003366]" /> Quick test photos (Click to add):
-                  </p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {samplePhotos.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleApplySamplePhoto(s)}
-                        className="text-left text-[10px] p-2 rounded-lg border border-[#dee8ff] bg-[#f0f3ff] hover:bg-[#dee8ff] text-[#001e40] truncate transition-colors flex items-center gap-1.5 font-medium"
-                      >
-                        <ImageIcon className="w-3.5 h-3.5 flex-shrink-0 text-[#003366]" />
-                        <span className="truncate">{s.title}</span>
-                      </button>
-                    ))}
+                {/* Quick sample photos for developer debugging only (?dev=1) */}
+                {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === '1' && (
+                  <div className="mt-2.5 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-[11px] text-slate-500 mb-1 font-medium flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-slate-600" /> Dev Test Images:
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {samplePhotos.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySamplePhoto(s)}
+                          className="text-left text-[10px] p-1.5 rounded border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 truncate transition-colors flex items-center gap-1.5 font-medium"
+                        >
+                          <ImageIcon className="w-3 h-3 shrink-0 text-slate-500" />
+                          <span className="truncate">{s.title}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Category Selection */}
+          {/* 2. Issue Category (Compact Select) */}
           <div>
-            <label className="block text-xs font-bold text-[#43474f] uppercase tracking-wider mb-1.5">
-              Issue Category
+            <label htmlFor="category-select" className="block text-xs font-bold text-slate-700 mb-1">
+              2. Issue Category
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'garbage', label: '🗑️ Solid Waste / Garbage', desc: 'Bin overflow, litter piles, MSW' },
-                { id: 'waterlogging', label: '🌊 Drainage / Blocked Grate', desc: 'Storm drain clogs & flooding' },
-                { id: 'infrastructure', label: '🏗️ Pavement / Footpath', desc: 'Cracks, potholes, fixtures' },
-                { id: 'plumbing', label: '🚰 Water / Plumbing', desc: 'Pipe leaks, taps, restrooms' },
-                { id: 'electrical', label: '⚡ Lighting & Electrical', desc: 'Exposed wires, streetlights' },
-                { id: 'safety', label: '🛡️ Safety & Hazard', desc: 'Broken glass, barriers, security' }
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategory(cat.id as ReportCategory)}
-                  className={`p-2.5 text-left rounded-lg border text-xs transition-all ${
-                    category === cat.id
-                      ? 'border-[#001e40] bg-[#e7eeff] text-[#001e40] font-bold shadow-xs'
-                      : 'border-[#c3c6d1] bg-white hover:bg-[#f0f3ff] text-[#43474f]'
-                  }`}
-                >
-                  <div className="font-semibold text-[#111c2d]">{cat.label}</div>
-                  <div className="text-[10px] text-[#737780] mt-0.5 truncate">{cat.desc}</div>
-                </button>
-              ))}
-            </div>
+            <select
+              id="category-select"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as ReportCategory)}
+              required
+              className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-xs text-slate-900 focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600 cursor-pointer"
+            >
+              <option value="">Select category...</option>
+              <option value="garbage">Solid Waste / Overflowing Bin</option>
+              <option value="waterlogging">Storm Drainage &amp; Blocked Grate</option>
+              <option value="infrastructure">Pavement / Pathway Defect</option>
+              <option value="plumbing">Water Supply &amp; Plumbing</option>
+              <option value="electrical">Lighting &amp; Exposed Wiring</option>
+              <option value="safety">Campus Safety Hazard</option>
+              <option value="other">General Facility Defect</option>
+            </select>
           </div>
 
-          {/* Severity Radio Buttons */}
+          {/* 3. Location on Campus (Auto-filled from map pin) */}
           <div>
-            <label className="block text-xs font-bold text-[#43474f] uppercase tracking-wider mb-1.5">
-              Urgency / Priority
-            </label>
-            <div className="flex gap-3">
-              {[
-                { value: 'normal', label: 'Standard Beat', desc: 'Routine clean-up within 120 mins' },
-                { value: 'urgent', label: 'High Priority / Urgent', desc: 'Dispatched immediately (< 60 mins)' }
-              ].map((opt) => (
-                <label 
-                  key={opt.value}
-                  className={`flex-1 flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer text-xs transition-colors ${
-                    severity === opt.value
-                      ? 'border-[#001e40] bg-[#e7eeff]'
-                      : 'border-[#c3c6d1] bg-white hover:bg-[#f0f3ff]'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="severity"
-                    value={opt.value}
-                    checked={severity === opt.value}
-                    onChange={() => setSeverity(opt.value as ReportSeverity)}
-                    className="mt-0.5 text-[#001e40] focus:ring-[#001e40]"
-                  />
-                  <div>
-                    <span className="font-semibold text-[#111c2d] block">{opt.label}</span>
-                    <span className="text-[10px] text-[#737780]">{opt.desc}</span>
-                  </div>
-                </label>
-              ))}
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="location-input" className="block text-xs font-bold text-slate-700">
+                3. Campus Location
+              </label>
+              {prefilledCoords && (
+                <span className="text-[10px] font-mono text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
+                  Map Pin: {prefilledCoords.x}%, {prefilledCoords.y}%
+                </span>
+              )}
             </div>
+
+            <div className="relative">
+              <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                id="location-input"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. UIET Block 1, Central Library Quad"
+                required
+                className="w-full pl-9 pr-3 py-2 rounded border border-slate-300 bg-white text-xs text-slate-900 focus:outline-hidden focus:border-blue-600"
+              />
+            </div>
+
+            <div className="mt-1 flex items-center justify-between text-[11px]">
+              <span className="text-slate-500">Quick selection:</span>
+              <button
+                type="button"
+                onClick={() => setShowLocationPicker(!showLocationPicker)}
+                className="text-blue-700 hover:underline flex items-center gap-0.5 font-medium cursor-pointer"
+              >
+                <span>Browse buildings</span>
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </div>
+
+            {showLocationPicker && (
+              <div className="mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 space-y-1 max-h-36 overflow-y-auto custom-scrollbar">
+                {campusLocations.map((loc) => (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => {
+                      setLocation(loc);
+                      setShowLocationPicker(false);
+                    }}
+                    className={`w-full text-left px-2 py-1 text-xs rounded transition-colors flex items-center justify-between ${
+                      location === loc ? 'bg-blue-700 text-white font-medium' : 'hover:bg-slate-200/60 text-slate-800'
+                    }`}
+                  >
+                    <span>{loc}</span>
+                    {location === loc && <Check className="w-3 h-3" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Title Field */}
+          {/* 4. Report Title */}
           <div>
-            <label htmlFor="title-input" className="block text-xs font-bold text-[#43474f] uppercase tracking-wider mb-1.5">
-              Report Title
+            <label htmlFor="title-input" className="block text-xs font-bold text-slate-700 mb-1">
+              4. Report Title
             </label>
             <input
               id="title-input"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Bin Overflow & Plastic Waste near UIET Lawn"
-              className="block w-full border border-[#c3c6d1] rounded-lg bg-white text-[#111c2d] text-sm p-2.5 focus:ring-1 focus:ring-[#001e40] focus:border-[#001e40] outline-none"
+              placeholder="e.g. Garbage bin overflow and ground spillage"
+              required
+              className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-xs text-slate-900 focus:outline-hidden focus:border-blue-600"
             />
           </div>
 
-          {/* Description Field */}
-          <div>
-            <label htmlFor="description-input" className="block text-xs font-bold text-[#43474f] uppercase tracking-wider mb-1.5">
-              Description & Notes
-            </label>
-            <textarea
-              id="description-input"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide details about the issue (exact room, floor, safety hazard, garbage volume)..."
-              className="block w-full border border-[#c3c6d1] rounded-lg bg-white text-[#111c2d] text-sm p-3 focus:ring-1 focus:ring-[#001e40] focus:border-[#001e40] outline-none resize-none"
-            />
+          {/* 5. System Priority & Citizen Note (Urgency radio removed; priority assigned by operations pipeline) */}
+          <div className="space-y-2">
+            <div className="p-2.5 rounded bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
+              <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-slate-900 block">System-Assigned Operational Priority</span>
+                <span className="text-[11px] text-slate-500">Triage priority and SLA dispatch are assigned automatically based on computer-vision hazard classification and zone protocols.</span>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="description-input" className="block text-xs font-bold text-slate-700 mb-1">
+                Citizen Observation Note (Optional)
+              </label>
+              <textarea
+                id="description-input"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add any helpful observations for the field team (e.g. spilled during lunch rush, obstructing pedestrian pathway)..."
+                className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-xs text-slate-900 focus:outline-hidden focus:border-blue-600 resize-none"
+              />
+            </div>
           </div>
         </form>
 

@@ -162,9 +162,9 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
       badge: 'CSJMU-ROOT-001',
       badgeText: 'Central Secretariat',
       pinHint: 'PIN: 9999',
-      icon: <Crown className="w-5 h-5 text-purple-700" />,
-      colorClasses: 'hover:bg-purple-50/60',
-      activeBorder: 'border-purple-600 ring-2 ring-purple-500/30 bg-purple-50/40'
+      icon: <Crown className="w-5 h-5 text-[#001e40]" />,
+      colorClasses: 'hover:bg-slate-50',
+      activeBorder: 'border-[#001e40] ring-2 ring-[#001e40]/20 bg-slate-50'
     }
   ];
 
@@ -172,7 +172,7 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden relative">
         {/* Modal Header */}
-        <div className="p-5 bg-gradient-to-r from-[#001e40] to-indigo-950 text-white relative">
+        <div className="p-5 bg-[#001e40] text-white relative">
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 text-white/70 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
@@ -359,9 +359,11 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div className="px-5 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
-          <span>🔒 Role-Based Access Control Enforced</span>
+          <span className="flex items-center gap-1.5 font-medium">
+            <Lock className="w-3 h-3 text-slate-500" />
+            Role-Based Access Control Enforced
+          </span>
           <button
             type="button"
             onClick={onClose}

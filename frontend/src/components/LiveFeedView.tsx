@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { MaintenanceReport } from '../types';
+import { resolveMediaUrl } from '../api/client';
 
 interface LiveFeedViewProps {
   reports: MaintenanceReport[];
@@ -75,7 +76,7 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
           <button
             key={cat}
             onClick={() => setCategoryFilter(cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
               categoryFilter === cat
                 ? 'bg-[#001e40] text-white'
                 : 'bg-white border border-[#c3c6d1] text-[#43474f] hover:bg-[#dee8ff]'
@@ -104,9 +105,12 @@ export const LiveFeedView: React.FC<LiveFeedViewProps> = ({
               <div className="relative h-44 bg-[#dee8ff] overflow-hidden">
                 {(report.beforeImageUrl || report.imageUrl) ? (
                   <img
-                    src={report.beforeImageUrl || report.imageUrl}
+                    src={resolveMediaUrl(report.beforeImageUrl || report.imageUrl)}
                     alt={report.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/sample-incidents/overflow_bin.jpg';
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#737780]">

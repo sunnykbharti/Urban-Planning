@@ -38,8 +38,18 @@ import { BvgWorkerDashboard } from './components/BvgWorkerDashboard';
 import { ManagementDashboard } from './components/ManagementDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RoleAuthModal } from './components/RoleAuthModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { TermsAndConditionsView } from './components/TermsAndConditionsView';
+import { PrivacyPolicyView } from './components/PrivacyPolicyView';
+import { StaffOperationsView } from './components/StaffOperationsView';
 import { DEFAULT_PROFILES, UserProfile } from './types';
-import { checkBackendHealth, fetchIncidentsFromBackend, createIncidentAPI } from './api/client';
+import { 
+  checkBackendHealth, 
+  fetchIncidentsFromBackend, 
+  createIncidentAPI,
+  updateIncidentStatusAPI,
+  verifyAndCloseAPI 
+} from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
 
 const SEED_DATA_VERSION = 'v3.0';
@@ -87,6 +97,11 @@ export default function App() {
   });
 
   const [userRole, setUserRole] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const r = params.get('role') as UserRole;
+      if (r && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(r)) return r;
+    }
     const saved = localStorage.getItem('csjmu_user_role') as UserRole;
     return (saved && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(saved)) ? saved : 'student';
   });
@@ -97,12 +112,18 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as ActiveTab;
+      if (tabParam) return tabParam;
+    }
     return userRole === 'student' ? 'student_dashboard' : userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' : userRole === 'management' ? 'management_dashboard' : 'admin_dashboard';
   });
 
   const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const handleRoleChange = (newRole: UserRole, newProfile?: UserProfile) => {
     setUserRole(newRole);
@@ -125,26 +146,59 @@ export default function App() {
     }
   };
 
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+
   const handleOpenAccountSwitcher = (target?: UserRole) => {
     setTargetAuthRole(target || null);
     setIsAuthModalOpen(true);
   };
 
   const handleAuthSuccess = (authenticatedRole: UserRole, profile: UserProfile) => {
+    setIsAuthenticated(true);
     handleRoleChange(authenticatedRole, profile);
     showToast(`Signed in as ${profile.name} (${profile.roleTitle})`, 'success');
   };
 
   const handleSignOut = () => {
-    handleRoleChange('student', DEFAULT_PROFILES.student);
+    setIsAuthenticated(false);
+    const guestProfile: UserProfile = {
+      name: 'Campus Citizen (Guest)',
+      role: 'student',
+      roleTitle: 'Guest Citizen',
+      department: 'Kanpur Nagar Public Civic Hub',
+      badgeNumber: 'GUEST-CIVIC',
+      email: '',
+      avatar: 'GC',
+      pin: '',
+      permissions: ['lodge_report', 'view_public_map']
+    };
+    setCurrentUserProfile(guestProfile);
+    setUserRole('student');
+    setActiveTab('student_dashboard');
     showToast('Signed out. Active view: Student / Civic Hub', 'info');
   };
   
   // Modals and Drawers
-  const [isReportDrawerOpen, setIsReportDrawerOpen] = useState<boolean>(false);
-  const [reportDrawerLocation, setReportDrawerLocation] = useState<string>('UIET Block 1');
+  const [isReportDrawerOpen, setIsReportDrawerOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('report') === '1';
+    }
+    return false;
+  });
+  const [reportDrawerLocation, setReportDrawerLocation] = useState<string>('UIET Block 1 (Pedestrian Quad)');
   const [reportDrawerCoords, setReportDrawerCoords] = useState<{ x: number; y: number }>({ x: 38, y: 38 });
-  const [selectedReportDetails, setSelectedReportDetails] = useState<MaintenanceReport | null>(null);
+  const [selectedReportDetails, setSelectedReportDetails] = useState<MaintenanceReport | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('modal') === '1') {
+        const saved = localStorage.getItem('csjmu_reports');
+        const list = saved ? JSON.parse(saved) : initialReports;
+        return list && list.length > 0 ? list[0] : null;
+      }
+    }
+    return null;
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   
   // Toast Alert Notification state
@@ -230,7 +284,19 @@ export default function App() {
         beforeImageUrl: newReport.imageUrl,
         garbageDetection: newReport.garbageDetection,
         estimatedAmount: newReport.estimatedAmount
-      });
+      }).then((created) => {
+        if (created) {
+          setReports(prev => prev.map(r => r.id === newReport.id ? { 
+            ...r, 
+            id: created.id, 
+            ticketNumber: created.ticketNumber,
+            zoneName: created.zoneName,
+            ward: created.ward,
+            authority: created.authority,
+            department: created.department
+          } : r));
+        }
+      }).catch(err => console.warn('Failed to persist incident to backend:', err));
     }
 
     showToast(`Report ${newReport.id} registered on CSJMU map`, newReport.severity === 'urgent' ? 'urgent' : 'success');
@@ -265,6 +331,26 @@ export default function App() {
       }
       return r;
     }));
+
+    // Sync with backend API if online
+    if (backendStatus.online) {
+      if (newStatus === 'resolved' && afterImg) {
+        verifyAndCloseAPI(reportId, afterImg).catch(err => {
+          console.warn('Backend verify API error:', err);
+        });
+      } else {
+        const statusMap: Record<string, string> = {
+          'dispatched': 'DISPATCHED',
+          'in_progress': 'IN_PROGRESS',
+          'resolved': 'RESOLVED',
+          'pending': 'DISPATCHED'
+        };
+        const backendStatusVal = statusMap[newStatus] || newStatus.toUpperCase();
+        updateIncidentStatusAPI(reportId, backendStatusVal, note).catch(err => {
+          console.warn('Backend status update error:', err);
+        });
+      }
+    }
 
     const targetReport = reports.find(r => r.id === reportId);
     const reportTitle = targetReport?.title || reportId;
@@ -436,9 +522,12 @@ export default function App() {
         urgentCount={urgentCount}
         userRole={userRole}
         currentProfile={currentUserProfile}
+        isAuthenticated={isAuthenticated}
         onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onSignOut={handleSignOut}
         backendOnline={backendStatus.online}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         onOpenReportDrawer={() => {
           setReportDrawerLocation('UIET Block 1');
           setReportDrawerCoords({ x: 38, y: 38 });
@@ -462,168 +551,200 @@ export default function App() {
           currentProfile={currentUserProfile}
           onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
           urgentCount={urgentCount}
+          isMobileOpen={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Main Content Area Canvas */}
         <main className="flex-1 ml-0 md:ml-[240px] p-4 md:p-8 max-w-[1600px] w-full min-h-[calc(100vh-4rem)] transition-all">
-          {/* Backend Status Notification Pill */}
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs px-3.5 py-2 rounded-lg border bg-white border-slate-200">
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${backendStatus.online ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
-              <span className="font-semibold text-slate-700">
-                {backendStatus.online ? `Flask Backend Connected (${backendStatus.version})` : 'Standalone Demo Mode (Flask API Offline)'}
-              </span>
-              <span className="text-slate-400 text-[11px] hidden sm:inline">&bull; 5-Module Operations Pipeline</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setActiveTab('heatisland')}
-                className={`text-[11px] font-extrabold px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'heatisland' 
-                    ? 'bg-rose-600 text-white shadow-xs' 
-                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-                }`}
-              >
-                <Flame className="w-3.5 h-3.5" />
-                <span>Heat Island Map</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('pipeline')}
-                className={`text-[11px] font-bold px-2 py-1 rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'pipeline' 
-                    ? 'bg-indigo-600 text-white' 
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                ARE Engine
-              </button>
-            </div>
-          </div>
+          {/* Status Indicator & Optional Dev Controls */}
+          {(() => {
+            const isDev = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === '1';
+            if (isDev) {
+              return (
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs px-3.5 py-2 rounded-lg border bg-slate-50 border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${backendStatus.online ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    <span className="font-semibold text-slate-700">
+                      {backendStatus.online ? `Live Backend (${backendStatus.version || 'v2'})` : 'Offline – using cached data'}
+                    </span>
+                    <span className="text-slate-400 text-[11px]">&bull; Dev Mode Active (?dev=1)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setActiveTab('heatisland')}
+                      className="text-[11px] font-semibold px-2 py-1 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                    >
+                      Heat Island
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('pipeline')}
+                      className="text-[11px] font-semibold px-2 py-1 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                    >
+                      Pipeline Debug
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
-          {/* DEDICATED 4-ROLE DASHBOARDS */}
-          {activeTab === 'student_dashboard' && (
-            <StudentDashboard
-              reports={displayedReports}
-              blocks={blocks}
-              activities={activities}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
-            />
-          )}
+          {/* DEDICATED 4-ROLE DASHBOARDS PROTECTED BY ERROR BOUNDARY */}
+          <ErrorBoundary fallbackTitle="Dashboard Display Error">
+            {activeTab === 'student_dashboard' && (
+              <StudentDashboard
+                reports={displayedReports}
+                blocks={blocks}
+                activities={activities}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+              />
+            )}
 
-          {(activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard') && (
-            <BvgWorkerDashboard
-              reports={displayedReports}
-              activities={activities}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              leaveRequests={leaveRequests}
-              onAddLeaveRequest={handleAddLeaveRequest}
-              reassignmentRequests={reassignmentRequests}
-              onAddReassignmentRequest={handleAddReassignmentRequest}
-            />
-          )}
+            {(activeTab === 'bvg_dashboard' || activeTab === 'operator_dashboard') && (
+              <BvgWorkerDashboard
+                reports={displayedReports}
+                activities={activities}
+                onUpdateStatus={handleUpdateStatus}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                leaveRequests={leaveRequests}
+                onAddLeaveRequest={handleAddLeaveRequest}
+                reassignmentRequests={reassignmentRequests}
+                onAddReassignmentRequest={handleAddReassignmentRequest}
+              />
+            )}
 
-          {activeTab === 'management_dashboard' && (
-            <ManagementDashboard
-              reports={displayedReports}
-              activities={activities}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              reassignmentRequests={reassignmentRequests}
-              onReviewReassignment={handleReviewReassignment}
-              leaveRequests={leaveRequests}
-              onReviewLeave={handleReviewLeave}
-            />
-          )}
+            {activeTab === 'management_dashboard' && (
+              <ManagementDashboard
+                reports={displayedReports}
+                activities={activities}
+                onUpdateStatus={handleUpdateStatus}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                reassignmentRequests={reassignmentRequests}
+                onReviewReassignment={handleReviewReassignment}
+                leaveRequests={leaveRequests}
+                onReviewLeave={handleReviewLeave}
+              />
+            )}
 
-          {activeTab === 'admin_dashboard' && (
-            <AdminDashboard
-              reports={displayedReports}
-              blocks={blocks}
-              activities={activities}
-              credentials={credentials}
-              onUpdateCredentials={handleUpdateCredentials}
-              onUpdateUserRole={handleUpdateUserRole}
-              onAssignTeam={handleAssignTeam}
-              onUpdateStatus={handleUpdateStatus}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-            />
-          )}
+            {activeTab === 'admin_dashboard' && (
+              <AdminDashboard
+                reports={displayedReports}
+                blocks={blocks}
+                activities={activities}
+                credentials={credentials}
+                onUpdateCredentials={handleUpdateCredentials}
+                onUpdateUserRole={handleUpdateUserRole}
+                onAssignTeam={handleAssignTeam}
+                onUpdateStatus={handleUpdateStatus}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+              />
+            )}
 
-          {/* OTHER ROLE-SPECIFIC / SHARED MODULE VIEWS */}
-          {activeTab === 'heatisland' && (
-            <HeatIslandMapView />
-          )}
+            {/* OTHER ROLE-SPECIFIC / SHARED MODULE VIEWS */}
+            {activeTab === 'operations' && (
+              <StaffOperationsView
+                reports={displayedReports}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onUpdateStatus={handleUpdateStatus}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+              />
+            )}
 
-          {activeTab === 'pipeline' && (
-            <PipelineVisualizer />
-          )}
+            {activeTab === 'heatisland' && (
+              <HeatIslandMapView />
+            )}
 
-          {activeTab === 'cctv_pipeline' && (
-            <CctvPipelineDashboard
-              onNavigateToTab={(tab) => setActiveTab(tab)}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-            />
-          )}
+            {activeTab === 'pipeline' && (
+              <PipelineVisualizer />
+            )}
 
-          {activeTab === 'map' && (
-            <CampusMap
-              reports={displayedReports}
-              blocks={blocks}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
-              userRole={userRole}
-            />
-          )}
+            {activeTab === 'cctv_pipeline' && (
+              <CctvPipelineDashboard
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+              />
+            )}
 
-          {activeTab === 'maintenance' && (
-            <MaintenanceManagementPanel
-              reports={displayedReports}
-              activities={activities}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-            />
-          )}
+            {activeTab === 'map' && (
+              <CampusMap
+                reports={displayedReports}
+                blocks={blocks}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onOpenReportDrawerWithLocation={handleOpenReportDrawerWithLoc}
+                userRole={userRole}
+              />
+            )}
 
-          {activeTab === 'feed' && (
-            <LiveFeedView
-              reports={displayedReports}
-              onSelectReport={(rep) => setSelectedReportDetails(rep)}
-              onOpenReportDrawer={() => {
-                setReportDrawerLocation('UIET Block 1');
-                setReportDrawerCoords({ x: 38, y: 38 });
-                setIsReportDrawerOpen(true);
-              }}
-            />
-          )}
+            {activeTab === 'maintenance' && (
+              <MaintenanceManagementPanel
+                reports={displayedReports}
+                activities={activities}
+                onUpdateStatus={handleUpdateStatus}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+              />
+            )}
 
-          {activeTab === 'planning' && (
-            <PlanningBoardView />
-          )}
+            {activeTab === 'feed' && (
+              <LiveFeedView
+                reports={displayedReports}
+                onSelectReport={(rep) => setSelectedReportDetails(rep)}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+              />
+            )}
 
-          {activeTab === 'analytics' && (
-            <AnalyticsView reports={reports} />
-          )}
+            {activeTab === 'planning' && (
+              <PlanningBoardView />
+            )}
+
+            {activeTab === 'analytics' && (
+              <AnalyticsView reports={reports} />
+            )}
+
+            {activeTab === 'terms' && (
+              <TermsAndConditionsView
+                onBackToDashboard={() => setActiveTab(
+                  userRole === 'student' ? 'student_dashboard' :
+                  userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' :
+                  userRole === 'management' ? 'management_dashboard' : 'admin_dashboard'
+                )}
+              />
+            )}
+
+            {activeTab === 'privacy' && (
+              <PrivacyPolicyView
+                onBackToDashboard={() => setActiveTab(
+                  userRole === 'student' ? 'student_dashboard' :
+                  userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' :
+                  userRole === 'management' ? 'management_dashboard' : 'admin_dashboard'
+                )}
+              />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 
@@ -656,6 +777,7 @@ export default function App() {
         currentProfile={currentUserProfile}
         onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onResetData={handleResetData}
+        onNavigateTab={(tab) => setActiveTab(tab)}
       />
 
       {/* Role-Based Access Control (RBAC) Authentication Modal */}
@@ -668,24 +790,33 @@ export default function App() {
         credentials={credentials}
       />
 
-      {/* Toast Notification Alert Banner */}
+      {/* Toast Notification (Non-blocking, bottom-right, auto-dismiss) */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-200">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-semibold ${
+        <div className="fixed bottom-4 right-4 z-50 pointer-events-none max-w-sm w-full p-2">
+          <div className={`pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg shadow-lg border text-xs font-semibold ${
             toastMessage.type === 'urgent'
-              ? 'bg-[#ba1a1a] text-white border-[#93000a]'
+              ? 'bg-rose-50 text-rose-900 border-rose-200 shadow-rose-900/10'
               : toastMessage.type === 'info'
-              ? 'bg-[#001e40] text-white border-[#003366]'
-              : 'bg-[#2e7d32] text-white border-[#1b5e20]'
+              ? 'bg-slate-900 text-slate-100 border-slate-700 shadow-slate-900/20'
+              : 'bg-emerald-50 text-emerald-900 border-emerald-200 shadow-emerald-900/10'
           }`}>
-            {toastMessage.type === 'urgent' ? (
-              <AlertTriangle className="w-5 h-5 flex-shrink-0 animate-bounce" />
-            ) : toastMessage.type === 'info' ? (
-              <Info className="w-5 h-5 flex-shrink-0" />
-            ) : (
-              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-            )}
-            <span>{toastMessage.text}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              {toastMessage.type === 'urgent' ? (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              ) : toastMessage.type === 'info' ? (
+                <Info className="w-4 h-4 text-blue-400 shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              )}
+              <span className="truncate">{toastMessage.text}</span>
+            </div>
+            <button
+              onClick={() => setToastMessage(null)}
+              className="p-1 text-slate-400 hover:text-slate-700 rounded cursor-pointer shrink-0"
+              aria-label="Dismiss notification"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}

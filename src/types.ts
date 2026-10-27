@@ -279,6 +279,7 @@ export type ActiveTab =
   | 'management_dashboard'
   | 'operator_dashboard' 
   | 'admin_dashboard' 
+  | 'operations'
   | 'cctv_pipeline'
   | 'map' 
   | 'heatisland' 
@@ -286,7 +287,9 @@ export type ActiveTab =
   | 'feed' 
   | 'planning' 
   | 'maintenance' 
-  | 'analytics';
+  | 'analytics'
+  | 'terms'
+  | 'privacy';
 
 export type UserRole = 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'admin' | 'operator';
 
@@ -328,7 +331,7 @@ export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 
     department: 'Computer Science & Engineering (UIET)',
     badgeNumber: 'CSJMU/UIET/2023/104',
     email: 'sunny.student@csjmu.ac.in',
-    avatar: '👨‍🎓',
+    avatar: 'SB',
     pin: '', // No PIN required for students/public audience
     permissions: ['lodge_report', 'view_public_map', 'view_cool_havens']
   },
@@ -341,7 +344,7 @@ export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 
     department: 'CSJMU Solid Waste Cleansing Beat 01',
     badgeNumber: 'BVG-IND-KNP-204',
     email: 'ramesh.bvg@csjmu.facility.in',
-    avatar: '👷‍♂️',
+    avatar: 'RK',
     pin: '1234',
     permissions: ['lodge_report', 'view_bvg_tasks', 'start_bvg_task', 'verify_closure']
   },
@@ -354,7 +357,7 @@ export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 
     department: 'Campus Works & Public Health Engineering',
     badgeNumber: 'CSJMU-EST-019',
     email: 'rksharma.estate@csjmu.ac.in',
-    avatar: '👨‍💼',
+    avatar: 'RS',
     pin: '5678',
     permissions: [
       'lodge_report', 'view_public_map', 'view_cool_havens',
@@ -371,7 +374,7 @@ export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 
     department: 'Directorate of Campus Administration & IT',
     badgeNumber: 'CSJMU-ROOT-001',
     email: 'admin.root@csjmu.ac.in',
-    avatar: '🏛️',
+    avatar: 'VC',
     pin: '9999',
     permissions: [
       'lodge_report', 'view_public_map', 'view_cool_havens',
@@ -403,6 +406,31 @@ export interface MicroclimateSector {
   zone: string;
   bounds: { x: number; y: number; width: number; height: number };
   gps: { latitude: number; longitude: number };
+  center?: [number, number];
+  areaSqm?: number;
+  validThermalPixels?: number;
+  confidence?: string;
+  recommendedSpecies?: {
+    name: string;
+    type?: string;
+    canopyDiameterM?: number;
+    waterNeed?: string;
+    rootSpread?: string;
+    cautions?: string;
+    coolingMechanism?: string;
+    reason?: string;
+    coolingEffect?: string;
+  }[];
+  metricsProvenance?: Record<string, {
+    type: 'MEASURED' | 'DERIVED' | 'ASSUMED';
+    sensor?: string;
+    resolution?: string;
+    method?: string;
+    source?: string;
+    notes?: string;
+  }>;
+  preMonsoon?: any;
+  postMonsoon?: any;
   metrics: {
     surfaceTempC: number;
     treeCanopyPct: number;

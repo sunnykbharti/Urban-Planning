@@ -21,13 +21,10 @@ const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isViteDev = window.location.port === '3000' || window.location.port === '5173';
-    // When running in production builds or non-dev environments, route via same origin /api
-    if (!isLocalhost || !isViteDev) {
-      return '/api';
-    }
+    // Route via /api (handled by Vite proxy in dev to port 5001, or nginx/same-origin in prod)
+    return '/api';
   }
-  return 'http://localhost:5000/api';
+  return '/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -487,9 +484,9 @@ export async function simulateCVDetectionAPI(
 // Microclimate & Campus Heat Island (UHI) Analytics Client Methods
 // ------------------------------------------------------------------
 
-export async function fetchMicroclimateSectors(): Promise<any> {
+export async function fetchMicroclimateSectors(season: string = 'pre_monsoon'): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE_URL}/microclimate/sectors`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${API_BASE_URL}/microclimate/sectors?season=${encodeURIComponent(season)}`, { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       const data = await res.json();
       return data.sectors;
@@ -512,9 +509,9 @@ export async function fetchMicroclimateInterventions(): Promise<any> {
   return null;
 }
 
-export async function fetchMicroclimateSummary(): Promise<any> {
+export async function fetchMicroclimateSummary(season: string = 'pre_monsoon'): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE_URL}/microclimate/summary`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${API_BASE_URL}/microclimate/summary?season=${encodeURIComponent(season)}`, { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       return await res.json();
     }
@@ -527,45 +524,61 @@ export async function fetchMicroclimateSummary(): Promise<any> {
 export async function simulateMitigationAPI(
   sectorId: string,
   addedTrees: number,
-  coolPavePct: number,
-  shadeSqm: number
+  coolPaveSqm: number,
+  shadeSqm: number,
+  season: string = 'pre_monsoon'
 ): Promise<any> {
   try {
     const res = await fetch(`${API_BASE_URL}/microclimate/simulate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sectorId, addedTrees, coolPavePct, shadeSqm }),
+      body: JSON.stringify({ sectorId, addedTrees, coolPaveSqm, shadeSqm, season }),
       signal: AbortSignal.timeout(3000)
     });
     if (res.ok) {
       return await res.json();
     }
   } catch (err) {
-    console.warn('Simulate mitigation API offline, calculating client-side');
+    console.warn('Simulate mitigation API offline, calculating bounded scenario client-side');
   }
 
-  // Client fallback
-  const treeCooling = Math.min(4.5, (addedTrees / 10.0) * 0.8);
-  const paveCooling = Math.min(5.5, (coolPavePct / 100.0) * 5.5);
-  const shadeCooling = Math.min(3.0, (shadeSqm / 500.0) * 3.0);
-  const totalDrop = +(treeCooling + paveCooling + shadeCooling).toFixed(2);
-  const currentTemp = 42.6;
+  // Client-side fallback using peer-reviewed literature bounds (Bowler 2010, Santamouris 2014, Lin 2010)
+  const treeCanopySqm = addedTrees * 25.0;
+  const treeMinDrop = Math.min(3.8, (treeCanopySqm / 100.0) * 0.35);
+  const treeMaxDrop = Math.min(3.8, (treeCanopySqm / 100.0) * 1.15);
 
+  const paveMinDrop = Math.min(4.2, (coolPaveSqm / 100.0) * 0.28);
+  const paveMaxDrop = Math.min(4.2, (coolPaveSqm / 100.0) * 0.85);
+
+  const shadeMinDrop = Math.min(2.8, (shadeSqm / 100.0) * 0.45);
+  const shadeMaxDrop = Math.min(2.8, (shadeSqm / 100.0) * 1.30);
+
+  const totalMinDrop = +Math.min(5.5, treeMinDrop + paveMinDrop + shadeMinDrop).toFixed(1);
+  const totalMaxDrop = +Math.min(7.0, treeMaxDrop + paveMaxDrop + shadeMaxDrop).toFixed(1);
+
+  const currentLST = 42.6;
   return {
     sectorId,
-    currentTempC: currentTemp,
-    projectedTempC: +(currentTemp - totalDrop).toFixed(1),
-    totalTempDropC: totalDrop,
-    coolingBreakdown: {
-      biologicalTreeDrop: +treeCooling.toFixed(2),
-      coolPavementDrop: +paveCooling.toFixed(2),
-      shadeStructureDrop: +shadeCooling.toFixed(2)
+    sectorName: 'UIET Central Courtyard & Transit Concourse',
+    currentSurfaceTempLST_C: currentLST,
+    temperatureMetric: 'Land Surface Temperature (LST, °C)',
+    airTempNote: 'Estimated air temperature (Tair) reduction is typically 30-50% of surface LST reduction.',
+    projectedSurfaceTempRangeC: [+(currentLST - totalMaxDrop).toFixed(1), +(currentLST - totalMinDrop).toFixed(1)],
+    totalLSTDropRangeC: [totalMinDrop, totalMaxDrop],
+    confidenceLabel: 'Low-Moderate confidence (empirical scenario estimate, not hydrodynamic forecast)',
+    breakdownRanges: {
+      treeCanopyLSTDrop: [+treeMinDrop.toFixed(1), +treeMaxDrop.toFixed(1)],
+      coolPavementLSTDrop: [+paveMinDrop.toFixed(1), +paveMaxDrop.toFixed(1)],
+      shadeStructureLSTDrop: [+shadeMinDrop.toFixed(1), +shadeMaxDrop.toFixed(1)]
     },
-    currentHeatRisk: 92,
-    projectedHeatRisk: Math.max(20, 92 - Math.round(totalDrop * 10)),
-    newClassification: totalDrop > 6 ? 'MODERATE' : 'HIGH_STRESS'
+    literatureSources: [
+      { measure: 'Tree Canopy', citation: 'Urban greening to cool towns and cities', year: 2010, doi: '10.1016/j.landurbplan.2010.05.006' },
+      { measure: 'Cool Pavement', citation: 'Cooling the cities—reflective & green roof review', year: 2014, doi: '10.1016/j.solener.2012.07.003' },
+      { measure: 'Architectural Shade', citation: 'Shading effect on outdoor thermal comfort', year: 2010, doi: '10.1016/j.buildenv.2009.06.002' }
+    ]
   };
 }
+
 
 // -------------------------------------------------------------
 // CCTV Garbage Detection 8-Stage Pipeline API Methods

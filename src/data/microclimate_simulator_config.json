@@ -1,0 +1,50 @@
+{
+  "methodology": "Peer-reviewed empirical urban microclimate scenario estimation",
+  "temperature_metric": "Land Surface Temperature (LST, °C) - NOT ambient air temperature",
+  "disclaimer": "Scenario estimate for urban planning guidance; not a certified hydrodynamic fluid prediction.",
+  "coefficients": {
+    "tree_canopy_cooling": {
+      "metric": "mature_tree_canopy",
+      "assumed_canopy_area_sqm_per_tree": 25.0,
+      "min_delta_c_per_100sqm": 0.35,
+      "max_delta_c_per_100sqm": 1.15,
+      "max_cap_c": 3.8,
+      "confidence": "Low-Moderate",
+      "citation": {
+        "title": "Urban greening to cool towns and cities: A systematic review of the empirical evidence",
+        "authors": "Bowler, D. E., Buyung-Ali, L., Knight, T. M., & Pullin, A. S.",
+        "year": 2010,
+        "journal": "Landscape and Urban Planning, 97(3), 147-155",
+        "doi": "https://doi.org/10.1016/j.landurbplan.2010.05.006"
+      }
+    },
+    "cool_pavement_retrofit": {
+      "metric": "high_albedo_pavement_sri_80",
+      "min_delta_c_per_100sqm": 0.28,
+      "max_delta_c_per_100sqm": 0.85,
+      "max_cap_c": 4.2,
+      "confidence": "Moderate",
+      "citation": {
+        "title": "Cooling the cities—a review of reflective and green roof mitigation technologies to fight heat island and improve comfort in urban environments",
+        "authors": "Santamouris, M.",
+        "year": 2014,
+        "journal": "Solar Energy, 103, 682-703",
+        "doi": "https://doi.org/10.1016/j.solener.2012.07.003"
+      }
+    },
+    "architectural_shade": {
+      "metric": "tensile_or_pergola_shade",
+      "min_delta_c_per_100sqm": 0.45,
+      "max_delta_c_per_100sqm": 1.30,
+      "max_cap_c": 2.8,
+      "confidence": "Low-Moderate",
+      "citation": {
+        "title": "Shading effect on long-term outdoor thermal comfort in sub-tropical climates",
+        "authors": "Lin, T. P., Tsai, K. T., Liao, C. C., & Huang, Y. C.",
+        "year": 2010,
+        "journal": "Building and Environment, 45(1), 213-221",
+        "doi": "https://doi.org/10.1016/j.buildenv.2009.06.002"
+      }
+    }
+  }
+}

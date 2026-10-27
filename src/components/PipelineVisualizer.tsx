@@ -105,7 +105,7 @@ export const PipelineVisualizer: React.FC = () => {
       name: 'Dispatch',
       tech: 'SLA + WhatsApp/SMS',
       icon: Send,
-      color: 'from-purple-500 to-indigo-600',
+      color: 'from-blue-700 to-slate-800',
       tag: 'Field Routing'
     },
     {
@@ -121,11 +121,10 @@ export const PipelineVisualizer: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 pb-20">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-900/40 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden shadow-2xl">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-[#001e40] border border-slate-700 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 border border-white/20 text-blue-200 text-xs font-semibold mb-3">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
             Urban Operations Pipeline Architecture
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -295,7 +294,7 @@ export const PipelineVisualizer: React.FC = () => {
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 Authority Resolution Engine (ARE) Live Output
               </h2>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60">
+              <span className="text-xs px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60">
                 SLA: {resolutionResult.slaMinutes} Minutes
               </span>
             </div>

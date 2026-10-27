@@ -48,7 +48,7 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
   const [filter, setFilter] = useState<'all' | 'urgent' | 'in_progress' | 'resolved'>('all');
   const [selectedTicketForVerify, setSelectedTicketForVerify] = useState<MaintenanceReport | null>(null);
   const [afterImageChoice, setAfterImageChoice] = useState<string>(
-    'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80'
+    '/sample-incidents/pavement_debris.jpg'
   );
   const [verificationNote, setVerificationNote] = useState<string>('Site cleared by Sanitation Beat Alpha. Area washed and disinfected.');
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
@@ -95,15 +95,15 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
   const sampleCleanPhotos = [
     {
       title: 'Pavement Swept & Cleared',
-      url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80'
+      url: '/sample-incidents/pavement_debris.jpg'
     },
     {
       title: 'Sanitized Bin Bay',
-      url: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=800&q=80'
+      url: '/sample-incidents/overflow_bin.jpg'
     },
     {
       title: 'Cleared Drain & Roadside',
-      url: 'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&w=800&q=80'
+      url: '/sample-incidents/drain_silt.jpg'
     }
   ];
 
@@ -375,7 +375,7 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                     <div className="aspect-video rounded-lg overflow-hidden bg-slate-100 border relative">
                       <img 
-                        src={report.beforeImageUrl || report.imageUrl || 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'} 
+                        src={report.beforeImageUrl || report.imageUrl || '/sample-incidents/overflow_bin.jpg'} 
                         alt="Before" 
                         className="w-full h-full object-cover" 
                       />
@@ -388,7 +388,7 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
                       {isResolved ? (
                         <>
                           <img 
-                            src={report.afterImageUrl || 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=600&q=80'} 
+                            src={report.afterImageUrl || '/sample-incidents/pavement_debris.jpg'} 
                             alt="After Clean" 
                             className="w-full h-full object-cover" 
                           />

@@ -24,6 +24,7 @@ interface SettingsModalProps {
   currentProfile?: UserProfile;
   onOpenAccountSwitcher?: () => void;
   onResetData: () => void;
+  onNavigateTab?: (tab: any) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -32,7 +33,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   userRole,
   currentProfile,
   onOpenAccountSwitcher,
-  onResetData
+  onResetData,
+  onNavigateTab
 }) => {
   const [urgentAlerts, setUrgentAlerts] = useState(true);
   const [autoLocate, setAutoLocate] = useState(true);
@@ -69,7 +71,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     ? 'bg-amber-100 text-amber-900 border-amber-300'
     : isManagement
     ? 'bg-blue-100 text-blue-900 border-blue-300'
-    : 'bg-purple-100 text-purple-900 border-purple-300';
+    : 'bg-slate-100 text-slate-800 border-slate-300';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -81,7 +83,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
           <button 
             onClick={onClose} 
-            className="text-[#737780] hover:text-[#111c2d] p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+            className="text-[#737780] hover:text-[#111c2d] p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -103,7 +105,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="text-2xl">{currentProfile?.avatar || '👤'}</span>
+                <div className="w-10 h-10 rounded-lg bg-[#001e40] text-white font-bold flex items-center justify-center text-xs tracking-wider shrink-0 shadow-xs border border-slate-700">
+                  {currentProfile?.avatar || 'SB'}
+                </div>
                 <div>
                   <h4 className="text-xs font-black text-slate-900">
                     {currentProfile?.name || 'Sunny Bharti'}
@@ -113,7 +117,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </p>
                 </div>
               </div>
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${roleBadgeStyle}`}>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${roleBadgeStyle}`}>
                 {isStudent ? 'Citizen' : isBvg ? 'BVG Worker' : isManagement ? 'Management' : 'Super Admin'}
               </span>
             </div>
@@ -125,7 +129,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
               <p className="text-[10px] text-slate-500 leading-tight max-w-[260px]">
-                🔒 Roles and clearance privileges are managed centrally. Arbitrary in-app role changing is disabled.
+                Roles and clearance privileges are managed centrally. Arbitrary in-app role changing is disabled.
               </p>
               <button
                 type="button"
@@ -203,7 +207,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
             <div className="pt-1.5 border-t border-[#e2e7f7] text-[10px] text-[#6d7280]">
-              💡 <span>To switch to cloud PostgreSQL (e.g., Supabase / Neon), set <code className="bg-white px-1 py-0.5 rounded border border-gray-300 font-mono">DATABASE_URL</code> in your backend <code className="font-mono">.env</code>.</span>
+              <span className="font-semibold text-slate-700">Database Tip:</span> <span>To switch to cloud PostgreSQL (e.g., Supabase / Neon), set <code className="bg-white px-1 py-0.5 rounded border border-gray-300 font-mono">DATABASE_URL</code> in your backend <code className="font-mono">.env</code>.</span>
             </div>
           </div>
         </div>
@@ -223,6 +227,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           >
             <RefreshCw className="w-3.5 h-3.5" /> Re-Seed Data
           </button>
+        </div>
+
+        {/* Compliance & Governance */}
+        <div className="pt-3 border-t border-[#c3c6d1] flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-[#001e40]">Campus Governance &amp; Privacy</span>
+            <p className="text-[11px] text-[#737780]">Official University statutory charter and DPDP Act 2023 compliance</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onNavigateTab) onNavigateTab('terms');
+              }}
+              className="px-2.5 py-1.5 border border-[#c3c6d1] bg-white hover:bg-slate-50 text-[#001e40] text-[11px] font-bold rounded-lg cursor-pointer"
+            >
+              Terms &amp; Charter
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onNavigateTab) onNavigateTab('privacy');
+              }}
+              className="px-2.5 py-1.5 border border-[#c3c6d1] bg-white hover:bg-slate-50 text-[#001e40] text-[11px] font-bold rounded-lg cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+          </div>
         </div>
 
         <div className="pt-3 border-t border-[#c3c6d1] flex justify-end">

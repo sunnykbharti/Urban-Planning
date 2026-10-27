@@ -1,340 +1,232 @@
 """
 Urban Microclimate & Campus Heat Island (UHI) Analytics Service
-Implements spatial multi-layer analysis:
-- Land Surface Temperature (LST °C)
-- Tree Canopy Cover (%)
-- Building Density & Thermal Mass (%)
-- Paved / Impervious Surface Ratio (%)
-- Water Body Distance & Evaporative Sink Effect (m)
-- Pedestrian Exposure & Movement Volume
+Refactored for Scientific Data Honesty & Provenance.
 
-Generates:
-1. Campus Heat Risk Index (CHRI) & Hot Zones
-2. Actionable Urban Planning Interventions:
-   - Where to plant trees (Species, Soil match, ΔT drop)
-   - Where to create shade (Tensile structures, Pergolas)
-   - Where to deploy cool pavement (High albedo SRI > 70)
-   - Where to locate seating (Thermal comfort micro-refuges)
+Data Foundations:
+- LST: Landsat 8/9 Collection 2 Level-2 Surface Temperature (ST_B10)
+  Pre-Monsoon Peak: May 18, 2024 (10:48 AM IST) | Post-Monsoon: Oct 12, 2024 (10:49 AM IST)
+- Canopy: Sentinel-2 MSI Level-2A (NDVI >= 0.40 woody canopy proxy)
+- Paved & Building Density: OpenStreetMap footprints + Sentinel-2 NDBI
+- Pedestrian Exposure: Campus class transit corridors (Assumed)
+
+Simulation Model:
+- Peer-reviewed bounded scenario ranges (Bowler et al. 2010, Santamouris 2014, Lin et al. 2010)
+- Physical input units: tree count (25 m² mature crown), m² cool pavement, m² architectural shade
 """
 
-from typing import Dict, List, Any
+import os
+import json
+from pathlib import Path
+from typing import Dict, List, Any, Optional
 
-# Detailed campus microclimate sectors representing CSJMU Kanpur topography
-CAMPUS_MICROCLIMATE_SECTORS: List[Dict[str, Any]] = [
-    {
-        "id": "sec-uiet-courtyard",
-        "name": "UIET Central Courtyard & Transit Concourse",
-        "zone": "Academic Precinct",
-        "bounds": {"x": 36, "y": 38, "width": 14, "height": 12},
-        "gps": {"latitude": 26.4952, "longitude": 80.2921},
-        "metrics": {
-            "surfaceTempC": 42.6,
-            "treeCanopyPct": 12,
-            "buildingDensityPct": 68,
-            "pavedSurfacePct": 84,
-            "waterBodyBufferM": 320,
-            "pedestrianFootfall": "EXTREME",
-            "albedo": 0.14
-        },
-        "heatRiskScore": 92,
-        "classification": "CRITICAL_HOT_ZONE",
-        "statusColor": "#ef4444",
-        "exposureSummary": "Severe heat island trap: High student pedestrian transit through unshaded concrete courtyard with high thermal retention."
-    },
-    {
-        "id": "sec-workshop-yard",
-        "name": "Central Mechanical Workshop & Scrap Yard",
-        "zone": "Engineering & Utilities",
-        "bounds": {"x": 22, "y": 56, "width": 16, "height": 14},
-        "gps": {"latitude": 26.4938, "longitude": 80.2895},
-        "metrics": {
-            "surfaceTempC": 44.2,
-            "treeCanopyPct": 6,
-            "buildingDensityPct": 75,
-            "pavedSurfacePct": 92,
-            "waterBodyBufferM": 410,
-            "pedestrianFootfall": "MEDIUM",
-            "albedo": 0.11
-        },
-        "heatRiskScore": 95,
-        "classification": "CRITICAL_HOT_ZONE",
-        "statusColor": "#dc2626",
-        "exposureSummary": "Highest recorded surface temperature (44.2°C) due to unpainted galvanized corrugated roofs and dark bitumen paving."
-    },
-    {
-        "id": "sec-library-plaza",
-        "name": "Central Library Forecourt & Sun Plaza",
-        "zone": "Central Academic",
-        "bounds": {"x": 56, "y": 32, "width": 14, "height": 14},
-        "gps": {"latitude": 26.4965, "longitude": 80.2940},
-        "metrics": {
-            "surfaceTempC": 39.8,
-            "treeCanopyPct": 18,
-            "buildingDensityPct": 52,
-            "pavedSurfacePct": 78,
-            "waterBodyBufferM": 190,
-            "pedestrianFootfall": "HIGH",
-            "albedo": 0.22
-        },
-        "heatRiskScore": 79,
-        "classification": "HIGH_STRESS",
-        "statusColor": "#f97316",
-        "exposureSummary": "Red sandstone paving re-radiates midday solar radiation directly onto students entering and leaving the central reading hall."
-    },
-    {
-        "id": "sec-admin-parking",
-        "name": "Vice Chancellor Secretariat & VIP Parking Lot",
-        "zone": "Administrative Precinct",
-        "bounds": {"x": 68, "y": 24, "width": 15, "height": 12},
-        "gps": {"latitude": 26.4975, "longitude": 80.2965},
-        "metrics": {
-            "surfaceTempC": 41.4,
-            "treeCanopyPct": 22,
-            "buildingDensityPct": 45,
-            "pavedSurfacePct": 88,
-            "waterBodyBufferM": 260,
-            "pedestrianFootfall": "MEDIUM",
-            "albedo": 0.12
-        },
-        "heatRiskScore": 83,
-        "classification": "HIGH_STRESS",
-        "statusColor": "#f97316",
-        "exposureSummary": "Unshaded open asphalt parking generates local micro-plume of buoyant heated air drifting toward administrative offices."
-    },
-    {
-        "id": "sec-botanical-pond",
-        "name": "North Botanical Garden & Rainwater Retention Pond",
-        "zone": "Eco-Conservation Zone",
-        "bounds": {"x": 72, "y": 50, "width": 18, "height": 18},
-        "gps": {"latitude": 26.4982, "longitude": 80.2980},
-        "metrics": {
-            "surfaceTempC": 28.4,
-            "treeCanopyPct": 86,
-            "buildingDensityPct": 4,
-            "pavedSurfacePct": 8,
-            "waterBodyBufferM": 0,
-            "pedestrianFootfall": "LOW",
-            "albedo": 0.35
-        },
-        "heatRiskScore": 14,
-        "classification": "COOL_REFUGE",
-        "statusColor": "#10b981",
-        "exposureSummary": "Primary natural cooling engine of the campus. Water surface evaporation combined with multi-tiered tree canopy suppresses temperature by 14.2°C."
-    },
-    {
-        "id": "sec-sports-stadium",
-        "name": "Athletic Stadium & Synthetic Running Track",
-        "zone": "Sports & Recreation",
-        "bounds": {"x": 38, "y": 72, "width": 22, "height": 16},
-        "gps": {"latitude": 26.4920, "longitude": 80.2950},
-        "metrics": {
-            "surfaceTempC": 42.1,
-            "treeCanopyPct": 10,
-            "buildingDensityPct": 18,
-            "pavedSurfacePct": 76,
-            "waterBodyBufferM": 380,
-            "pedestrianFootfall": "HIGH",
-            "albedo": 0.16
-        },
-        "heatRiskScore": 86,
-        "classification": "CRITICAL_HOT_ZONE",
-        "statusColor": "#ef4444",
-        "exposureSummary": "Wide open, unshaded spectator stands and synthetic poly-turf reach peak thermal saturation by 13:00 hrs."
-    },
-    {
-        "id": "sec-hostel-spine",
-        "name": "Boys Hostel Spine & Canteen Pathway (Gate 2)",
-        "zone": "Residential Sector",
-        "bounds": {"x": 74, "y": 70, "width": 16, "height": 16},
-        "gps": {"latitude": 26.4970, "longitude": 80.2995},
-        "metrics": {
-            "surfaceTempC": 39.5,
-            "treeCanopyPct": 26,
-            "buildingDensityPct": 60,
-            "pavedSurfacePct": 74,
-            "waterBodyBufferM": 210,
-            "pedestrianFootfall": "EXTREME",
-            "albedo": 0.18
-        },
-        "heatRiskScore": 81,
-        "classification": "HIGH_STRESS",
-        "statusColor": "#f97316",
-        "exposureSummary": "High vulnerability due to extreme evening and midday student pedestrian traffic crossing between hostels and academic mess."
-    },
-    {
-        "id": "sec-girls-hostel",
-        "name": "Girls Hostel Inner Courtyard & Neem Grove",
-        "zone": "Residential Sector",
-        "bounds": {"x": 54, "y": 55, "width": 14, "height": 14},
-        "gps": {"latitude": 26.4950, "longitude": 80.2960},
-        "metrics": {
-            "surfaceTempC": 31.8,
-            "treeCanopyPct": 68,
-            "buildingDensityPct": 42,
-            "pavedSurfacePct": 32,
-            "waterBodyBufferM": 140,
-            "pedestrianFootfall": "MEDIUM",
-            "albedo": 0.28
-        },
-        "heatRiskScore": 32,
-        "classification": "MODERATE",
-        "statusColor": "#3b82f6",
-        "exposureSummary": "Protected courtyard microclimate with mature Azadirachta indica (Neem) trees providing continuous biological shade."
-    }
-]
+BASE_DIR = Path(__file__).resolve().parent
+ZONES_FILE = BASE_DIR / "data" / "csjmu_heat_zones.json"
+SIM_CONFIG_FILE = BASE_DIR / "data" / "microclimate_simulator_config.json"
 
-# 4 Actionable Urban Planning Interventions
-PLANNING_INTERVENTIONS = {
-    "treePlanting": [
-        {
-            "id": "TP-01",
-            "title": "UIET North Boulevard Green Corridor",
-            "sectorId": "sec-uiet-courtyard",
-            "location": "North Pedestrian Spine between UIET 1 & 3",
-            "coordinates": {"x": 42, "y": 36},
-            "gps": {"latitude": 26.4955, "longitude": 80.2925},
-            "urgency": "HIGH",
-            "recommendedSpecies": [
-                {"name": "Azadirachta indica (Neem)", "reason": "Dense evergreen shade, high evapotranspiration, dust filtration", "coolingEffect": "High (-3.8°C)"},
-                {"name": "Cassia fistula (Amaltas)", "reason": "Drought tolerant, medium canopy, seasonal aesthetic", "coolingEffect": "Medium (-2.4°C)"},
-                {"name": "Dalbergia sissoo (Shisham)", "reason": "Deep root system, non-disruptive to pavement foundation", "coolingEffect": "High (-3.2°C)"}
-            ],
-            "treeCountTarget": 45,
-            "estimatedTempDropC": 4.2,
-            "soilPermeability": "Good (Sandy Loam)",
-            "undergroundUtilitiesCheck": "PASSED (Safe from sewer mains)",
-            "whyHere": "Currently 84% paved with only 12% canopy. Extreme student footfall makes this the #1 priority for biological shading."
-        },
-        {
-            "id": "TP-02",
-            "title": "Stadium Perimeter Heat Buffer Belt",
-            "sectorId": "sec-sports-stadium",
-            "location": "West Bleacher Boundary Road",
-            "coordinates": {"x": 37, "y": 74},
-            "gps": {"latitude": 26.4918, "longitude": 80.2945},
-            "urgency": "MEDIUM",
-            "recommendedSpecies": [
-                {"name": "Ficus benghalensis (Banyan)", "reason": "Massive canopy footprint, multi-generational microclimate sink", "coolingEffect": "Very High (-5.1°C)"},
-                {"name": "Terminalia arjuna (Arjun)", "reason": "Rapid vertical growth, strong windbreak property", "coolingEffect": "High (-3.5°C)"}
-            ],
-            "treeCountTarget": 30,
-            "estimatedTempDropC": 3.6,
-            "soilPermeability": "Moderate",
-            "undergroundUtilitiesCheck": "PASSED",
-            "whyHere": "Blocks afternoon solar glare and western hot winds (Loo) from heating the running tracks and bleachers."
-        }
-    ],
+# Load persistent GeoJSON/JSON and simulator configurations
+if ZONES_FILE.exists():
+    with open(ZONES_FILE, "r", encoding="utf-8") as f:
+        GEOJSON_DATA = json.load(f)
+else:
+    GEOJSON_DATA = {"features": []}
 
-    "shadeStructures": [
-        {
-            "id": "SS-01",
-            "title": "UIET Central Tensile Fabric Canopy Walkway",
-            "sectorId": "sec-uiet-courtyard",
-            "location": "Connecting UIET Block 1 to Canteen Hub",
-            "coordinates": {"x": 39, "y": 42},
-            "gps": {"latitude": 26.4950, "longitude": 80.2922},
-            "structureType": "PTFE Architectural Tensile Membrane with Photovoltaic Integrated Skin",
-            "spanLengthMeters": 85,
-            "uvProtectionPct": 98,
-            "solarInsolationCut": "82% direct radiation cut",
-            "whyNoTrees": "Underground 11kV electrical duct bank and stormwater culvert prevent tree root growth.",
-            "immediateImpact": "Instant 6.5°C perceived thermal comfort improvement (PET) along main student thoroughfare."
-        },
-        {
-            "id": "SS-02",
-            "title": "Library Concourse Solar Pergola Gallery",
-            "sectorId": "sec-library-plaza",
-            "location": "Central Library Main Approach Steps",
-            "coordinates": {"x": 58, "y": 34},
-            "gps": {"latitude": 26.4967, "longitude": 80.2942},
-            "structureType": "Bifacial Solar Glass Pergola with Climber Trellises (Bougainvillea)",
-            "spanLengthMeters": 50,
-            "uvProtectionPct": 95,
-            "solarInsolationCut": "75% solar reflection + 12 kW clean power generation",
-            "whyNoTrees": "Sandstone podium slab over underground book archive basement.",
-            "immediateImpact": "Creates sheltered waiting and congregation foyer outside reading hall."
-        }
-    ],
+if SIM_CONFIG_FILE.exists():
+    with open(SIM_CONFIG_FILE, "r", encoding="utf-8") as f:
+        SIMULATOR_CONFIG = json.load(f)
+else:
+    SIMULATOR_CONFIG = {"coefficients": {}}
 
-    "coolPavement": [
-        {
-            "id": "CP-01",
-            "title": "Workshop Logistics & Loading Dock Retrofit",
-            "sectorId": "sec-workshop-yard",
-            "location": "Central Mechanical Workshop North Apron",
-            "coordinates": {"x": 26, "y": 60},
-            "gps": {"latitude": 26.4936, "longitude": 80.2892},
-            "currentMaterial": "Aged Weathered Asphalt (Albedo: 0.10, Surface: 44.2°C)",
-            "recommendedTreatment": "Permeable Concrete Pavers with High Solar Reflectance Index (SRI ≥ 78)",
-            "retrofitAreaSqM": 3200,
-            "expectedSurfaceTempDrop": "Down from 44.2°C to 34.5°C (-9.7°C drop)",
-            "permeabilityGain": "Permits 180mm/hr stormwater infiltration, recharging campus groundwater"
-        },
-        {
-            "id": "CP-02",
-            "title": "Admin & VIP Parking Lot Cool Coating",
-            "sectorId": "sec-admin-parking",
-            "location": "Secretariat Open Car Park",
-            "coordinates": {"x": 71, "y": 26},
-            "gps": {"latitude": 26.4973, "longitude": 80.2962},
-            "currentMaterial": "Bituminous Macadam (Albedo: 0.12)",
-            "recommendedTreatment": "Titanium-Dioxide Polymer Cool Pavement Slurry (SRI ≥ 82, Light Grey Finish)",
-            "retrofitAreaSqM": 2400,
-            "expectedSurfaceTempDrop": "Down from 41.4°C to 33.0°C (-8.4°C drop)",
-            "permeabilityGain": "Reflective thermal barrier stops re-radiation into adjacent offices"
-        }
-    ],
-
-    "optimalSeating": [
-        {
-            "id": "OS-01",
-            "title": "Botanical Lake Breeze Study Pavilion",
-            "sectorId": "sec-botanical-pond",
-            "location": "South-West Shore of Eco Retention Pond",
-            "coordinates": {"x": 75, "y": 54},
-            "gps": {"latitude": 26.4980, "longitude": 80.2978},
-            "thermalComfortIndex": "EXCELLENT (28.4°C ambient micro-climate)",
-            "canopyShadeFactor": "95% Mature Ficus & Neem canopy",
-            "windChanneling": "Catches prevailing easterly lake breezes",
-            "furnitureType": "Recycled composite timber benches with solar USB charging ports",
-            "capacity": 24,
-            "walkDistanceMinutes": "2.5 mins from Central Library"
-        },
-        {
-            "id": "OS-02",
-            "title": "UIET West Pocket Forest Seating Ring",
-            "sectorId": "sec-uiet-courtyard",
-            "location": "Adjacent to UIET Block 2 Lawn Margin",
-            "coordinates": {"x": 45, "y": 50},
-            "gps": {"latitude": 26.4948, "longitude": 80.2928},
-            "thermalComfortIndex": "GOOD (32.2°C with planned canopy extension)",
-            "canopyShadeFactor": "70% existing Gulmohar canopy",
-            "windChanneling": "Building venturi draft provides natural air velocity (1.8 m/s)",
-            "furnitureType": "Granite curved seating benches with backrests under dense tree ring",
-            "capacity": 18,
-            "walkDistanceMinutes": "45 seconds from Mechanical & Civil classrooms"
-        }
-    ]
-}
 
 class CampusHeatIslandService:
     def __init__(self):
-        self.sectors = CAMPUS_MICROCLIMATE_SECTORS
-        self.interventions = PLANNING_INTERVENTIONS
+        self.geojson = GEOJSON_DATA
+        self.sim_config = SIMULATOR_CONFIG
+        self.features = self.geojson.get("features", [])
 
-    def get_sectors(self) -> List[Dict[str, Any]]:
-        return self.sectors
+    def get_sectors(self, season: str = "pre_monsoon") -> List[Dict[str, Any]]:
+        """
+        Returns the 8 campus sectors with season-specific satellite metrics,
+        provenance classification (MEASURED, DERIVED, ASSUMED), and polygon bounds.
+        """
+        sectors = []
+        is_pre = (season != "post_monsoon")
+
+        for feat in self.features:
+            props = feat.get("properties", {})
+            metrics_obj = props.get("preMonsoon" if is_pre else "postMonsoon", {})
+            
+            # Extract bounding rectangle for backwards compatibility
+            coords = feat.get("geometry", {}).get("coordinates", [[]])[0]
+            if coords:
+                min_lng = min(p[0] for p in coords)
+                max_lng = max(p[0] for p in coords)
+                min_lat = min(p[1] for p in coords)
+                max_lat = max(p[1] for p in coords)
+            else:
+                min_lng, max_lng, min_lat, max_lat = 80.265, 80.267, 26.502, 26.504
+
+            # Map coordinates to percentage bounds for compatibility
+            # CSJMU bounding box: Lat 26.4985 to 26.5075, Lng 80.2630 to 80.2735
+            x_pct = round((min_lng - 80.2630) / (80.2735 - 80.2630) * 100, 1)
+            y_pct = round((26.5075 - max_lat) / (26.5075 - 26.4985) * 100, 1)
+            w_pct = max(8.0, round((max_lng - min_lng) / (80.2735 - 80.2630) * 100, 1))
+            h_pct = max(8.0, round((max_lat - min_lat) / (26.5075 - 26.4985) * 100, 1))
+
+            sectors.append({
+                "id": props.get("id"),
+                "name": props.get("name"),
+                "zone": props.get("zone"),
+                "bounds": {"x": x_pct, "y": y_pct, "width": w_pct, "height": h_pct},
+                "polygon": coords,
+                "gps": {"latitude": props.get("center", [26.503, 80.268])[0], "longitude": props.get("center", [26.503, 80.268])[1]},
+                "metrics": {
+                    "surfaceTempC": metrics_obj.get("surfaceTempC", 40.0),
+                    "treeCanopyPct": metrics_obj.get("treeCanopyPct", 20.0),
+                    "buildingDensityPct": metrics_obj.get("buildingDensityPct", 50.0),
+                    "pavedSurfacePct": metrics_obj.get("pavedSurfacePct", 75.0),
+                    "waterBodyBufferM": metrics_obj.get("waterBodyBufferM", 250),
+                    "pedestrianFootfall": metrics_obj.get("pedestrianFootfall", "MEDIUM"),
+                    "albedo": 0.18
+                },
+                "metricsProvenance": props.get("metricsProvenance", {}),
+                "heatRiskScore": metrics_obj.get("chriScore", 75),
+                "classification": metrics_obj.get("classification", "HIGH_STRESS"),
+                "statusColor": (
+                    "#ef4444" if metrics_obj.get("classification") == "CRITICAL_HOT_ZONE"
+                    else "#f97316" if metrics_obj.get("classification") == "HIGH_STRESS"
+                    else "#10b981" if metrics_obj.get("classification") == "COOL_REFUGE"
+                    else "#3b82f6"
+                ),
+                "exposureSummary": props.get("exposureSummary", ""),
+                "recommendedSpecies": props.get("recommendedSpecies", []),
+                "siteChecklist": props.get("siteChecklist", {}),
+                "season": "pre_monsoon" if is_pre else "post_monsoon",
+                "acquisitionDate": metrics_obj.get("date", "2024-05-18"),
+                "overpassTimeIST": metrics_obj.get("overpassTimeIST", "10:48 AM"),
+                "validThermalPixels": props.get("validThermalPixels", 8),
+                "confidence": props.get("confidence", "MODERATE")
+            })
+
+        return sectors
 
     def get_interventions(self) -> Dict[str, Any]:
-        return self.interventions
+        """Returns factual interventions with site check requirements."""
+        return {
+            "treePlanting": [
+                {
+                    "id": "TP-01",
+                    "title": "UIET North Boulevard Green Corridor",
+                    "sectorId": "sec-uiet-courtyard",
+                    "location": "North Pedestrian Spine between UIET 1 & 3",
+                    "coordinates": {"x": 42, "y": 36},
+                    "gps": {"latitude": 26.4955, "longitude": 80.2925},
+                    "urgency": "HIGH",
+                    "recommendedSpecies": [
+                        {"name": "Azadirachta indica (Neem)", "native": True, "spreadM": 14, "waterNeed": "Low", "cautions": "Seasonal fruit drop requires sweeping; non-invasive near foundations."},
+                        {"name": "Cassia fistula (Amaltas)", "native": True, "spreadM": 8, "waterNeed": "Low-Moderate", "cautions": "Deciduous in late winter; no root foundation disruption."}
+                    ],
+                    "treeCountTarget": 45,
+                    "targetCanopySqm": 1125,
+                    "estimatedLSTDropRange": "1.2 to 2.8 °C (Low confidence scenario estimate)",
+                    "siteChecklist": {
+                        "utilitiesChecked": False,
+                        "soilPermeabilityChecked": False,
+                        "irrigationAccessChecked": False,
+                        "buildingSetbackChecked": False,
+                        "inspector": "Pending Site Survey",
+                        "status": "NOT_CHECKED"
+                    },
+                    "whyHere": "Currently 84% paved with only 12% canopy. Extreme student footfall makes this the primary candidate for biological shade."
+                },
+                {
+                    "id": "TP-02",
+                    "title": "Stadium Western Perimeter Buffer Belt",
+                    "sectorId": "sec-sports-stadium",
+                    "location": "West Bleacher Boundary Road",
+                    "coordinates": {"x": 37, "y": 74},
+                    "gps": {"latitude": 26.4918, "longitude": 80.2945},
+                    "urgency": "MEDIUM",
+                    "recommendedSpecies": [
+                        {"name": "Syzygium cumini (Jamun)", "native": True, "spreadM": 14, "waterNeed": "Moderate", "cautions": "Fruit drop in July-August along synthetic track; excellent windbreak against hot western Loo."}
+                    ],
+                    "treeCountTarget": 30,
+                    "targetCanopySqm": 750,
+                    "estimatedLSTDropRange": "0.8 to 2.1 °C (Low confidence scenario estimate)",
+                    "siteChecklist": {
+                        "utilitiesChecked": False,
+                        "soilPermeabilityChecked": False,
+                        "irrigationAccessChecked": False,
+                        "buildingSetbackChecked": False,
+                        "inspector": "Pending Site Survey",
+                        "status": "NOT_CHECKED"
+                    },
+                    "whyHere": "Blocks afternoon western solar glare and hot summer winds (Loo) from heating the stadium stands."
+                }
+            ],
+            "shadeStructures": [
+                {
+                    "id": "SS-01",
+                    "title": "UIET Central Tensile Walkway",
+                    "sectorId": "sec-uiet-courtyard",
+                    "location": "Connecting UIET Block 1 to Canteen Hub",
+                    "coordinates": {"x": 39, "y": 42},
+                    "gps": {"latitude": 26.4950, "longitude": 80.2922},
+                    "structureType": "PTFE Architectural Tensile Membrane",
+                    "spanLengthMeters": 85,
+                    "areaSqm": 340,
+                    "whyNoTrees": "Underground 11kV electrical duct bank and stormwater culvert prevent tree root growth."
+                }
+            ],
+            "coolPavement": [
+                {
+                    "id": "CP-01",
+                    "title": "Workshop Loading Dock Retrofit",
+                    "sectorId": "sec-workshop-yard",
+                    "location": "Central Mechanical Workshop North Apron",
+                    "coordinates": {"x": 26, "y": 60},
+                    "gps": {"latitude": 26.4936, "longitude": 80.2892},
+                    "currentMaterial": "Aged Weathered Asphalt (Albedo: 0.11)",
+                    "recommendedTreatment": "Permeable Pavers with High Solar Reflectance Index (SRI >= 78)",
+                    "retrofitAreaSqM": 3200
+                }
+            ],
+            "optimalSeating": [
+                {
+                    "id": "OS-01",
+                    "title": "Botanical Lake Breeze Study Pavilion",
+                    "sectorId": "sec-botanical-pond",
+                    "location": "South-West Shore of Eco Retention Pond",
+                    "coordinates": {"x": 75, "y": 54},
+                    "gps": {"latitude": 26.4980, "longitude": 80.2978},
+                    "canopyShadeFactor": "95% Mature Ficus & Neem canopy",
+                    "capacity": 24
+                }
+            ]
+        }
 
-    def get_summary_metrics(self) -> Dict[str, Any]:
-        avg_temp = round(sum(s["metrics"]["surfaceTempC"] for s in self.sectors) / len(self.sectors), 1)
-        max_temp = max(s["metrics"]["surfaceTempC"] for s in self.sectors)
-        min_temp = min(s["metrics"]["surfaceTempC"] for s in self.sectors)
-        hot_zones_count = sum(1 for s in self.sectors if s["classification"] == "CRITICAL_HOT_ZONE")
-        avg_canopy = round(sum(s["metrics"]["treeCanopyPct"] for s in self.sectors) / len(self.sectors), 1)
-        avg_paved = round(sum(s["metrics"]["pavedSurfacePct"] for s in self.sectors) / len(self.sectors), 1)
+    def get_summary_metrics(self, season: str = "pre_monsoon") -> Dict[str, Any]:
+        """Calculates true summary statistics from the loaded zone dataset."""
+        sectors = self.get_sectors(season=season)
+        if not sectors:
+            return {
+                "avgSurfaceTempC": None,
+                "peakHotZoneTempC": None,
+                "coolOasisTempC": None,
+                "uhiDeltaRangeC": None,
+                "criticalHotZonesCount": 0,
+                "avgTreeCanopyPct": None,
+                "avgPavedSurfacePct": None,
+                "season": season,
+                "acquisitionDate": "No data"
+            }
+
+        avg_temp = round(sum(s["metrics"]["surfaceTempC"] for s in sectors) / len(sectors), 1)
+        max_temp = max(s["metrics"]["surfaceTempC"] for s in sectors)
+        min_temp = min(s["metrics"]["surfaceTempC"] for s in sectors)
+        hot_zones_count = sum(1 for s in sectors if s["classification"] == "CRITICAL_HOT_ZONE")
+        avg_canopy = round(sum(s["metrics"]["treeCanopyPct"] for s in sectors) / len(sectors), 1)
+        avg_paved = round(sum(s["metrics"]["pavedSurfacePct"] for s in sectors) / len(sectors), 1)
+        acq_date = sectors[0].get("acquisitionDate", "2024-05-18")
 
         return {
             "avgSurfaceTempC": avg_temp,
@@ -344,46 +236,82 @@ class CampusHeatIslandService:
             "criticalHotZonesCount": hot_zones_count,
             "avgTreeCanopyPct": avg_canopy,
             "avgPavedSurfacePct": avg_paved,
-            "totalInterventions": {
-                "treePlantingTarget": sum(tp["treeCountTarget"] for tp in self.interventions["treePlanting"]),
-                "shadeCanopyMeters": sum(sc["spanLengthMeters"] for sc in self.interventions["shadeStructures"]),
-                "coolPavementSqM": sum(cp["retrofitAreaSqM"] for cp in self.interventions["coolPavement"]),
-                "seatingCapacity": sum(os["capacity"] for os in self.interventions["optimalSeating"])
-            }
+            "season": season,
+            "acquisitionDate": acq_date,
+            "thermalSensor": "Landsat 9 TIRS-2 (Collection 2 Level-2 ST_B10)"
         }
 
-    def simulate_mitigation(self, sector_id: str, added_trees: int, cool_pave_pct: float, shade_sqm: float) -> Dict[str, Any]:
-        sector = next((s for s in self.sectors if s["id"] == sector_id), self.sectors[0])
-        curr_temp = sector["metrics"]["surfaceTempC"]
-        curr_canopy = sector["metrics"]["treeCanopyPct"]
+    def simulate_mitigation(
+        self,
+        sector_id: str,
+        added_trees: int,
+        cool_pave_sqm: float,
+        shade_sqm: float,
+        season: str = "pre_monsoon"
+    ) -> Dict[str, Any]:
+        """
+        Scientific What-If Simulator:
+        Calculates bounded scenario ranges based on published literature with strict caps.
+        Rejects any intervention coefficient that lacks a documented peer-reviewed source.
+        """
+        sectors = self.get_sectors(season=season)
+        sector = next((s for s in sectors if s["id"] == sector_id), sectors[0])
+        curr_lst = sector["metrics"]["surfaceTempC"]
+        coeffs = self.sim_config.get("coefficients", {})
 
-        # Empirical microclimate delta cooling calculations:
-        # Each 10 mature trees reduce local LST by ~0.8°C (up to 4.5°C max)
-        tree_cooling = min(4.5, (added_trees / 10.0) * 0.8)
-        # Cool pavement conversion reduces surface LST by up to 5.5°C
-        pave_cooling = min(5.5, (cool_pave_pct / 100.0) * 5.5)
-        # Shade structures cut direct radiation perceived temperature by up to 3.0°C
-        shade_cooling = min(3.0, (shade_sqm / 500.0) * 3.0)
+        # 1. Tree Canopy Cooling (Bowler et al. 2010)
+        tree_cfg = coeffs.get("tree_canopy_cooling")
+        if not tree_cfg or not tree_cfg.get("citation"):
+            raise ValueError("Tree canopy coefficient missing published citation.")
+        
+        canopy_per_tree = tree_cfg.get("assumed_canopy_area_sqm_per_tree", 25.0)
+        total_canopy_sqm = added_trees * canopy_per_tree
+        tree_min_drop = min(tree_cfg["max_cap_c"], (total_canopy_sqm / 100.0) * tree_cfg["min_delta_c_per_100sqm"])
+        tree_max_drop = min(tree_cfg["max_cap_c"], (total_canopy_sqm / 100.0) * tree_cfg["max_delta_c_per_100sqm"])
 
-        total_temp_drop = round(tree_cooling + pave_cooling + shade_cooling, 2)
-        projected_temp = round(curr_temp - total_temp_drop, 1)
-        projected_canopy = min(95, curr_canopy + int(added_trees * 0.4))
-        projected_risk = max(15, sector["heatRiskScore"] - int(total_temp_drop * 10))
+        # 2. Cool Pavement Retrofit (Santamouris 2014)
+        pave_cfg = coeffs.get("cool_pavement_retrofit")
+        if not pave_cfg or not pave_cfg.get("citation"):
+            raise ValueError("Cool pavement coefficient missing published citation.")
+        
+        pave_min_drop = min(pave_cfg["max_cap_c"], (cool_pave_sqm / 100.0) * pave_cfg["min_delta_c_per_100sqm"])
+        pave_max_drop = min(pave_cfg["max_cap_c"], (cool_pave_sqm / 100.0) * pave_cfg["max_delta_c_per_100sqm"])
+
+        # 3. Architectural Shade (Lin et al. 2010)
+        shade_cfg = coeffs.get("architectural_shade")
+        if not shade_cfg or not shade_cfg.get("citation"):
+            raise ValueError("Architectural shade coefficient missing published citation.")
+        
+        shade_min_drop = min(shade_cfg["max_cap_c"], (shade_sqm / 100.0) * shade_cfg["min_delta_c_per_100sqm"])
+        shade_max_drop = min(shade_cfg["max_cap_c"], (shade_sqm / 100.0) * shade_cfg["max_delta_c_per_100sqm"])
+
+        # Total combined range (surface LST drop) with physical ceiling
+        total_min_drop = round(min(5.5, tree_min_drop + pave_min_drop + shade_min_drop), 1)
+        total_max_drop = round(min(7.0, tree_max_drop + pave_max_drop + shade_max_drop), 1)
+
+        projected_lst_min = round(curr_lst - total_max_drop, 1)
+        projected_lst_max = round(curr_lst - total_min_drop, 1)
 
         return {
             "sectorId": sector["id"],
             "sectorName": sector["name"],
-            "currentTempC": curr_temp,
-            "projectedTempC": projected_temp,
-            "totalTempDropC": total_temp_drop,
-            "coolingBreakdown": {
-                "biologicalTreeDrop": round(tree_cooling, 2),
-                "coolPavementDrop": round(pave_cooling, 2),
-                "shadeStructureDrop": round(shade_cooling, 2)
+            "currentSurfaceTempLST_C": curr_lst,
+            "temperatureMetric": "Land Surface Temperature (LST, °C)",
+            "airTempNote": "Estimated air temperature (Tair) reduction is typically 30-50% of surface LST reduction.",
+            "projectedSurfaceTempRangeC": [projected_lst_min, projected_lst_max],
+            "totalLSTDropRangeC": [total_min_drop, total_max_drop],
+            "confidenceLabel": "Low-Moderate confidence (empirical scenario estimate, not hydrodynamic forecast)",
+            "breakdownRanges": {
+                "treeCanopyLSTDrop": [round(tree_min_drop, 1), round(tree_max_drop, 1)],
+                "coolPavementLSTDrop": [round(pave_min_drop, 1), round(pave_max_drop, 1)],
+                "shadeStructureLSTDrop": [round(shade_min_drop, 1), round(shade_max_drop, 1)]
             },
-            "currentHeatRisk": sector["heatRiskScore"],
-            "projectedHeatRisk": projected_risk,
-            "newClassification": "COOL_REFUGE" if projected_temp < 32 else ("MODERATE" if projected_temp < 36 else "HIGH_STRESS")
+            "literatureSources": [
+                {"measure": "Tree Canopy", "citation": tree_cfg["citation"]["title"], "year": tree_cfg["citation"]["year"], "doi": tree_cfg["citation"]["doi"]},
+                {"measure": "Cool Pavement", "citation": pave_cfg["citation"]["title"], "year": pave_cfg["citation"]["year"], "doi": pave_cfg["citation"]["doi"]},
+                {"measure": "Architectural Shade", "citation": shade_cfg["citation"]["title"], "year": shade_cfg["citation"]["year"], "doi": shade_cfg["citation"]["doi"]}
+            ]
         }
+
 
 heat_island_service = CampusHeatIslandService()

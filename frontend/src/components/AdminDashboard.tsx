@@ -181,15 +181,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Super Admin Command Header */}
-      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-[#001e40] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-purple-800/40">
+      <div className="bg-[#001e40] rounded-xl p-6 text-white shadow-md border border-slate-700">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 backdrop-blur-md text-purple-200 border border-white/10">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-200 border border-white/10">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
                 CSJMU Central Secretariat &amp; IT Directorate
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-200 border border-amber-400/30">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-400/20 text-amber-200 border border-amber-400/30">
                 Master Super Admin Terminal
               </span>
             </div>
@@ -197,8 +197,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white">
               Super Admin Executive Console
             </h1>
-            <p className="text-xs text-purple-100/80 max-w-2xl leading-relaxed">
-              Complete administrative authority over BVG contractor dispatch, role assignment permissions, security policies, and role login PIN credentials.
+            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              Administrative authority over BVG contractor dispatch, role assignment permissions, security policies, and verified login credentials.
             </p>
           </div>
 
@@ -206,15 +206,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="grid grid-cols-3 gap-3 bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/10">
             <div className="text-center px-2">
               <div className="text-xl font-black text-amber-300">{urgentTasks}</div>
-              <div className="text-[9px] uppercase font-bold text-purple-200/80 tracking-wider">Urgent Tasks</div>
+              <div className="text-[9px] uppercase font-bold text-slate-300 tracking-wider">Urgent Tasks</div>
             </div>
             <div className="text-center px-2 border-l border-white/10">
               <div className="text-xl font-black text-emerald-300">{credentials.length}</div>
-              <div className="text-[9px] uppercase font-bold text-purple-200/80 tracking-wider">Personnel</div>
+              <div className="text-[9px] uppercase font-bold text-slate-300 tracking-wider">Personnel</div>
             </div>
             <div className="text-center px-2 border-l border-white/10">
-              <div className="text-xl font-black text-purple-300">4</div>
-              <div className="text-[9px] uppercase font-bold text-purple-200/80 tracking-wider">Active Roles</div>
+              <div className="text-xl font-black text-blue-300">4</div>
+              <div className="text-[9px] uppercase font-bold text-slate-300 tracking-wider">Active Roles</div>
             </div>
           </div>
         </div>
@@ -231,10 +231,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex items-center gap-2 mt-6 pt-4 border-t border-white/10 overflow-x-auto">
           <button
             onClick={() => setActiveTab('bvg_work')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'bvg_work'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400/40'
-                : 'bg-white/10 hover:bg-white/15 text-purple-100'
+                ? 'bg-[#003366] text-white shadow-xs ring-1 ring-blue-400/40'
+                : 'bg-white/10 hover:bg-white/15 text-slate-200'
             }`}
           >
             <HardHat className="w-4 h-4" />
@@ -243,10 +243,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('roles_management')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'roles_management'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400/40'
-                : 'bg-white/10 hover:bg-white/15 text-purple-100'
+                ? 'bg-[#003366] text-white shadow-xs ring-1 ring-blue-400/40'
+                : 'bg-white/10 hover:bg-white/15 text-slate-200'
             }`}
           >
             <UserCheck className="w-4 h-4" />
@@ -255,14 +255,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('credentials_management')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'credentials_management'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400/40'
-                : 'bg-white/10 hover:bg-white/15 text-purple-100'
+                ? 'bg-[#003366] text-white shadow-xs ring-1 ring-blue-400/40'
+                : 'bg-white/10 hover:bg-white/15 text-slate-200'
             }`}
           >
             <KeyRound className="w-4 h-4" />
             <span>Manage Password &amp; Login Credentials</span>
+          </button>
+        </div>
+
+        {/* Quick Access to Operational Intelligence */}
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 overflow-x-auto text-[11px]">
+          <span className="text-slate-300 font-bold uppercase tracking-wider text-[10px] mr-1 flex-shrink-0">
+            Direct Jump:
+          </span>
+          <button
+            onClick={() => onNavigateToTab('cctv_pipeline')}
+            className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-400/20 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <Layers className="w-3 h-3 text-indigo-300" />
+            <span>CCTV AI Pipeline</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('map')}
+            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-white border border-white/10 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <MapPin className="w-3 h-3 text-blue-300" />
+            <span>Campus GIS Map</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('heatisland')}
+            className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/20 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <Flame className="w-3 h-3 text-rose-300" />
+            <span>Heat Island Analysis</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('analytics')}
+            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/20 font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+          >
+            <BarChart3 className="w-3 h-3 text-emerald-300" />
+            <span>SWM Analytics</span>
           </button>
         </div>
       </div>
@@ -273,7 +308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeTab === 'bvg_work' && (
         <div className="space-y-6">
           {/* Quick Filters & Stats */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
                 <HardHat className="w-4 h-4 text-amber-600" />
@@ -291,7 +326,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onClick={() => setWorkFilter(f)}
                   className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
                     workFilter === f
-                      ? 'bg-white text-purple-900 shadow-xs font-black'
+                      ? 'bg-white text-[#001e40] shadow-xs font-black'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -302,10 +337,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Leaflet Map Preview */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <span className="text-xs font-black text-slate-800 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-purple-600" />
+                <MapPin className="w-4 h-4 text-[#001e40]" />
                 CSJMU Live Dispatch Beat Map (Red = Urgent &bull; Yellow = Medium &bull; Green = Low/Resolved)
               </span>
               <span className="text-xs text-slate-500 font-semibold">
@@ -325,7 +360,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Master Work Dispatch Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
@@ -354,7 +389,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                             isUrgent 
                               ? 'bg-rose-100 text-rose-800 border border-rose-200' 
                               : report.severity === 'medium'
@@ -368,7 +403,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <select
                             value={report.assignedTeam || 'BVG Beat 01 UIET Sanitation'}
                             onChange={(e) => onAssignTeam(report.id, e.target.value)}
-                            className="bg-white border border-slate-200 rounded-lg p-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                            className="bg-white border border-slate-200 rounded-lg p-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-600 cursor-pointer"
                           >
                             <option value="BVG Beat 01 UIET Sanitation">BVG Beat 01 (UIET & Labs)</option>
                             <option value="BVG Beat 02 Admin Corridor">BVG Beat 02 (Admin & Central)</option>
@@ -378,7 +413,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </select>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase ${
                             report.status === 'resolved'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : report.status === 'in_progress'
@@ -391,7 +426,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="py-3.5 px-4 text-right">
                           <button
                             onClick={() => onSelectReport(report)}
-                            className="px-3 py-1 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 font-bold rounded-lg text-xs transition-colors cursor-pointer"
                           >
                             Details
                           </button>
@@ -411,10 +446,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ========================================================================= */}
       {activeTab === 'roles_management' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-purple-600" />
+                <UserCheck className="w-4 h-4 text-blue-700" />
                 Campus Personnel &amp; Roles Directory
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -424,14 +459,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <button
               onClick={() => setIsAddUserOpen(true)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-[#001e40] hover:bg-[#003366] text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               <span>Add Personnel</span>
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
@@ -454,9 +489,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="text-[11px] text-slate-500 font-medium">{user.email}</div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${
                             user.role === 'super_admin'
-                              ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                              ? 'bg-slate-100 text-slate-900 border border-slate-300'
                               : user.role === 'management'
                               ? 'bg-blue-100 text-blue-900 border border-blue-300'
                               : user.role === 'bvg_worker'
@@ -487,7 +522,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               setNewSelectedRole(user.role);
                               setNewDepartment(user.department);
                             }}
-                            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1 ml-auto"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1 ml-auto"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Change Role</span>
@@ -508,10 +543,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ========================================================================= */}
       {activeTab === 'credentials_management' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-purple-600" />
+                <KeyRound className="w-4 h-4 text-[#001e40]" />
                 Access Control &amp; PIN Authentication Manager
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -544,7 +579,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="text-xs text-slate-500 mt-1">Field staff beat assignments &amp; AI photo resolution</div>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-xs">
+            <div className="bg-white rounded-xl p-4 border border-blue-200 shadow-xs">
               <div className="text-[10px] font-black uppercase text-blue-700">Role 3: Management</div>
               <div className="text-sm font-black text-slate-900 mt-1">
                 PIN: {credentials.find(c => c.role === 'management')?.pin || '5678'}
@@ -552,8 +587,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="text-xs text-slate-500 mt-1">Estate Directorate SLA oversight, reassignment &amp; leave approval</div>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-purple-200 shadow-xs">
-              <div className="text-[10px] font-black uppercase text-purple-700">Role 4: Super Admin</div>
+            <div className="bg-white rounded-xl p-4 border border-slate-300 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-900">Role 4: Super Admin</div>
               <div className="text-sm font-black text-slate-900 mt-1">
                 PIN: {credentials.find(c => c.role === 'super_admin')?.pin || '9999'}
               </div>
@@ -562,7 +597,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Credentials Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
@@ -607,7 +642,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="py-3.5 px-4">
                           <button
                             onClick={() => handleToggleAccountStatus(user.id)}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase cursor-pointer transition-colors ${
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase cursor-pointer transition-colors ${
                               user.status === 'active'
                                 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                 : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
@@ -623,7 +658,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 setEditingPinUser(user);
                                 setTempPin(user.pin);
                               }}
-                              className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1.5 ml-auto"
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1.5 ml-auto"
                             >
                               <KeyRound className="w-3.5 h-3.5" />
                               <span>Update PIN</span>
@@ -645,15 +680,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ========================================================================= */}
       {editingUser && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-purple-600" />
+                <UserCheck className="w-5 h-5 text-[#001e40]" />
                 Change User Role
               </h3>
               <button
                 onClick={() => setEditingUser(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -670,7 +705,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <select
                 value={newSelectedRole}
                 onChange={(e) => setNewSelectedRole(e.target.value as UserRole)}
-                className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500"
+                className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-bold focus:ring-2 focus:ring-blue-600"
               >
                 <option value="student">Student / Campus Citizen</option>
                 <option value="bvg_worker">BVG Sanitation Worker</option>
@@ -686,20 +721,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 value={newDepartment}
                 onChange={(e) => setNewDepartment(e.target.value)}
                 placeholder="E.g. Solid Waste Beat 02, Directorate Office..."
-                className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500"
+                className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-medium focus:ring-2 focus:ring-blue-600"
               />
             </div>
 
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setEditingUser(null)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveRoleChange}
-                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+                className="flex-1 py-2.5 bg-[#001e40] hover:bg-[#003366] text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
               >
                 Save Role Change
               </button>
@@ -713,15 +748,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ========================================================================= */}
       {editingPinUser && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-purple-600" />
+                <KeyRound className="w-5 h-5 text-[#001e40]" />
                 Update Login PIN
               </h3>
               <button
                 onClick={() => setEditingPinUser(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -739,21 +774,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 value={tempPin}
                 onChange={(e) => setTempPin(e.target.value)}
                 placeholder="E.g. 1234"
-                className="w-full text-center tracking-widest text-lg font-mono font-black p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                className="w-full text-center tracking-widest text-lg font-mono font-black p-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600"
               />
             </div>
 
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setEditingPinUser(null)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSavePin}
                 disabled={!tempPin.trim()}
-                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+                className="flex-1 py-2.5 bg-[#001e40] hover:bg-[#003366] disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
               >
                 Update PIN
               </button>
@@ -767,15 +802,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ========================================================================= */}
       {isAddUserOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-purple-600" />
+                <UserPlus className="w-5 h-5 text-[#001e40]" />
                 Add New Campus Personnel
               </h3>
               <button
                 onClick={() => setIsAddUserOpen(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -790,7 +825,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="E.g. Vikash Sharma"
-                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 mt-1"
+                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-medium focus:ring-2 focus:ring-blue-600 mt-1"
                 />
               </div>
 
@@ -802,7 +837,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   placeholder="vikash@csjmu.ac.in"
-                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 mt-1"
+                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-medium focus:ring-2 focus:ring-blue-600 mt-1"
                 />
               </div>
 
@@ -812,7 +847,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={newUserRole}
                     onChange={(e) => setNewUserRole(e.target.value as UserRole)}
-                    className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 mt-1"
+                    className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-bold focus:ring-2 focus:ring-blue-600 mt-1"
                   >
                     <option value="student">Student</option>
                     <option value="bvg_worker">BVG Worker</option>
@@ -828,7 +863,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     value={newUserPin}
                     onChange={(e) => setNewUserPin(e.target.value)}
                     placeholder="1234"
-                    className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold focus:ring-2 focus:ring-purple-500 mt-1"
+                    className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-mono font-bold focus:ring-2 focus:ring-blue-600 mt-1"
                   />
                 </div>
               </div>
@@ -840,7 +875,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   value={newUserAgency}
                   onChange={(e) => setNewUserAgency(e.target.value)}
                   placeholder="BVG India Ltd. or CSJMU Directorate"
-                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 mt-1"
+                  className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg font-medium focus:ring-2 focus:ring-blue-600 mt-1"
                 />
               </div>
 
@@ -848,13 +883,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddUserOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+                  className="flex-1 py-2.5 bg-[#001e40] hover:bg-[#003366] text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
                 >
                   Create Personnel
                 </button>

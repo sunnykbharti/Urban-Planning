@@ -16,7 +16,9 @@ import {
   LogOut,
   Shield,
   BadgeCheck,
-  Server
+  Server,
+  Menu,
+  Landmark
 } from 'lucide-react';
 import { ActivityEvent, UserRole, UserProfile } from '../types';
 
@@ -31,6 +33,9 @@ interface TopNavBarProps {
   onOpenAccountSwitcher?: () => void;
   onSignOut?: () => void;
   backendOnline?: boolean;
+  isMobileMenuOpen?: boolean;
+  onToggleMobileMenu?: () => void;
+  isAuthenticated?: boolean;
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = ({
@@ -43,7 +48,10 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   currentProfile,
   onOpenAccountSwitcher,
   onSignOut,
-  backendOnline
+  backendOnline,
+  isMobileMenuOpen,
+  onToggleMobileMenu,
+  isAuthenticated = true
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -56,7 +64,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
       case 'operator':
         return {
           title: 'Sanitation Beat Lead',
-          badgeText: 'BVG Field Worker',
+          badgeText: 'BVG Field Crew',
           color: 'bg-amber-100 text-amber-900 border-amber-300',
           iconColor: 'bg-amber-600'
         };
@@ -72,8 +80,8 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
         return {
           title: 'Registrar & Chief Administrator',
           badgeText: 'Super Admin',
-          color: 'bg-purple-100 text-purple-900 border-purple-300',
-          iconColor: 'bg-purple-900'
+          color: 'bg-slate-100 text-slate-800 border-slate-300',
+          iconColor: 'bg-slate-900'
         };
       default:
         return {
@@ -86,36 +94,48 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   };
 
   const roleMeta = getRoleBadge();
-  const userName = currentProfile?.name || (userRole === 'student' ? 'Sunny Bharti' : userRole === 'bvg_worker' ? 'Ramesh Kumar' : userRole === 'management' ? 'Er. R. K. Sharma' : 'Prof. A. K. Shukla');
+  const userName = isAuthenticated 
+    ? (currentProfile?.name || (userRole === 'student' ? 'Sunny Bharti' : userRole === 'bvg_worker' ? 'Ramesh Kumar' : userRole === 'management' ? 'Er. R. K. Sharma' : 'Prof. A. K. Shukla'))
+    : 'Citizen (Guest)';
   const userInitials = userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <header className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 md:px-8 h-16 bg-[#ffffff] border-b border-[#c3c6d1] shadow-xs">
+    <header className="fixed top-0 left-0 right-0 w-full z-40 flex justify-between items-center px-3 sm:px-4 md:px-6 h-16 bg-white border-b border-[#c3c6d1] shadow-xs">
       {/* Brand Logo / Title & Active Persona Badge */}
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs ${roleMeta.iconColor}`}>
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {/* Mobile Sidebar Hamburger Toggle */}
+        <button
+          onClick={onToggleMobileMenu}
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white shadow-xs shrink-0 ${roleMeta.iconColor}`}>
           {userRole === 'student' ? (
-            <GraduationCap className="w-5 h-5" />
+            <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
           ) : userRole === 'bvg_worker' || userRole === 'operator' ? (
-            <HardHat className="w-5 h-5 text-amber-200" />
+            <HardHat className="w-4 h-4 sm:w-5 sm:h-5 text-amber-200" />
           ) : userRole === 'management' ? (
-            <Building2 className="w-5 h-5 text-blue-200" />
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
           ) : (
-            <span className="text-sm font-black">🏛️</span>
+            <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           )}
         </div>
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <span className="text-base md:text-lg font-extrabold text-[#001e40] tracking-tight leading-tight">
-              CSJMU Urban Planning Portal
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-sm sm:text-base md:text-lg font-bold text-[#001e40] tracking-tight leading-tight truncate">
+              CSJMU Civic Ops
+              <span className="hidden sm:inline font-semibold text-slate-500"> &bull; UIET</span>
             </span>
-            <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${roleMeta.color}`}>
+            <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${roleMeta.color}`}>
               <BadgeCheck className="w-3 h-3" />
-              <span>{roleMeta.badgeText}</span>
+              <span>{isAuthenticated ? roleMeta.badgeText : 'Guest'}</span>
             </span>
           </div>
-          <span className="text-[10px] text-slate-500 font-semibold hidden md:inline">
-            {currentProfile?.department || 'Kanpur Nagar Campus Municipal Precinct'}
+          <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate hidden md:inline">
+            {isAuthenticated ? (currentProfile?.department || 'Kanpur Nagar Campus Municipal Precinct') : 'Campus Waste & Infrastructure Monitoring'}
           </span>
         </div>
       </div>
@@ -130,7 +150,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search reports, wards, work orders..."
-            className="w-full pl-9 pr-7 py-1.5 rounded-full border border-[#c3c6d1] bg-[#f0f3ff] focus:bg-white focus:border-[#001e40] focus:ring-1 focus:ring-[#001e40] outline-none text-xs text-[#111c2d] placeholder-[#737780] transition-colors"
+            className="w-full pl-9 pr-7 py-1.5 rounded-lg border border-[#c3c6d1] bg-[#f0f3ff] focus:bg-white focus:border-[#001e40] focus:ring-1 focus:ring-[#001e40] outline-none text-xs text-[#111c2d] placeholder-[#737780] transition-colors"
           />
           {searchQuery && (
             <button
@@ -147,9 +167,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
       <div className="flex items-center gap-2 text-[#001e40]">
         {/* Backend Online status indicator */}
         {backendOnline !== undefined && (
-          <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold bg-slate-100 border border-slate-200">
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 border border-slate-200">
             <span className={`w-2 h-2 rounded-full ${backendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            <span className="text-slate-600">{backendOnline ? 'API Synced' : 'Offline Cache'}</span>
+            <span className="text-slate-700">{backendOnline ? 'Live Data (Synced)' : 'Cached Data (May 2024)'}</span>
           </div>
         )}
 
@@ -158,7 +178,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
           id="help-button"
           onClick={() => setShowHelp(true)}
           aria-label="Help & Documentation"
-          className="p-2 rounded-full hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative cursor-pointer"
+          className="p-2 rounded-lg hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative cursor-pointer"
           title="Help & Campus Protocols"
         >
           <HelpCircle className="w-5 h-5" />
@@ -170,12 +190,12 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             id="notifications-button"
             onClick={() => setShowNotifications(!showNotifications)}
             aria-label="Notifications"
-            className="p-2 rounded-full hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative cursor-pointer"
+            className="p-2 rounded-lg hover:bg-[#dee8ff] text-[#43474f] hover:text-[#001e40] transition-colors flex items-center justify-center relative cursor-pointer"
             title="Notifications"
           >
             <Bell className="w-5 h-5" />
             {urgentCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#ba1a1a] rounded-full ring-2 ring-white"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ba1a1a] rounded-full ring-2 ring-white"></span>
             )}
           </button>
 
@@ -191,7 +211,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                     <Bell className="w-4 h-4 text-[#001e40]" />
                     <span className="font-semibold text-sm text-[#001e40]">Campus Dispatch Alerts</span>
                   </div>
-                  <span className="text-xs bg-[#ffdad6] text-[#ba1a1a] font-bold px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-[#ffdad6] text-[#ba1a1a] font-bold px-2 py-0.5 rounded-md">
                     {urgentCount} High Priority
                   </span>
                 </div>
@@ -202,7 +222,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                   ) : (
                     activities.map((act) => (
                       <div key={act.id} className="py-2.5 flex items-start gap-3 hover:bg-[#f0f3ff] px-2 rounded-lg transition-colors">
-                        <div className="p-1.5 bg-[#e7eeff] text-[#001e40] rounded-full mt-0.5">
+                        <div className="p-1.5 bg-[#e7eeff] text-[#001e40] rounded-lg mt-0.5">
                           <AlertTriangle className="w-3.5 h-3.5 text-[#ba1a1a]" />
                         </div>
                         <div className="flex-1 text-xs">
@@ -220,24 +240,34 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
         </div>
 
         {/* User Account Profile & Switcher Dropdown */}
-        <div className="relative ml-1">
+        {!isAuthenticated ? (
           <button
-            id="account-menu-button"
-            onClick={() => setShowAccountMenu(!showAccountMenu)}
-            aria-label="User profile and account options"
-            className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+            id="nav-sign-in-button"
+            onClick={onOpenAccountSwitcher}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#001e40] hover:bg-[#002b5c] text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
           >
-            <div className={`w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-xs ${roleMeta.iconColor}`}>
-              {userInitials}
-            </div>
-            <div className="hidden xl:flex flex-col text-left">
-              <span className="text-xs font-bold text-slate-800 leading-tight">
-                {userName}
-              </span>
-              <span className="text-[10px] text-slate-500 font-semibold">{roleMeta.badgeText}</span>
-            </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Sign In</span>
           </button>
+        ) : (
+          <div className="relative ml-1">
+            <button
+              id="account-menu-button"
+              onClick={() => setShowAccountMenu(!showAccountMenu)}
+              aria-label="User profile and account options"
+              className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <div className={`w-7 h-7 rounded-md text-white flex items-center justify-center font-bold text-xs ${roleMeta.iconColor}`}>
+                {userInitials}
+              </div>
+              <div className="hidden xl:flex flex-col text-left">
+                <span className="text-xs font-bold text-slate-800 leading-tight">
+                  {userName}
+                </span>
+                <span className="text-[10px] text-slate-500 font-semibold">{roleMeta.badgeText}</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
 
           {showAccountMenu && (
             <>
@@ -249,7 +279,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                 {/* Active User Identity Card */}
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{currentProfile?.avatar || '👤'}</span>
+                    <div className="w-10 h-10 rounded-lg bg-[#001e40] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                      {currentProfile?.avatar || userInitials}
+                    </div>
                     <div>
                       <p className="text-xs font-black text-slate-900 leading-tight">
                         {userName}
@@ -258,7 +290,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                         {currentProfile?.roleTitle || roleMeta.title}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleMeta.color}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${roleMeta.color}`}>
                           {roleMeta.badgeText}
                         </span>
                         <span className="text-[10px] font-mono font-semibold text-slate-500">
@@ -307,14 +339,15 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                   </button>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 text-center">
-                  🔒 RBAC credentials verified via CSJMU Directory
+                <div className="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 text-center font-medium">
+                  RBAC credentials verified via CSJMU Directory
                 </div>
               </div>
             </>
           )}
         </div>
-      </div>
+      )}
+    </div>
 
       {/* Help Modal */}
       {showHelp && (
@@ -322,7 +355,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
           <div className="bg-white rounded-xl max-w-lg w-full p-6 border border-[#c3c6d1] shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowHelp(false)}
-              className="absolute top-4 right-4 p-1.5 text-[#737780] hover:text-[#111c2d] hover:bg-[#f0f3ff] rounded-full cursor-pointer"
+              className="absolute top-4 right-4 p-1.5 text-[#737780] hover:text-[#111c2d] hover:bg-[#f0f3ff] rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -338,22 +371,22 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
             <div className="space-y-3 text-xs text-[#43474f] leading-relaxed max-h-96 overflow-y-auto pr-1">
               <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                <p className="font-bold text-emerald-900 mb-1">👨‍🎓 Student / Campus Citizen Role</p>
+                <p className="font-bold text-emerald-950 mb-1">Student / Campus Citizen Role</p>
                 <p>Public civic access. Report infrastructure anomalies, track cleaning progress, view campus heat island zones and eco-refuges.</p>
               </div>
 
               <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="font-bold text-amber-900 mb-1">👷‍♂️ BVG Worker Role (Field Operations)</p>
+                <p className="font-bold text-amber-950 mb-1">BVG Worker Role (Field Operations)</p>
                 <p>Contractor task queue. Execute cleaning work orders, run Computer Vision AI before/after verification, and submit beat reassignments or leave applications.</p>
               </div>
 
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="font-bold text-blue-900 mb-1">👨‍💼 Management Role (Directorate of Estate &amp; Works)</p>
+                <p className="font-bold text-blue-950 mb-1">Management Role (Directorate of Estate &amp; Works)</p>
                 <p>Executive sanitation oversight. Audit contractor SLAs, authorize beat reassignments, approve workforce leaves, and monitor campus-wide sanitary hygiene.</p>
               </div>
 
-              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                <p className="font-bold text-purple-900 mb-1">👑 Super Admin Role (Registrar Secretariat)</p>
+              <div className="p-3 bg-slate-100 rounded-lg border border-slate-300">
+                <p className="font-bold text-slate-900 mb-1">Super Admin Role (Registrar Secretariat)</p>
                 <p>System master terminal. Credential administration, automated CCTV AI sweeps, microclimate heat-island planning, and system audit governance.</p>
               </div>
             </div>

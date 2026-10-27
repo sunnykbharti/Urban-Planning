@@ -467,8 +467,8 @@ export const MaintenanceManagementPanel: React.FC<MaintenanceManagementPanelProp
                   </div>
                   <p className="text-xs text-[#43474f] mt-1">{act.description}</p>
                   <div className="mt-2 flex items-center gap-3 text-[11px] text-[#737780]">
-                    <span>📍 {act.location}</span>
-                    {act.actor && <span>👤 Operator: {act.actor}</span>}
+                    <span>Location: {act.location}</span>
+                    {act.actor && <span>Operator: {act.actor}</span>}
                   </div>
                 </div>
               ))}

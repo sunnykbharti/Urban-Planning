@@ -169,7 +169,7 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
   const PIPELINE_STAGES = [
     { num: 1, title: 'CCTV Data Collection', desc: '4x Daily Captures (Stratified Shift Windows)', icon: Video, color: 'from-blue-600 to-indigo-600' },
     { num: 2, title: 'Data Ingestion & Storage', desc: 'Sub-stream/Snapshot frame, aspect resize, privacy blur', icon: Layers, color: 'from-indigo-600 to-sky-600' },
-    { num: 3, title: 'AI Detection (YOLOv11)', desc: 'Overflow, litter pile, drain clog, bin capacity', icon: Cpu, color: 'from-purple-600 to-pink-600' },
+    { num: 3, title: 'AI Detection (YOLOv11)', desc: 'Overflow, litter pile, drain clog, bin capacity', icon: Cpu, color: 'from-blue-700 to-slate-800' },
     { num: 4, title: 'Geotagging & GIS Mapping', desc: 'Camera ID → Fixed spatial coordinates & zone', icon: MapPin, color: 'from-amber-600 to-orange-600' },
     { num: 5, title: 'LLM-Assisted Parsing', desc: 'Converts detection into structured work order', icon: Bot, color: 'from-emerald-600 to-teal-600' },
     { num: 6, title: 'Authority Engine Routing', desc: 'Zone → Ward → Supervisor → Cleaning team', icon: ShieldCheck, color: 'from-blue-700 to-indigo-800' },
@@ -180,13 +180,10 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
   return (
     <div className="space-y-6 pb-16">
       {/* 1. Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-indigo-500/20">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-12 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      <div className="relative overflow-hidden rounded-2xl bg-[#001e40] text-white p-6 sm:p-8 shadow-xl border border-slate-700">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold tracking-wide uppercase">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 border border-white/20 text-blue-200 text-xs font-semibold tracking-wide uppercase">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               Vision AI Automated Surveillance
             </div>
@@ -296,7 +293,7 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
             </h2>
             <p className="text-xs text-slate-500">Autonomous loop from RTSP Camera feed to BVG Contractor work order closure</p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
             End-to-End Latency: &lt; 2.5 seconds
           </span>
         </div>
@@ -356,7 +353,7 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
               const sampleImg = cam.sampleImages?.[simClass] || 
                                cam.sampleImages?.['overflow'] || 
                                cam.sampleImages?.['clean'] || 
-                               'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=800&q=80';
+                               '/sample-incidents/pavement_debris.jpg';
 
               const hasOverflow = simClass === 'overflow';
               const hasDrain = simClass === 'blocked_drain';
@@ -482,7 +479,7 @@ export const CctvPipelineDashboard: React.FC<CctvPipelineDashboardProps> = ({
                 <Shield className="w-4 h-4 text-indigo-600" />
                 Decision Engine & Deduplication Gate
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
                 Stage 4 Filter
               </span>
             </div>

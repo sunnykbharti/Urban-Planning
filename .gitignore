@@ -1,1 +1,20 @@
-# All files tracked - nothing ignored
+# Environments & Secrets
+.env
+backend/.env
+backend/config.yaml
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Node / Vite
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# CCTV Captures & Temporary storage
+backend/captures/
+backend/data/*.json
+!backend/data/.gitkeep
+
+# System
+.DS_Store
