@@ -90,21 +90,32 @@ export async function uploadAndDetectGarbageAPI(
 ): Promise<UploadDetectionResponse> {
   const sourceType = options?.sourceType || 'CITIZEN_MOBILE';
   const notes = options?.notes || '';
+  const geminiApiKey = (typeof window !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : null) || 
+                       (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
 
   // 1. Try uploading to Flask Backend
   try {
     let res: Response;
+    const commonHeaders: Record<string, string> = {};
+    if (geminiApiKey) {
+      commonHeaders['X-Gemini-Api-Key'] = geminiApiKey;
+    }
+
     if (typeof fileOrData === 'string') {
       // Base64 Data URI or Image URL
       res = await fetch(`${API_BASE_URL}/upload-and-detect`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...commonHeaders
+        },
         body: JSON.stringify({
           imageData: fileOrData,
           sourceType,
-          notes
+          notes,
+          geminiApiKey
         }),
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(12000)
       });
     } else {
       // Multipart File upload
@@ -112,11 +123,15 @@ export async function uploadAndDetectGarbageAPI(
       formData.append('file', fileOrData, (fileOrData as File).name || 'garbage_photo.jpg');
       formData.append('sourceType', sourceType);
       formData.append('notes', notes);
+      if (geminiApiKey) {
+        formData.append('geminiApiKey', geminiApiKey);
+      }
 
       res = await fetch(`${API_BASE_URL}/upload-and-detect`, {
         method: 'POST',
+        headers: commonHeaders,
         body: formData,
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(12000)
       });
     }
 

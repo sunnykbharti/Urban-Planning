@@ -47,6 +47,7 @@ export interface SanitationTeam {
 export interface BoundingBox {
   id: string;
   label: string;
+  category?: 'litter' | 'environment';
   confidence: number;
   box: { ymin: number; xmin: number; ymax: number; xmax: number };
   color?: string;
@@ -77,6 +78,9 @@ export interface GarbageDetectionResult {
   primaryClass: DetectionClass;
   classLabel: string;
   defaultSeverity: string;
+  detectedEnvironment?: string;
+  contextObjects?: string[];
+  unwantedObjects?: string[];
   estimatedAmount: EstimatedAmount;
   boundingBoxes: BoundingBox[];
   source?: {
@@ -87,8 +91,11 @@ export interface GarbageDetectionResult {
   imageTelemetry?: {
     width: number;
     height: number;
-    edgeDensity: number;
-    clutterRatio: number;
+    edgeDensity?: number;
+    clutterRatio?: number;
+    contextObjectsCount?: number;
+    unwantedObjectsCount?: number;
+    fallbackTriggered?: boolean;
   };
   aiSummary: string;
 }

@@ -12,6 +12,12 @@ import os
 import uuid
 import base64
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load local and workspace root environment variables
+load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -166,11 +172,20 @@ def upload_and_detect_endpoint():
             else:
                 return jsonify({"error": "No image file or image data provided"}), 400
 
+        # Extract optional Gemini API Key from header, form, body, or environment
+        gemini_api_key = (
+            request.headers.get("X-Gemini-Api-Key")
+            or request.form.get("geminiApiKey")
+            or (request.get_json(silent=True) or {}).get("geminiApiKey")
+            or os.environ.get("GEMINI_API_KEY")
+        )
+
         # Execute Computer Vision & Amount Estimation pipeline
         detection_result = analyze_garbage_image(
             image_path=saved_path,
             source_type=source_type,
-            user_notes=user_notes
+            user_notes=user_notes,
+            gemini_api_key=gemini_api_key
         )
 
         file_size = os.path.getsize(saved_path)

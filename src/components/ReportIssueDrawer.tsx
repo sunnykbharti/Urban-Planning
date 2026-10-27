@@ -447,6 +447,49 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                       </div>
                     </div>
 
+                    {/* Scene Decomposition Breakdown: Context vs Unwanted Litter */}
+                    {(Boolean(detectionResult.unwantedObjects?.length) || Boolean(detectionResult.contextObjects?.length)) && (
+                      <div className="space-y-1.5 pt-1 bg-white/70 p-2.5 rounded-lg border border-emerald-100">
+                        {detectionResult.unwantedObjects && detectionResult.unwantedObjects.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-red-700 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
+                              Unwanted Objects / Litter:
+                            </p>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {detectionResult.unwantedObjects.map((item, i) => (
+                                <span 
+                                  key={i} 
+                                  className="text-[10px] bg-red-50 px-2 py-0.5 rounded-md border border-red-200 text-red-800 font-semibold"
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {detectionResult.contextObjects && detectionResult.contextObjects.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block"></span>
+                              Identified Environment:
+                            </p>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {detectionResult.contextObjects.map((item, i) => (
+                                <span 
+                                  key={i} 
+                                  className="text-[10px] bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200 text-sky-800 font-medium"
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Composition Breakdown */}
                     {detectionResult.estimatedAmount.compositionBreakdown && (
                       <div className="space-y-1">
