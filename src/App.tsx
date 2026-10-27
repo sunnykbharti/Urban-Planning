@@ -299,6 +299,13 @@ export default function App() {
       }).catch(err => console.warn('Failed to persist incident to backend:', err));
     }
 
+    // Return user to their respective role dashboard
+    const respectiveDashboard = 
+      userRole === 'student' ? 'student_dashboard' :
+      userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' :
+      userRole === 'management' ? 'management_dashboard' : 'admin_dashboard';
+    setActiveTab(respectiveDashboard);
+
     showToast(`Report ${newReport.id} registered on CSJMU map`, newReport.severity === 'urgent' ? 'urgent' : 'success');
   };
 
