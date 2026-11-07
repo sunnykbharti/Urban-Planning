@@ -119,68 +119,64 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     });
   }, [reports, filterScope, searchQuery]);
 
+  const getSeverityBorder = (severity: string, isResolved: boolean) => {
+    if (isResolved) return 'border-l-slate-300';
+    const s = (severity || '').toLowerCase();
+    if (s === 'critical') return 'border-l-rose-600';
+    if (s === 'urgent' || s === 'high') return 'border-l-amber-500';
+    if (s === 'normal' || s === 'medium') return 'border-l-sky-500';
+    return 'border-l-slate-300';
+  };
+
+  const formatRelativeTime = (timeAgo?: string, createdAt?: string) => {
+    if (timeAgo) {
+      const lower = timeAgo.toLowerCase();
+      if (lower.includes('yesterday') || lower.includes('day')) return 'yesterday';
+      if (lower.includes('hr') || lower.includes('hour')) return lower.replace(/hrs?(\s*ago)?/, 'h ago').trim();
+      if (lower.includes('min')) return lower.replace(/mins?(\s*ago)?/, 'm ago').trim();
+      return timeAgo;
+    }
+    if (!createdAt) return 'now';
+    try {
+      const diffMin = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+      if (diffMin < 1) return 'now';
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHours = Math.floor(diffMin / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return 'yesterday';
+    } catch {
+      return '2h ago';
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* 1. TOP SUMMARY STRIP (Replaces marketing hero banner with computed real data) */}
+      {/* 1. TOP SUMMARY STRIP (Plain text summary with no vertical dividers and no bold mono numbers) */}
       <section 
         aria-label="Civic Operations Summary"
-        className="bg-white border border-slate-200 rounded-lg p-3 sm:p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3"
+        className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center justify-between gap-3 shadow-2xs"
       >
-        <div className="flex flex-wrap items-center gap-2 sm:gap-6 text-xs text-slate-600">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-            <span className="font-semibold text-slate-900">Campus Status: Operations Active</span>
-          </div>
-
-          <div className="hidden sm:block h-4 w-px bg-slate-200" />
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500">Open Incidents:</span>
-            <span className="font-mono font-bold text-slate-900">{openCount}</span>
-          </div>
-
-          <div className="hidden sm:block h-4 w-px bg-slate-200" />
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500">Critical:</span>
-            <span className={`font-mono font-bold ${criticalCount > 0 ? 'text-red-700' : 'text-slate-900'}`}>
-              {criticalCount}
-            </span>
-          </div>
-
-          <div className="hidden sm:block h-4 w-px bg-slate-200" />
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500">Resolved Today:</span>
-            <span className="font-mono font-bold text-emerald-700">{resolvedCount}</span>
-          </div>
-
-          <div className="hidden sm:block h-4 w-px bg-slate-200" />
-
-          <div className="flex items-center gap-1.5">
-            <Video className="w-3.5 h-3.5 text-slate-500" />
-            <span className="text-slate-500">CCTV Feeds:</span>
-            <span className="font-mono font-bold text-slate-900">{activeCamerasCount} Online</span>
-          </div>
+        <div className="text-xs text-slate-600">
+          <span>{openCount} open</span>
+          {criticalCount > 0 && <span>, <span className="text-rose-700 font-medium">{criticalCount} critical</span></span>}
+          {resolvedCount > 0 && <span>, {resolvedCount} resolved</span>}
         </div>
 
         {/* Action Button */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            id="report-hazard-button"
-            onClick={onOpenReportDrawer}
-            className="w-full sm:w-auto px-3.5 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Camera className="w-3.5 h-3.5" />
-            <span>Lodge Incident</span>
-          </button>
-        </div>
+        <button
+          id="report-hazard-button"
+          onClick={onOpenReportDrawer}
+          className="px-3.5 py-1.5 rounded bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+        >
+          <Camera className="w-3.5 h-3.5" />
+          <span>Lodge Incident</span>
+        </button>
       </section>
 
       {/* 2. MAIN SPLIT VIEW (List on Left, Map on Right on Desktop) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         
-        {/* LEFT COLUMN: Scannable Incident Queue / Table (5 cols on desktop) */}
+        {/* LEFT COLUMN: Ticketing Tool Incident Queue (5 cols on desktop) */}
         <section 
           aria-label="Incident Queue" 
           className="lg:col-span-5 bg-white border border-slate-200 rounded-lg p-3 sm:p-4 shadow-2xs flex flex-col h-auto lg:h-[660px]"
@@ -188,9 +184,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           {/* Queue Filter Controls */}
           <div className="pb-3 border-b border-slate-200 space-y-2 shrink-0">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
                 <span>Campus Incidents</span>
-                <span className="text-xs font-mono font-normal text-slate-500">
+                <span className="text-xs font-normal text-slate-500">
                   ({filteredReports.length})
                 </span>
               </h2>
@@ -240,7 +236,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter by ID, zone, category..."
-                className="w-full pl-8 pr-3 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:outline-hidden"
+                className="w-full pl-8 pr-3 py-1.5 rounded border border-slate-200 bg-slate-50/50 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-600 focus:outline-hidden"
               />
             </div>
           </div>
@@ -259,12 +255,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               filteredReports.map((report) => {
                 const isCctv = report.source?.type === 'CCTV_FIXED' || report.reportedBy?.role?.includes('cctv') || report.reportedBy?.name?.includes('CCTV');
                 const isResolved = report.status === 'resolved';
-                const sev = getSeverityBadge(report.severity);
-                const SevIcon = sev.Icon;
                 const isSelected = selectedIncidentId === report.id;
-
-                // Estimated weight handling with honest disclaimers
-                const weight = report.estimatedAmountKg || report.estimatedAmount?.weightKg;
+                const assigneeName = report.assignedTeam 
+                  ? (typeof report.assignedTeam === 'string' ? report.assignedTeam : report.assignedTeam.teamName) 
+                  : null;
 
                 return (
                   <div
@@ -273,74 +267,77 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                       setSelectedIncidentId(report.id);
                       onSelectReport(report);
                     }}
-                    className={`py-3 px-2 rounded cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50/70 border-l-2 border-blue-700' : 'hover:bg-slate-50'
+                    className={`py-2.5 px-3 rounded border-l-[3px] cursor-pointer transition-colors ${getSeverityBorder(report.severity, isResolved)} ${
+                      isSelected ? 'bg-indigo-50/60' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      {/* Photo Thumbnail if available */}
+                      {report.imageUrl && (
+                        <img
+                          src={report.imageUrl}
+                          alt=""
+                          className="w-10 h-10 rounded object-cover border border-slate-200 shrink-0 mt-0.5"
+                        />
+                      )}
+
                       <div className="min-w-0 flex-1">
-                        {/* Meta Row: ID, Severity, Source */}
-                        <div className="flex items-center gap-1.5 flex-wrap text-[10px] mb-1">
-                          <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                        {/* Meta Line: Ticket ID • Relative Time • CCTV feed */}
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-0.5">
+                          <span className="font-mono text-slate-700 font-medium">
                             {report.ticketNumber || report.id}
                           </span>
-
-                          <span className={`inline-flex items-center gap-1 font-semibold px-1.5 py-0.2 rounded border ${sev.className}`}>
-                            <SevIcon className="w-3 h-3 shrink-0" />
-                            <span>{sev.label}</span>
-                          </span>
-
-                          {isCctv ? (
-                            <span className="inline-flex items-center gap-1 text-slate-600 font-medium bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                              <Video className="w-2.5 h-2.5 text-slate-500" />
-                              <span>{report.source?.sensorId || 'CCTV Cam 04'}</span>
-                              <span className="text-[9px] text-slate-400">&bull; 2/3 frames</span>
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 text-[10px]">
-                              Citizen report
-                            </span>
+                          <span>&bull;</span>
+                          <span>{formatRelativeTime(report.timeAgo, report.createdAt)}</span>
+                          {isCctv && (
+                            <>
+                              <span>&bull;</span>
+                              <span className="inline-flex items-center gap-1 text-slate-600">
+                                <Video className="w-3 h-3 text-slate-400" />
+                                <span>{report.source?.sensorId || 'CCTV Cam 04'}</span>
+                              </span>
+                            </>
                           )}
-
-                          <span className="text-slate-400 ml-auto font-mono text-[10px]">
-                            {report.timeAgo || 'Recent'}
-                          </span>
                         </div>
 
-                        {/* Incident Title */}
-                        <h3 className="text-xs font-bold text-slate-900 leading-tight truncate">
+                        {/* Title */}
+                        <h3 className="text-xs font-medium text-slate-900 leading-snug truncate">
                           {report.title}
                         </h3>
 
-                        {/* Location */}
-                        <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate">{report.location}</span>
-                        </p>
+                        {/* Location & Assignee */}
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                          <span className="flex items-center gap-1 truncate max-w-[140px] sm:max-w-[180px]">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{report.location}</span>
+                          </span>
 
-                        {/* Rough Estimate if present */}
-                        {weight && (
-                          <div 
-                            className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200"
-                            title="Rough photogrammetric volume estimate. Not verified by certified scale."
-                          >
-                            <Scale className="w-3 h-3 text-slate-500" />
-                            <span>Rough estimate: ~{weight} kg</span>
-                            <span className="text-[9px] text-slate-400">(visual estimation)</span>
-                          </div>
-                        )}
+                          <span>&bull;</span>
+
+                          <span className="truncate">
+                            {assigneeName ? (
+                              <span className="text-slate-600">{assigneeName}</span>
+                            ) : (
+                              <span className="text-amber-700 italic">Unassigned</span>
+                            )}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Status Tag */}
-                      <div className="shrink-0 text-right">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                          isResolved 
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                            : 'bg-amber-50 text-amber-900 border-amber-200'
-                        }`}>
-                          {isResolved ? 'Resolved' : 'Active'}
-                        </span>
-                      </div>
+                      {/* Status indicator: ONLY show when it differs from active */}
+                      {report.status !== 'pending' && (
+                        <div className="shrink-0 pt-0.5">
+                          {isResolved ? (
+                            <span className="text-[11px] font-medium text-emerald-700">Resolved</span>
+                          ) : report.status === 'in_progress' ? (
+                            <span className="text-[11px] font-medium text-indigo-700">In progress</span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-slate-600 capitalize">
+                              {report.status.replace('_', ' ')}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

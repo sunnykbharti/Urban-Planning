@@ -134,23 +134,23 @@ export const initialReports: MaintenanceReport[] = [
     coordinates: { x: 61, y: 41 },
     gps: { latitude: 26.5043, longitude: 80.2686 },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '2 hrs ago',
+    timeAgo: '2h ago',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
-    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    assignedTeam: 'Beat 01 - Ramesh Kumar',
     reportedBy: {
       name: 'Sunny Bharti',
-      role: 'UIET B.Tech Student / Citizen Reporter',
+      role: 'UIET B.Tech Student',
     },
     updates: [
       {
         id: 'u-1',
-        timestamp: '2 hrs ago',
+        timestamp: '2h ago',
         author: 'Sunny Bharti',
         message: 'Report submitted with photo of paver dislocation near reading hall entrance.',
       },
       {
         id: 'u-2',
-        timestamp: '45 mins ago',
+        timestamp: '45m ago',
         author: 'Er. R. K. Sharma (Estate)',
         message: 'Dispatched to BVG Beat 01 (Lead: Ramesh Kumar) for safety cones and mortar leveling.',
         statusChange: 'in_progress'
@@ -169,25 +169,19 @@ export const initialReports: MaintenanceReport[] = [
     coordinates: { x: 79, y: 26 },
     gps: { latitude: 26.5057, longitude: 80.2715 },
     createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '1 hr ago',
-    imageUrl: '/sample-incidents/pavement_debris.jpg',
-    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    timeAgo: '1h ago',
+    imageUrl: undefined,
+    assignedTeam: undefined,
     reportedBy: {
       name: 'Sunny Bharti',
-      role: 'UIET B.Tech Student / Citizen Reporter',
+      role: 'UIET B.Tech Student',
     },
     updates: [
       {
         id: 'u-9',
-        timestamp: '1 hr ago',
+        timestamp: '1h ago',
         author: 'Sunny Bharti',
         message: 'Spotted during football practice. Placed temporary safety branch over lid.',
-      },
-      {
-        id: 'u-10',
-        timestamp: '20 mins ago',
-        author: 'Ramesh Kumar (BVG Lead)',
-        message: 'Reassignment requested to High-Voltage Electrical Unit (Team Beta). Sweeper team lacks HV insulated gear.'
       }
     ]
   },
@@ -203,25 +197,25 @@ export const initialReports: MaintenanceReport[] = [
     coordinates: { x: 50, y: 65 },
     gps: { latitude: 26.5024, longitude: 80.2679 },
     createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '4 hrs ago',
-    imageUrl: '/sample-incidents/overflow_bin.jpg',
-    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    timeAgo: '4h ago',
+    imageUrl: undefined,
+    assignedTeam: 'Beat 02 - Sanitation Squad',
     reportedBy: {
       name: 'Sunny Bharti',
-      role: 'UIET B.Tech Student / Citizen Reporter',
+      role: 'UIET B.Tech Student',
     },
     updates: [
       {
         id: 'u-3',
-        timestamp: '4 hrs ago',
+        timestamp: '4h ago',
         author: 'Sunny Bharti',
         message: 'Report filed with photo of overflowing bio-bin.',
       },
       {
         id: 'u-4',
-        timestamp: '2 hrs ago',
+        timestamp: '2h ago',
         author: 'Estate Operations Desk',
-        message: 'SLA timer set to 90 mins. Beat 01 cart team en route.'
+        message: 'SLA timer set to 90 mins. Beat 02 cart team en route.'
       }
     ]
   },
@@ -237,9 +231,9 @@ export const initialReports: MaintenanceReport[] = [
     coordinates: { x: 81, y: 36 },
     gps: { latitude: 26.5066, longitude: 80.2647 },
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    timeAgo: '1 day ago',
+    timeAgo: 'yesterday',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUp83atXoJGMSBBu57auBMYXA5q4rcooRFstYO0jG7eJJu3uYCk0YukoTWBfW4aGrAesYRtp9rBm3-34Pdw2PPUu-PPwg3rSObF8iq_Y5AU3v-h-_z1tCb33Z_cLjOHTmilWqO91VF5f-sJsKkPkSYWlooLEOsILLYxA0gOZmAP-hDYaMRpgGlDjfzbTXQoXN0G1UgSHcnlqFhsxmkqDzQj2ou7aZY47UBiZrYe0u9VaZUE3OVFWMp',
-    assignedTeam: 'Beat 01 - Lead: Ramesh Kumar (BVG India)',
+    assignedTeam: 'Beat 01 - Ramesh Kumar',
     reportedBy: {
       name: 'Campus Security Office',
       role: 'Estate Security Supervisor',
@@ -247,7 +241,7 @@ export const initialReports: MaintenanceReport[] = [
     updates: [
       {
         id: 'u-5',
-        timestamp: '1 day ago',
+        timestamp: 'yesterday',
         author: 'Ramesh Kumar (BVG Lead)',
         message: 'Bitumen resurfacing and inspection completed. Verified safe.',
         statusChange: 'resolved'

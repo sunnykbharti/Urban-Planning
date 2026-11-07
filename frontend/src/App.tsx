@@ -53,7 +53,7 @@ import {
 } from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame, X } from 'lucide-react';
 
-const SEED_DATA_VERSION = 'v3.0';
+const SEED_DATA_VERSION = 'v3.1';
 
 // Check if seed version is up to date, otherwise initialize fresh seeded data
 if (typeof window !== 'undefined') {
