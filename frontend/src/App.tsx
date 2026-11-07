@@ -672,6 +672,7 @@ export default function App() {
           urgentCount={urgentCount}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
+          onNavigateToLanding={() => setAppView('landing')}
         />
 
         {/* Main Content Area Canvas */}

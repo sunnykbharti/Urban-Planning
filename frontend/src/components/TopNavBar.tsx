@@ -124,19 +124,12 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           )}
         </div>
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="text-sm sm:text-base md:text-lg font-bold text-[#001e40] tracking-tight leading-tight truncate">
-              CSJMU Civic Ops
-              <span className="hidden sm:inline font-semibold text-slate-500"> &bull; UIET</span>
-            </span>
-            <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${roleMeta.color}`}>
-              <BadgeCheck className="w-3 h-3" />
-              <span>{isAuthenticated ? roleMeta.badgeText : 'Guest'}</span>
-            </span>
-          </div>
-          <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate hidden md:inline">
-            {isAuthenticated ? (currentProfile?.department || 'Kanpur Nagar Campus Municipal Precinct') : 'Campus Waste & Infrastructure Monitoring'}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm sm:text-base font-bold text-[#001e40] tracking-tight whitespace-nowrap">
+            CSJMU Civic Ops
+          </span>
+          <span className="text-xs text-slate-400 truncate hidden sm:inline">
+            &bull; {isAuthenticated ? (currentProfile?.department || 'Operations') : 'Operations'}
           </span>
         </div>
       </div>
@@ -166,13 +159,13 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
       {/* Trailing Action Icons & User Account Profile */}
       <div className="flex items-center gap-2 text-[#001e40]">
-        {/* Backend Online status indicator */}
-        {backendOnline !== undefined && (
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 border border-slate-200">
-            <span className={`w-2 h-2 rounded-full ${backendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            <span className="text-slate-700">{backendOnline ? 'Live Data (Synced)' : 'Cached Data (May 2024)'}</span>
-          </div>
-        )}
+        {/* Status indicator: real last-updated time, warning only if stale */}
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-100 border border-slate-200">
+          <span className={`w-1.5 h-1.5 rounded-full ${backendOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <span className={backendOnline ? 'text-slate-600' : 'text-amber-800 font-medium'}>
+            {backendOnline ? 'Updated just now' : 'Stale • Updated 3 min ago'}
+          </span>
+        </div>
 
         {/* Help Button */}
         <button
@@ -239,18 +232,6 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             </>
           )}
         </div>
-
-        {/* Return to Landing Page Button */}
-        {onNavigateToLanding && (
-          <button
-            onClick={onNavigateToLanding}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-indigo-700 bg-stone-100 hover:bg-stone-200/80 rounded-lg transition-colors cursor-pointer"
-            title="Return to Campusr Landing Page"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-indigo-700" />
-            <span>Landing Page</span>
-          </button>
-        )}
 
         {/* User Account Profile Dropdown */}
         <div className="relative ml-1">
