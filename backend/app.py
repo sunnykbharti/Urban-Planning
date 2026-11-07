@@ -274,6 +274,14 @@ def create_incident():
 
     # Garbage detection & estimated amount payload if present
     garbage_detection = data.get("garbageDetection")
+    
+    # Safeguard against false reports: If AI verified clean area and report category is garbage, reject
+    if garbage_detection and garbage_detection.get("isGarbageDetected") is False and data.get("category", "garbage") == "garbage":
+        return jsonify({
+            "error": "False incident rejected: Computer Vision verified that this area is clean with no solid waste or litter detected.",
+            "isFalseReport": True
+        }), 400
+
     estimated_amount = data.get("estimatedAmount")
     if garbage_detection and not estimated_amount:
         estimated_amount = garbage_detection.get("estimatedAmount")

@@ -18,7 +18,8 @@ import {
   BadgeCheck,
   Server,
   Menu,
-  Landmark
+  Landmark,
+  BookOpen
 } from 'lucide-react';
 import { ActivityEvent, UserRole, UserProfile } from '../types';
 
@@ -30,12 +31,12 @@ interface TopNavBarProps {
   userRole: UserRole;
   onOpenReportDrawer: () => void;
   currentProfile?: UserProfile;
-  onOpenAccountSwitcher?: () => void;
   onSignOut?: () => void;
   backendOnline?: boolean;
   isMobileMenuOpen?: boolean;
   onToggleMobileMenu?: () => void;
   isAuthenticated?: boolean;
+  onNavigateToLanding?: () => void;
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = ({
@@ -46,12 +47,12 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   userRole,
   onOpenReportDrawer,
   currentProfile,
-  onOpenAccountSwitcher,
   onSignOut,
   backendOnline,
   isMobileMenuOpen,
   onToggleMobileMenu,
-  isAuthenticated = true
+  isAuthenticated = true,
+  onNavigateToLanding
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -239,35 +240,37 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
           )}
         </div>
 
-        {/* User Account Profile & Switcher Dropdown */}
-        {!isAuthenticated ? (
+        {/* Return to Landing Page Button */}
+        {onNavigateToLanding && (
           <button
-            id="nav-sign-in-button"
-            onClick={onOpenAccountSwitcher}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#001e40] hover:bg-[#002b5c] text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+            onClick={onNavigateToLanding}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-indigo-700 bg-stone-100 hover:bg-stone-200/80 rounded-lg transition-colors cursor-pointer"
+            title="Return to Campusr Landing Page"
           >
-            <UserCheck className="w-3.5 h-3.5" />
-            <span>Sign In</span>
+            <BookOpen className="w-3.5 h-3.5 text-indigo-700" />
+            <span>Landing Page</span>
           </button>
-        ) : (
-          <div className="relative ml-1">
-            <button
-              id="account-menu-button"
-              onClick={() => setShowAccountMenu(!showAccountMenu)}
-              aria-label="User profile and account options"
-              className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              <div className={`w-7 h-7 rounded-md text-white flex items-center justify-center font-bold text-xs ${roleMeta.iconColor}`}>
-                {userInitials}
-              </div>
-              <div className="hidden xl:flex flex-col text-left">
-                <span className="text-xs font-bold text-slate-800 leading-tight">
-                  {userName}
-                </span>
-                <span className="text-[10px] text-slate-500 font-semibold">{roleMeta.badgeText}</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
+        )}
+
+        {/* User Account Profile Dropdown */}
+        <div className="relative ml-1">
+          <button
+            id="account-menu-button"
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            aria-label="User profile and account options"
+            className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <div className={`w-7 h-7 rounded-md text-white flex items-center justify-center font-bold text-xs ${roleMeta.iconColor}`}>
+              {userInitials}
+            </div>
+            <div className="hidden xl:flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-800 leading-tight">
+                {userName}
+              </span>
+              <span className="text-[10px] text-slate-500 font-semibold">{roleMeta.badgeText}</span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
 
           {showAccountMenu && (
             <>
@@ -307,24 +310,22 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
                 {/* Account Actions */}
                 <div className="space-y-1.5">
-                  {/* Switch Account */}
-                  <button
-                    onClick={() => {
-                      setShowAccountMenu(false);
-                      if (onOpenAccountSwitcher) onOpenAccountSwitcher();
-                    }}
-                    className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-[#dee8ff] hover:text-[#001e40] transition-colors flex items-center justify-between cursor-pointer border border-slate-200/60"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <UserCheck className="w-4 h-4 text-[#001e40]" />
+                  {/* Go to Landing Page */}
+                  {onNavigateToLanding && (
+                    <button
+                      onClick={() => {
+                        setShowAccountMenu(false);
+                        onNavigateToLanding();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4 text-indigo-700" />
                       <div>
-                        <p className="leading-tight">Switch User Account</p>
-                        <p className="text-[10px] text-slate-500 font-normal">
-                          Sign in as another seeded campus account
-                        </p>
+                        <p className="leading-tight font-semibold text-stone-900">Campusr Landing Page</p>
+                        <p className="text-[10px] text-slate-500 font-normal">View features, overview &amp; public portal</p>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
 
                   {/* Sign Out */}
                   <button
@@ -346,8 +347,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             </>
           )}
         </div>
-      )}
-    </div>
+      </div>
 
       {/* Help Modal */}
       {showHelp && (

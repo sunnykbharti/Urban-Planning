@@ -50,7 +50,7 @@ import {
   updateIncidentStatusAPI,
   verifyAndCloseAPI 
 } from './api/client';
-import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Info, Server, Flame, X } from 'lucide-react';
 
 const SEED_DATA_VERSION = 'v3.0';
 
@@ -162,9 +162,11 @@ export default function App() {
   const handleSignOut = () => {
     setIsAuthenticated(false);
     const guestProfile: UserProfile = {
+      id: 'guest',
       name: 'Campus Citizen (Guest)',
       role: 'student',
       roleTitle: 'Guest Citizen',
+      agency: 'CSJMU Citizen Portal',
       department: 'Kanpur Nagar Public Civic Hub',
       badgeNumber: 'GUEST-CIVIC',
       email: '',

@@ -35,7 +35,6 @@ interface SideNavBarProps {
   onOpenReportDrawer: () => void;
   onOpenSettings: () => void;
   userRole: UserRole;
-  onOpenAccountSwitcher?: () => void;
   currentProfile?: any;
   urgentCount: number;
   isMobileOpen?: boolean;
@@ -48,7 +47,6 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   onOpenReportDrawer,
   onOpenSettings,
   userRole,
-  onOpenAccountSwitcher,
   currentProfile,
   urgentCount,
   isMobileOpen,
@@ -415,7 +413,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           <span>Portal Settings</span>
         </button>
 
-        {/* Authenticated Identity Card & Switch Account trigger */}
+        {/* Authenticated Identity Card */}
         <div className="mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-lg bg-[#001e40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
@@ -430,15 +428,6 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
               </p>
             </div>
           </div>
-
-          <button
-            id="nav-switch-account"
-            onClick={onOpenAccountSwitcher}
-            className="p-1.5 text-slate-500 hover:text-[#001e40] hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-            title="Switch User Account"
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
     </aside>

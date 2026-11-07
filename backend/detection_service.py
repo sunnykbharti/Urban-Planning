@@ -556,7 +556,7 @@ def analyze_garbage_image(
                 "sensorId": "AI_VISION_HYBRID_ENGINE",
                 "modelInference": "ResNet50-LandmarkGuard + YOLOv8-Decomposer"
             },
-            "aiSummary": f"Deep Learning verified: Scene identified as {monument_name} ({int(top_scene_prob*100)}% certainty). No solid waste or litter detected."
+            "aiSummary": f"Deep Learning verified: Scene identified as {monument_name}. Area verified clean with no solid waste or litter detected."
         }
 
     # C. YOLOv8 Scene & Object Decomposition
@@ -590,7 +590,7 @@ def analyze_garbage_image(
                     if raw_name in ENVIRONMENT_OBJECTS:
                         friendly_name = ENVIRONMENT_OBJECTS[raw_name]
                         env_detections.append({
-                            "label": f"{friendly_name} ({int(conf*100)}%)",
+                            "label": friendly_name,
                             "name": friendly_name,
                             "category": "environment",
                             "confidence": round(conf, 2),
@@ -602,7 +602,7 @@ def analyze_garbage_image(
                     elif raw_name in UNWANTED_LITTER_OBJECTS:
                         friendly_name = UNWANTED_LITTER_OBJECTS[raw_name]
                         unwanted_detections.append({
-                            "label": f"{friendly_name} ({int(conf*100)}%)",
+                            "label": friendly_name,
                             "name": friendly_name,
                             "category": "litter",
                             "confidence": round(conf, 2),
@@ -906,5 +906,5 @@ def simulate_detection(
             "sensorId": f"SENSOR_{random.randint(100, 999)}",
             "modelInference": "Campus Context Decomposer Engine"
         },
-        "aiSummary": f"Automated CV detection flagged {matched_class['label']} (~{weight_kg} kg) with {int(confidence*100)}% certainty."
+        "aiSummary": f"Automated CV detection flagged {matched_class['label']} (~{weight_kg} kg)."
     }

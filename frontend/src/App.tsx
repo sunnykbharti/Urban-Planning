@@ -37,11 +37,12 @@ import { OperatorDashboard } from './components/OperatorDashboard';
 import { BvgWorkerDashboard } from './components/BvgWorkerDashboard';
 import { ManagementDashboard } from './components/ManagementDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
-import { RoleAuthModal } from './components/RoleAuthModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TermsAndConditionsView } from './components/TermsAndConditionsView';
 import { PrivacyPolicyView } from './components/PrivacyPolicyView';
 import { StaffOperationsView } from './components/StaffOperationsView';
+import { LandingPageView } from './components/LandingPageView';
+import { LoginPageView } from './components/LoginPageView';
 import { DEFAULT_PROFILES, UserProfile } from './types';
 import { 
   checkBackendHealth, 
@@ -50,7 +51,7 @@ import {
   updateIncidentStatusAPI,
   verifyAndCloseAPI 
 } from './api/client';
-import { CheckCircle2, AlertTriangle, Info, Server, Flame } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Info, Server, Flame, X } from 'lucide-react';
 
 const SEED_DATA_VERSION = 'v3.0';
 
@@ -120,10 +121,30 @@ export default function App() {
     return userRole === 'student' ? 'student_dashboard' : userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' : userRole === 'management' ? 'management_dashboard' : 'admin_dashboard';
   });
 
-  const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  // Authentication strictly required for app entry
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('campusr_authenticated') === 'true';
+    }
+    return false;
+  });
+
+  // High-level application view: 'landing' (public marketing & overview), 'login' (sign in), or 'app' (dashboard workspace)
+  const [appView, setAppView] = useState<'landing' | 'login' | 'app'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get('view');
+      const isAuth = localStorage.getItem('campusr_authenticated') === 'true';
+      if (v === 'landing') return 'landing';
+      if (v === 'login') return 'login';
+      if (v === 'app') return isAuth ? 'app' : 'login';
+      if (params.get('tab') || params.get('role')) return isAuth ? 'app' : 'login';
+    }
+    return 'landing';
+  });
 
   const handleRoleChange = (newRole: UserRole, newProfile?: UserProfile) => {
     setUserRole(newRole);
@@ -135,6 +156,7 @@ export default function App() {
       if (DEFAULT_PROFILES[norm]) setCurrentUserProfile(DEFAULT_PROFILES[norm]);
     }
 
+    // Direct user strictly to their role's specific dashboard
     if (newRole === 'student') {
       setActiveTab('student_dashboard');
     } else if (newRole === 'bvg_worker' || newRole === 'operator') {
@@ -146,36 +168,34 @@ export default function App() {
     }
   };
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-
-  const handleOpenAccountSwitcher = (target?: UserRole) => {
-    setTargetAuthRole(target || null);
-    setIsAuthModalOpen(true);
-  };
-
   const handleAuthSuccess = (authenticatedRole: UserRole, profile: UserProfile) => {
     setIsAuthenticated(true);
+    localStorage.setItem('campusr_authenticated', 'true');
     handleRoleChange(authenticatedRole, profile);
+    setAppView('app');
     showToast(`Signed in as ${profile.name} (${profile.roleTitle})`, 'success');
   };
 
   const handleSignOut = () => {
     setIsAuthenticated(false);
+    localStorage.removeItem('campusr_authenticated');
+    localStorage.removeItem('csjmu_user_role');
     const guestProfile: UserProfile = {
-      name: 'Campus Citizen (Guest)',
+      id: 'guest',
+      name: 'Unauthenticated User',
       role: 'student',
-      roleTitle: 'Guest Citizen',
-      department: 'Kanpur Nagar Public Civic Hub',
-      badgeNumber: 'GUEST-CIVIC',
+      roleTitle: 'Signed Out',
+      agency: 'Campusr Portal',
+      department: 'Authentication Required',
+      badgeNumber: '',
       email: '',
-      avatar: 'GC',
+      avatar: '?',
       pin: '',
-      permissions: ['lodge_report', 'view_public_map']
+      permissions: []
     };
     setCurrentUserProfile(guestProfile);
-    setUserRole('student');
-    setActiveTab('student_dashboard');
-    showToast('Signed out. Active view: Student / Civic Hub', 'info');
+    setAppView('login');
+    showToast('Signed out of Campusr. Please sign in to enter the app.', 'info');
   };
   
   // Modals and Drawers
@@ -519,6 +539,99 @@ export default function App() {
     );
   });
 
+  if (appView === 'landing') {
+    return (
+      <>
+        <LandingPageView
+          onNavigateToLogin={() => setAppView('login')}
+          onNavigateToApp={() => {
+            if (isAuthenticated) {
+              setAppView('app');
+            } else {
+              setAppView('login');
+            }
+          }}
+          isAuthenticated={isAuthenticated}
+        />
+        {/* Global Toast Notification */}
+        {toastMessage && (
+          <div className="fixed bottom-4 right-4 z-50 pointer-events-none max-w-sm w-full p-2">
+            <div className={`pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg shadow-lg border text-xs font-semibold ${
+              toastMessage.type === 'urgent'
+                ? 'bg-rose-50 text-rose-900 border-rose-200 shadow-rose-900/10'
+                : toastMessage.type === 'info'
+                ? 'bg-slate-900 text-slate-100 border-slate-700 shadow-slate-900/20'
+                : 'bg-emerald-50 text-emerald-900 border-emerald-200 shadow-emerald-900/10'
+            }`}>
+              <div className="flex items-center gap-2 min-w-0">
+                {toastMessage.type === 'urgent' ? (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                ) : toastMessage.type === 'info' ? (
+                  <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                )}
+                <span className="truncate">{toastMessage.text}</span>
+              </div>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded cursor-pointer shrink-0"
+                aria-label="Dismiss notification"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // STRICT AUTHENTICATION GUARD: Without login, no entry to app strictly!
+  if (!isAuthenticated || appView === 'login') {
+    return (
+      <>
+        <LoginPageView
+          onLoginSuccess={(role, profile) => {
+            handleAuthSuccess(role, profile);
+          }}
+          onBackToLanding={() => setAppView('landing')}
+          credentials={credentials}
+        />
+        {/* Global Toast Notification */}
+        {toastMessage && (
+          <div className="fixed bottom-4 right-4 z-50 pointer-events-none max-w-sm w-full p-2">
+            <div className={`pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg shadow-lg border text-xs font-semibold ${
+              toastMessage.type === 'urgent'
+                ? 'bg-rose-50 text-rose-900 border-rose-200 shadow-rose-900/10'
+                : toastMessage.type === 'info'
+                ? 'bg-slate-900 text-slate-100 border border-slate-700 shadow-slate-900/20'
+                : 'bg-emerald-50 text-emerald-900 border-emerald-200 shadow-emerald-900/10'
+            }`}>
+              <div className="flex items-center gap-2 min-w-0">
+                {toastMessage.type === 'urgent' ? (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                ) : toastMessage.type === 'info' ? (
+                  <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                )}
+                <span className="truncate">{toastMessage.text}</span>
+              </div>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded cursor-pointer shrink-0"
+                aria-label="Dismiss notification"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f9f9ff] text-[#111c2d] flex flex-col font-sans selection:bg-[#dee8ff] selection:text-[#001e40]">
       {/* Top Navigation Bar */}
@@ -530,8 +643,8 @@ export default function App() {
         userRole={userRole}
         currentProfile={currentUserProfile}
         isAuthenticated={isAuthenticated}
-        onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onSignOut={handleSignOut}
+        onNavigateToLanding={() => setAppView('landing')}
         backendOnline={backendStatus.online}
         isMobileMenuOpen={isMobileMenuOpen}
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -556,7 +669,6 @@ export default function App() {
           onOpenSettings={() => setIsSettingsOpen(true)}
           userRole={userRole}
           currentProfile={currentUserProfile}
-          onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
           urgentCount={urgentCount}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -782,19 +894,8 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         userRole={userRole}
         currentProfile={currentUserProfile}
-        onOpenAccountSwitcher={() => handleOpenAccountSwitcher()}
         onResetData={handleResetData}
         onNavigateTab={(tab) => setActiveTab(tab)}
-      />
-
-      {/* Role-Based Access Control (RBAC) Authentication Modal */}
-      <RoleAuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        targetRole={targetAuthRole || 'student'}
-        currentRole={userRole}
-        onSuccess={handleAuthSuccess}
-        credentials={credentials}
       />
 
       {/* Toast Notification (Non-blocking, bottom-right, auto-dismiss) */}

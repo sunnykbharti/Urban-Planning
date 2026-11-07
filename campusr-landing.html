@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campusr — College life, organized</title>
+  <meta name="description" content="A simple app for students and colleges. Class timetables, shared notes, daily mess menus, and campus notices in one place.">
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            canvas: '#FAF9F6',
+            brand: {
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              600: '#4F46E5',
+              700: '#4338CA',
+              800: '#3730A3',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #FAF9F6;
+      color: #1C1917;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+  <!-- 1. PLAIN FULL-WIDTH NAVBAR -->
+  <header class="w-full bg-white border-b border-stone-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-md bg-indigo-700 flex items-center justify-center text-white">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+        <span class="font-bold text-base tracking-tight text-stone-900">Campusr</span>
+      </a>
+
+      <!-- Simple Nav Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-stone-600">
+        <a href="#how-it-works" class="hover:text-indigo-700 transition-colors">How it works</a>
+        <a href="#features" class="hover:text-indigo-700 transition-colors">Features</a>
+        <a href="#contact" class="hover:text-indigo-700 transition-colors">Contact</a>
+        <a href="#terms" class="hover:text-indigo-700 transition-colors">Terms</a>
+      </nav>
+
+      <!-- Action Buttons on Right -->
+      <div class="flex items-center gap-3">
+        <a href="http://localhost:3000/?view=login" class="px-3.5 py-1.5 text-sm font-medium text-stone-700 hover:text-indigo-700 hover:bg-stone-50 border border-stone-200 rounded-md transition-colors">
+          Log in
+        </a>
+        <a href="http://localhost:3000/?view=login" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-700 hover:bg-indigo-800 rounded-md transition-colors shadow-sm">
+          Launch App &rarr;
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 2. LEFT-ALIGNED HERO WITH PRODUCT PREVIEW ON THE RIGHT -->
+  <section class="py-16 sm:py-20 border-b border-stone-200">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        
+        <!-- Left: Text & Action -->
+        <div class="lg:col-span-6">
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-stone-900 leading-tight">
+            College life is messy.<br>Campusr keeps it organized.
+          </h1>
+          <p class="mt-4 text-base sm:text-lg text-stone-600 leading-relaxed">
+            Students shouldn't have to check four broken portals and six random chat groups just to know where their next class is, what the mess is serving, or who has last semester's exam notes.
+          </p>
+
+          <div class="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <a href="http://localhost:3000/?view=login" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm rounded-md transition-colors text-center shadow-sm">
+              Sign In to Campus Portal
+            </a>
+            <a href="http://localhost:3000/?view=login" class="px-5 py-2.5 bg-white hover:bg-stone-50 border border-stone-300 text-stone-700 font-medium text-sm rounded-md transition-colors text-center">
+              Sign In to Enter &rarr;
+            </a>
+          </div>
+
+          <div class="mt-8 pt-6 border-t border-stone-200 flex items-center gap-6 text-xs text-stone-500">
+            <div>Used by students across 40+ colleges</div>
+            <div class="w-1 h-1 rounded-full bg-stone-300"></div>
+            <div>Sets up in under a week</div>
+          </div>
+        </div>
+
+        <!-- Right: Realistic Product Screenshot / UI card -->
+        <div class="lg:col-span-6">
+          <div class="bg-white border border-stone-200 rounded-lg shadow-sm p-4 sm:p-5">
+            
+            <!-- Window Bar -->
+            <div class="flex items-center justify-between pb-3 border-b border-stone-200 mb-4 text-xs text-stone-500">
+              <span class="font-medium text-stone-800">Student Daily View</span>
+              <span>Thursday, Semester 4</span>
+            </div>
+
+            <!-- Current Lecture Card -->
+            <div class="bg-indigo-50/70 border border-indigo-100 rounded-md p-3.5 mb-3">
+              <div class="flex items-center justify-between text-xs text-indigo-700 font-medium">
+                <span>Class in 15 mins • Lecture Hall 102</span>
+                <span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-[11px]">Comp Sci 304</span>
+              </div>
+              <div class="text-sm font-semibold text-stone-900 mt-1">Database Systems &amp; Query Optimization</div>
+              <div class="text-xs text-stone-600 mt-0.5">Prof. Thorne • Attendance so far: 92% (Safe)</div>
+            </div>
+
+            <!-- Next Items (List) -->
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-md px-3 py-2 text-xs">
+                <span class="text-stone-700 font-medium">2:00 PM — Hardware Lab (Lab B, Workstation 12)</span>
+                <span class="text-stone-500">2 hours</span>
+              </div>
+              <div class="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-md px-3 py-2 text-xs">
+                <span class="text-stone-700 font-medium">4:30 PM — Robotics Club Workshop</span>
+                <span class="text-stone-500">Student Center</span>
+              </div>
+            </div>
+
+            <!-- Bottom Split: Today's Mess & Shared Notes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-stone-200">
+              <div class="border border-stone-200 rounded-md p-2.5 text-xs bg-white">
+                <div class="font-semibold text-stone-900 mb-1">Lunch Menu (Dining Hall)</div>
+                <div class="text-stone-600 leading-snug">Rajma, steamed rice, roti, salad, and curd. Open till 2:30 PM.</div>
+              </div>
+              <div class="border border-stone-200 rounded-md p-2.5 text-xs bg-white">
+                <div class="font-semibold text-stone-900 mb-1">Recent Notes Upload</div>
+                <div class="text-stone-600 leading-snug">OS Midterm Prep Guide (PDF, 12 pages) shared by Sarah K.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. WHAT IT DOES: ASYMMETRIC COMPARISON LAYOUT -->
+  <section id="how-it-works" class="py-16 border-b border-stone-200 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      
+      <div class="max-w-2xl mb-12">
+        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">
+          Why colleges replace their existing setup with Campusr
+        </h2>
+        <p class="mt-3 text-sm sm:text-base text-stone-600">
+          Most campuses don't suffer from a lack of software — they suffer from too many separate tools that don't talk to each other.
+        </p>
+      </div>
+
+      <!-- Asymmetric Two-Column Comparison -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left: The Old Way (4 cols) -->
+        <div class="md:col-span-5 bg-stone-50 border border-stone-200 rounded-lg p-6">
+          <h3 class="text-sm font-bold text-stone-900 uppercase tracking-wide mb-4">How it usually works</h3>
+          <ul class="space-y-4 text-xs sm:text-sm text-stone-600">
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-500 font-bold shrink-0">✕</span>
+              <span>An ERP built in 2007 that is painful to open on a phone.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-500 font-bold shrink-0">✕</span>
+              <span>Official notices posted on paper pinboards or emailed as attachments nobody reads.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-500 font-bold shrink-0">✕</span>
+              <span>Class notes scattered across five different WhatsApp groups and expiring links.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-500 font-bold shrink-0">✕</span>
+              <span>Students finding out the mess menu changed only after walking 15 minutes to the dining hall.</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-red-500 font-bold shrink-0">✕</span>
+              <span>Hostel maintenance requests written in a physical register book that gets lost.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Right: How Campusr Solves It (7 cols) -->
+        <div class="md:col-span-7 bg-white border border-stone-200 rounded-lg p-6">
+          <h3 class="text-sm font-bold text-indigo-700 uppercase tracking-wide mb-4">How Campusr does it</h3>
+          
+          <div class="space-y-5 text-sm">
+            <div class="pb-4 border-b border-stone-100">
+              <div class="font-semibold text-stone-900">One mobile-first dashboard for students</div>
+              <p class="text-xs sm:text-sm text-stone-600 mt-1">
+                Classes, room numbers, attendance percentages, and test schedules are pulled directly from your university system and shown on a fast, mobile-friendly screen.
+              </p>
+            </div>
+
+            <div class="pb-4 border-b border-stone-100">
+              <div class="font-semibold text-stone-900">A clean repository for study material</div>
+              <p class="text-xs sm:text-sm text-stone-600 mt-1">
+                Students upload notes, formula sheets, and past papers organized neatly by branch, semester, and course code. Classmates upvote the most helpful ones.
+              </p>
+            </div>
+
+            <div>
+              <div class="font-semibold text-stone-900">Daily campus updates in real time</div>
+              <p class="text-xs sm:text-sm text-stone-600 mt-1">
+                Mess staff update the daily menu in 30 seconds from their phone. Campus administration can push urgent weather or schedule circulars that ping everyone instantly.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. CORE FEATURES (VARIED LAYOUTS: NOT EQUAL ROWS) -->
+  <section id="features" class="py-16 border-b border-stone-200">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      
+      <div class="max-w-2xl mb-12">
+        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">
+          Everything students need on a regular weekday
+        </h2>
+        <p class="mt-2 text-sm sm:text-base text-stone-600">
+          Here is what is included when your campus goes live.
+        </p>
+      </div>
+
+      <!-- Feature 1: Wide Layout for Timetable & Attendance -->
+      <div class="bg-white border border-stone-200 rounded-lg p-6 sm:p-8 mb-6 shadow-sm">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-6">
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Timetables &amp; Attendance</span>
+            <h3 class="text-xl font-bold text-stone-900 mt-3 mb-2">Never walk into the wrong lecture hall</h3>
+            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+              Campusr syncs with your college's master timetable. If a professor swaps a slot or moves a class to a different room, students see the change before leaving their dorm.
+            </p>
+            <ul class="space-y-2 text-xs sm:text-sm text-stone-600">
+              <li class="flex items-center gap-2">
+                <span class="text-indigo-700 font-bold">•</span>
+                <span>Shows how many classes you can miss before hitting the 75% attendance rule.</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-indigo-700 font-bold">•</span>
+                <span>Works offline if campus Wi-Fi drops.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="lg:col-span-6 bg-stone-50 border border-stone-200 rounded-md p-4">
+            <div class="text-xs font-semibold text-stone-800 mb-2">Subject Attendance Breakdown</div>
+            <div class="space-y-2 text-xs">
+              <div class="bg-white p-2.5 rounded border border-stone-200 flex items-center justify-between">
+                <div>
+                  <span class="font-medium text-stone-900">Computer Architecture</span>
+                  <span class="text-stone-500 block text-[11px]">23 of 25 attended</span>
+                </div>
+                <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">92%</span>
+              </div>
+              <div class="bg-white p-2.5 rounded border border-stone-200 flex items-center justify-between">
+                <div>
+                  <span class="font-medium text-stone-900">Computer Networks</span>
+                  <span class="text-stone-500 block text-[11px]">19 of 24 attended</span>
+                </div>
+                <span class="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">79% (Warning)</span>
+              </div>
+              <div class="bg-white p-2.5 rounded border border-stone-200 flex items-center justify-between">
+                <div>
+                  <span class="font-medium text-stone-900">Discrete Mathematics</span>
+                  <span class="text-stone-500 block text-[11px]">26 of 28 attended</span>
+                </div>
+                <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">93%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2 & 3: Two Unequal Columns (Notes Exchange & Dining) -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
+        
+        <!-- Notes Exchange (7 cols) -->
+        <div class="md:col-span-7 bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
+          <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Study Material</span>
+          <h3 class="text-lg font-bold text-stone-900 mt-3 mb-2">Peer notes that don't disappear into chat archives</h3>
+          <p class="text-xs sm:text-sm text-stone-600 mb-4">
+            Search handwritten notes, textbook recommendations, and solved question banks categorized strictly by course and semester.
+          </p>
+
+          <div class="space-y-2 text-xs">
+            <div class="border border-stone-200 rounded-md p-3 hover:bg-stone-50 transition-colors">
+              <div class="flex items-center justify-between font-semibold text-stone-900">
+                <span>Data Structures — Midterm Cheat Sheet</span>
+                <span class="text-stone-500 text-[11px]">PDF • 8 pages</span>
+              </div>
+              <div class="text-stone-500 mt-1 flex items-center gap-3">
+                <span>By Rahul S. (Grade A+)</span>
+                <span>•</span>
+                <span>420 downloads</span>
+              </div>
+            </div>
+
+            <div class="border border-stone-200 rounded-md p-3 hover:bg-stone-50 transition-colors">
+              <div class="flex items-center justify-between font-semibold text-stone-900">
+                <span>Signals &amp; Systems — 5-Year Solved Papers</span>
+                <span class="text-stone-500 text-[11px]">PDF • 22 pages</span>
+              </div>
+              <div class="text-stone-500 mt-1 flex items-center gap-3">
+                <span>Faculty verified</span>
+                <span>•</span>
+                <span>610 downloads</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dining & Mess (5 cols) -->
+        <div class="md:col-span-5 bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
+          <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Dining &amp; Mess</span>
+          <h3 class="text-lg font-bold text-stone-900 mt-3 mb-2">Know what's for dinner before walking over</h3>
+          <p class="text-xs sm:text-sm text-stone-600 mb-4">
+            Daily meal menus updated directly by the mess committee with timings and dietary tags.
+          </p>
+
+          <div class="bg-stone-50 border border-stone-200 rounded-md p-3.5 text-xs">
+            <div class="flex items-center justify-between font-semibold text-stone-900 pb-2 border-b border-stone-200 mb-2">
+              <span>Today's Dinner (7:30 – 9:30 PM)</span>
+              <span class="text-emerald-700 font-medium">Serving now</span>
+            </div>
+            <p class="text-stone-700 leading-relaxed">
+              Paneer butter masala, yellow dal tadka, jeera rice, fresh phulkas, and gulab jamun.
+            </p>
+            <div class="mt-3 pt-2 border-t border-stone-200 flex items-center justify-between text-[11px] text-stone-500">
+              <span>Vegetarian</span>
+              <span>Wait time: ~5 mins</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Feature 4: Campus Notices & Facility Helpdesk (Clean List Style) -->
+      <div class="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Notices &amp; Events</span>
+            <h3 class="text-base font-bold text-stone-900 mt-2 mb-1">Official circulars, zero clutter</h3>
+            <p class="text-xs text-stone-600 mb-3">
+              Only verified university admins and department chairs can post announcements. Important exam dates and holiday notices stay pinned at the top.
+            </p>
+            <div class="text-xs text-stone-500 font-medium">Direct notification on student phones • No spam</div>
+          </div>
+
+          <div>
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Hostel Maintenance</span>
+            <h3 class="text-base font-bold text-stone-900 mt-2 mb-1">Fix Wi-Fi, electricity, and plumbing faster</h3>
+            <p class="text-xs text-stone-600 mb-3">
+              Students submit issues with a photo and room number. The maintenance warden marks progress so students know when someone is coming to fix it.
+            </p>
+            <div class="text-xs text-stone-500 font-medium">Average ticket resolution: under 4 hours</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. SIMPLE NUMBERS (NO FLASHY CARDS) -->
+  <section class="py-12 border-b border-stone-200 bg-stone-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div>
+          <div class="text-2xl sm:text-3xl font-bold text-stone-900">40+</div>
+          <div class="text-xs text-stone-600 mt-1">Colleges using Campusr</div>
+        </div>
+        <div>
+          <div class="text-2xl sm:text-3xl font-bold text-stone-900">180,000+</div>
+          <div class="text-xs text-stone-600 mt-1">Daily active students</div>
+        </div>
+        <div>
+          <div class="text-2xl sm:text-3xl font-bold text-stone-900">&lt;7 days</div>
+          <div class="text-xs text-stone-600 mt-1">Average setup time</div>
+        </div>
+        <div>
+          <div class="text-2xl sm:text-3xl font-bold text-stone-900">99.9%</div>
+          <div class="text-xs text-stone-600 mt-1">Uptime record</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. CONTACT DETAILS (FOUNDER-TO-FOUNDER STYLE) -->
+  <section id="contact" class="py-16 border-b border-stone-200 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        <!-- Left: Direct Contact Information (5 cols) -->
+        <div class="lg:col-span-5">
+          <h2 class="text-2xl font-bold text-stone-900">Let's set up your campus</h2>
+          <p class="mt-2 text-sm text-stone-600 leading-relaxed">
+            Whether you are a university dean, department chair, or student council president, write to us directly. We do not do sales runarounds — you will talk directly with our engineering team to see if Campusr is the right fit.
+          </p>
+
+          <div class="mt-6 space-y-4 text-xs sm:text-sm">
+            <div class="p-4 border border-stone-200 rounded-md bg-stone-50">
+              <div class="font-semibold text-stone-900">Email us directly</div>
+              <a href="mailto:partnerships@campusr.io" class="text-indigo-700 hover:underline font-medium block mt-0.5">
+                partnerships@campusr.io
+              </a>
+              <div class="text-stone-500 text-xs mt-1">We respond to every message within 4 hours.</div>
+            </div>
+
+            <div class="p-4 border border-stone-200 rounded-md bg-stone-50">
+              <div class="font-semibold text-stone-900">Call our desk</div>
+              <div class="text-stone-800 font-medium mt-0.5">+1 (800) 492-CAMPUS</div>
+              <div class="text-stone-500 text-xs mt-1">Monday through Friday, 9:00 AM – 6:00 PM EST</div>
+            </div>
+
+            <div class="p-4 border border-stone-200 rounded-md bg-stone-50">
+              <div class="font-semibold text-stone-900">Office location</div>
+              <div class="text-stone-700 mt-0.5">Campusr Technologies Inc.</div>
+              <div class="text-stone-500 text-xs">440 Tech Square, 6th Floor, Cambridge, MA 02139</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Simple Contact Form (7 cols) -->
+        <div class="lg:col-span-7 bg-stone-50 border border-stone-200 rounded-lg p-6 sm:p-8">
+          <h3 class="text-base font-bold text-stone-900 mb-1">Request a walkthrough</h3>
+          <p class="text-xs text-stone-600 mb-6">Tell us a little bit about your institution and we'll spin up a quick test link.</p>
+
+          <form id="contactForm" onsubmit="handleFormSubmit(event)" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="name" class="block font-medium text-stone-800 mb-1">Your Name</label>
+                <input required type="text" id="name" placeholder="Prof. Jane Adams" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs focus:outline-none focus:border-indigo-700">
+              </div>
+              <div>
+                <label for="email" class="block font-medium text-stone-800 mb-1">Official Email</label>
+                <input required type="email" id="email" placeholder="jane@college.edu" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs focus:outline-none focus:border-indigo-700">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="role" class="block font-medium text-stone-800 mb-1">Role at College</label>
+                <select id="role" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs text-stone-800 focus:outline-none focus:border-indigo-700">
+                  <option value="admin">College Administrator / Dean</option>
+                  <option value="faculty">Professor / Department Head</option>
+                  <option value="it">Campus IT Lead</option>
+                  <option value="student">Student Representative</option>
+                </select>
+              </div>
+              <div>
+                <label for="students" class="block font-medium text-stone-800 mb-1">Approximate Student Count</label>
+                <select id="students" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs text-stone-800 focus:outline-none focus:border-indigo-700">
+                  <option value="small">Under 2,000</option>
+                  <option value="medium">2,000 – 10,000</option>
+                  <option value="large">10,000+</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="notes" class="block font-medium text-stone-800 mb-1">What is your biggest headache right now?</label>
+              <textarea id="notes" rows="3" placeholder="e.g. Students miss circulars, mess timetable is hard to maintain, or attendance tracking is messy..." class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs focus:outline-none focus:border-indigo-700"></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full py-2.5 px-4 bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-xs rounded-md transition-colors shadow-sm">
+              Send walkthrough request
+            </button>
+
+            <div id="successNotice" class="hidden p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-md text-center text-xs">
+              Thanks! We got your note and will email you back today.
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. TERMS & CONDITIONS -->
+  <section id="terms" class="py-16 border-b border-stone-200 bg-stone-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      
+      <div class="mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-stone-900">Terms &amp; Conditions</h2>
+        <p class="text-xs text-stone-500 mt-1">Last updated: January 2026</p>
+      </div>
+
+      <div class="bg-white border border-stone-200 rounded-lg p-6 sm:p-8 space-y-6 text-xs sm:text-sm text-stone-600 leading-relaxed">
+        <div>
+          <h3 class="font-bold text-stone-900 mb-1">1. Who this is for</h3>
+          <p>
+            Campusr is provided by Campusr Technologies Inc. to licensed colleges, universities, and their enrolled students and faculty. Accounts are tied to validated institutional email addresses or registrar records.
+          </p>
+        </div>
+
+        <div class="pt-4 border-t border-stone-100">
+          <h3 class="font-bold text-stone-900 mb-1">2. Student data privacy</h3>
+          <p>
+            We do not sell student data, show external ads, or track students across the web. All class records, attendance logs, and personal details remain the property of the student and their institution in accordance with FERPA and standard privacy laws.
+          </p>
+        </div>
+
+        <div class="pt-4 border-t border-stone-100">
+          <h3 class="font-bold text-stone-900 mb-1">3. Acceptable use of shared notes</h3>
+          <p>
+            The notes exchange feature is strictly for student-authored summaries, study guides, and original revision material. Uploading pirated commercial textbooks, leaked exam papers, or copyrighted commercial material is prohibited and results in immediate account suspension.
+          </p>
+        </div>
+
+        <div class="pt-4 border-t border-stone-100">
+          <h3 class="font-bold text-stone-900 mb-1">4. Availability &amp; support</h3>
+          <p>
+            We target 99.9% availability for all active campuses. Timetable views and mess menus are cached locally on device so students can still view their schedule if campus internet goes down.
+          </p>
+        </div>
+
+        <div class="pt-4 border-t border-stone-100">
+          <h3 class="font-bold text-stone-900 mb-1">5. Questions &amp; Legal Contact</h3>
+          <p>
+            For legal inquiries or data processing requests, reach us at <a href="mailto:legal@campusr.io" class="text-indigo-700 underline font-medium">legal@campusr.io</a> or mail Campusr Technologies Inc., 440 Tech Square, Cambridge, MA 02139.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 8. SIMPLE FOOTER & COPYRIGHT -->
+  <footer class="py-8 bg-white text-xs text-stone-500">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-stone-900">Campusr</span>
+        <span>— College life, organized.</span>
+      </div>
+
+      <div class="flex items-center gap-6 text-stone-600">
+        <a href="#how-it-works" class="hover:text-stone-900 transition-colors">How it works</a>
+        <a href="#features" class="hover:text-stone-900 transition-colors">Features</a>
+        <a href="#contact" class="hover:text-stone-900 transition-colors">Contact</a>
+        <a href="#terms" class="hover:text-stone-900 transition-colors">Terms</a>
+      </div>
+
+      <div>
+        &copy; 2026 Campusr Technologies Inc. All rights reserved.
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const notice = document.getElementById('successNotice');
+      btn.disabled = true;
+      btn.innerText = 'Sending...';
+
+      setTimeout(() => {
+        btn.innerText = 'Request Sent ✓';
+        btn.classList.remove('bg-indigo-700', 'hover:bg-indigo-800');
+        btn.classList.add('bg-stone-800');
+        notice.classList.remove('hidden');
+      }, 500);
+    }
+  </script>
+
+</body>
+</html>

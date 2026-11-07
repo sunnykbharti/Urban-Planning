@@ -25,7 +25,6 @@ interface SettingsModalProps {
   onClose: () => void;
   userRole: UserRole;
   currentProfile?: UserProfile;
-  onOpenAccountSwitcher?: () => void;
   onResetData: () => void;
   onNavigateTab?: (tab: any) => void;
 }
@@ -35,7 +34,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   userRole,
   currentProfile,
-  onOpenAccountSwitcher,
   onResetData,
   onNavigateTab
 }) => {
@@ -146,21 +144,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span><strong>Dept:</strong> {currentProfile?.department || 'Computer Science & Engineering'}</span>
             </div>
 
-            <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
-              <p className="text-[10px] text-slate-500 leading-tight max-w-[260px]">
-                Roles and clearance privileges are managed centrally. Arbitrary in-app role changing is disabled.
+            <div className="pt-2 border-t border-slate-200/80">
+              <p className="text-[10px] text-slate-500 leading-tight">
+                Role clearance and access permissions are strictly enforced. To access another role, sign out and log in with the corresponding credentials.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  if (onOpenAccountSwitcher) onOpenAccountSwitcher();
-                }}
-                className="px-2.5 py-1.5 bg-[#001e40] hover:bg-[#002b5c] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-blue-200" />
-                <span>Switch Account</span>
-              </button>
             </div>
           </div>
         </div>

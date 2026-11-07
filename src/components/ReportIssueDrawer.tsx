@@ -16,16 +16,17 @@ import {
   Maximize2,
   Scan,
   CheckCircle2,
-  Eye,
-  EyeOff,
-  Layers,
   HardHat,
   Clock,
   ShieldCheck,
   FileCheck,
   Plus,
   RotateCcw,
-  Info
+  Info,
+  Droplet,
+  Zap,
+  Hammer,
+  Ban
 } from 'lucide-react';
 import { ReportCategory, ReportSeverity, MaintenanceReport, GarbageDetectionResult, BoundingBox } from '../types';
 import { samplePhotos } from '../data/mockData';
@@ -66,7 +67,6 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisStatus, setAnalysisStatus] = useState<string>('');
   const [detectionResult, setDetectionResult] = useState<GarbageDetectionResult | null>(null);
-  const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
 
   // Sync prefilled location
   useEffect(() => {
@@ -74,6 +74,13 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
       setLocation(prefilledLocation);
     }
   }, [prefilledLocation]);
+
+  // Safeguard: Check if photos have been analyzed and verified clean of waste
+  const allDetectionsList: GarbageDetectionResult[] = Object.values(photoDetections);
+  const hasAnalyzedPhotos = photoUrls.length > 0 && allDetectionsList.length > 0;
+  const anyGarbageDetected = allDetectionsList.some(d => d.isGarbageDetected);
+  const isCleanArea = hasAnalyzedPhotos && !anyGarbageDetected;
+  const isSubmissionBlocked = isCleanArea && (category === 'garbage' || !category);
 
   if (!isOpen) return null;
 
@@ -143,36 +150,41 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
       setDetectionResult(activeDet);
 
       // Aggregate insights across all analyzed photos
-      const allDets = Object.values(newDetections);
+      const allDets: GarbageDetectionResult[] = Object.values(newDetections);
       const anyGarbage = allDets.some(d => d.isGarbageDetected);
       const allUnwanted = Array.from(new Set(allDets.flatMap(d => d.unwantedObjects || [])));
-      const totalWeight = Math.round(allDets.reduce((acc, d) => acc + (d.estimatedAmount?.weightKg || 0), 0) * 10) / 10;
+      const totalWeight = Math.round(allDets.reduce((acc: number, d: GarbageDetectionResult) => acc + (d.estimatedAmount?.weightKg || 0), 0) * 10) / 10;
 
-      // Auto-populate form if waste is detected
+      // Auto-populate form data based on AI identification
       if (anyGarbage) {
-        if (!category) {
-          const hasDrain = allDets.some(d => d.primaryClass === 'blocked_drain');
-          setCategory(hasDrain ? 'waterlogging' : 'garbage');
-        }
+        const hasDrain = allDets.some(d => d.primaryClass === 'blocked_drain');
+        setCategory(hasDrain ? 'waterlogging' : 'garbage');
+
         if (activeDet?.defaultSeverity) {
           const sevLower = activeDet.defaultSeverity.toLowerCase();
           setSeverity(sevLower === 'critical' || sevLower === 'high' ? 'urgent' : 'normal');
         }
-        if (!title) {
-          const unwantedSummary = allUnwanted.slice(0, 2).join(' & ');
-          setTitle(
-            unwantedSummary 
-              ? `Campus Litter: ${unwantedSummary} (~${totalWeight} kg)` 
-              : `${activeDet?.classLabel || 'Waste Detected'} (~${totalWeight} kg)`
-          );
-        }
-        if (!description.trim() && activeDet?.aiSummary) {
+
+        const unwantedSummary = allUnwanted.slice(0, 2).join(' & ');
+        setTitle(
+          unwantedSummary 
+            ? `Campus Litter: ${unwantedSummary}` 
+            : (activeDet?.classLabel || 'Campus Litter Detected')
+        );
+
+        if (activeDet?.aiSummary) {
           const multiPhotoPrefix = updatedUrls.length > 1 ? `[Verified across ${updatedUrls.length} photos] ` : '';
           setDescription(`${multiPhotoPrefix}${activeDet.aiSummary}`);
         }
-      } else if (suggestedCategory) {
-        if (!category) setCategory(suggestedCategory);
-        if (!title && suggestedTitle) setTitle(suggestedTitle);
+      } else {
+        // When AI verifies no litter or waste: do NOT pre-select waste category or title
+        setCategory('');
+        setTitle('');
+        if (activeDet?.aiSummary) {
+          setDescription(activeDet.aiSummary);
+        } else {
+          setDescription('AI Computer Vision verified clean area. No solid waste or litter detected.');
+        }
       }
     } catch (err) {
       console.error('Failed to process batch image upload:', err);
@@ -241,18 +253,12 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
     setSeverity('normal');
   };
 
-  const handleApplyAiInsights = () => {
-    if (!detectionResult) return;
-    setCategory(detectionResult.primaryClass === 'blocked_drain' ? 'waterlogging' : 'garbage');
-    const sevLower = detectionResult.defaultSeverity.toLowerCase();
-    setSeverity(sevLower === 'critical' || sevLower === 'high' ? 'urgent' : 'normal');
-    const amtKg = detectionResult.estimatedAmount?.weightKg;
-    setTitle(`${detectionResult.classLabel} (${amtKg ? `~${amtKg} kg` : 'Waste Detected'})`);
-    setDescription(detectionResult.aiSummary);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmissionBlocked) {
+      alert('False Report Blocked: Computer Vision verified this scene is clean with zero litter or waste. Disagreeing reports for clean areas cannot be dispatched.');
+      return;
+    }
     if (!category) {
       alert('Please select an issue category.');
       return;
@@ -269,12 +275,12 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
     const primaryImage = effectiveUrls[0];
 
     // Compute aggregated amount across all photos
-    const allDets = Object.values(photoDetections);
+    const allDets: GarbageDetectionResult[] = Object.values(photoDetections);
     const totalWeightKg = allDets.length > 0 
-      ? Math.round(allDets.reduce((acc, d) => acc + (d.estimatedAmount?.weightKg || 0), 0) * 10) / 10 
+      ? Math.round(allDets.reduce((acc: number, d: GarbageDetectionResult) => acc + (d.estimatedAmount?.weightKg || 0), 0) * 10) / 10 
       : detectionResult?.estimatedAmount?.weightKg;
     const totalVolumeM3 = allDets.length > 0
-      ? Math.round(allDets.reduce((acc, d) => acc + (d.estimatedAmount?.volumeM3 || 0), 0) * 100) / 100
+      ? Math.round(allDets.reduce((acc: number, d: GarbageDetectionResult) => acc + (d.estimatedAmount?.volumeM3 || 0), 0) * 100) / 100
       : detectionResult?.estimatedAmount?.volumeM3;
 
     setTimeout(() => {
@@ -398,64 +404,13 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                       <div className="w-12 h-12 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin mb-3" />
                       <p className="text-sm font-bold flex items-center gap-1.5 text-center">
                         <Scan className="w-4 h-4 text-emerald-400 animate-pulse" />
-                        <span>{analysisStatus || 'Analyzing with Computer Vision...'}</span>
-                      </p>
-                      <p className="text-xs text-white/80 mt-1 text-center">
-                        Decomposing environment • Detecting bottles, paper scraps &amp; leaves
+                        <span>{analysisStatus || 'Identifying and auto-filling form data...'}</span>
                       </p>
                     </div>
                   )}
 
-                  {/* Bounding Boxes Overlay */}
-                  {!isAnalyzing && showBoundingBoxes && detectionResult?.boundingBoxes && (
-                    <div className="absolute inset-0 pointer-events-none z-10">
-                      {detectionResult.boundingBoxes.map((bbox) => {
-                        const top = `${bbox.box.ymin * 100}%`;
-                        const left = `${bbox.box.xmin * 100}%`;
-                        const width = `${(bbox.box.xmax - bbox.box.xmin) * 100}%`;
-                        const height = `${(bbox.box.ymax - bbox.box.ymin) * 100}%`;
-
-                        return (
-                          <div
-                            key={bbox.id}
-                            className="absolute border-2 border-dashed rounded transition-all duration-300"
-                            style={{
-                              top,
-                              left,
-                              width,
-                              height,
-                              borderColor: bbox.color || '#ef4444',
-                              backgroundColor: `${bbox.color || '#ef4444'}18`
-                            }}
-                          >
-                            <span 
-                              className="absolute -top-6 left-0 text-[10px] font-bold text-white px-2 py-0.5 rounded shadow-md whitespace-nowrap flex items-center gap-1"
-                              style={{ backgroundColor: bbox.color || '#ef4444' }}
-                            >
-                              <span>{bbox.label}</span>
-                              {bbox.weightShareKg ? <span>• ~{bbox.weightShareKg} kg</span> : null}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Image Controls: Bounding Box Toggle & Remove Single Photo */}
-                  <div className="absolute top-2 right-2 flex items-center gap-1.5 z-20">
-                    {detectionResult?.boundingBoxes && detectionResult.boundingBoxes.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
-                        className={`p-1.5 rounded-lg text-xs font-semibold shadow-md transition-colors flex items-center gap-1 ${
-                          showBoundingBoxes ? 'bg-[#001e40] text-white hover:bg-[#003366]' : 'bg-white/90 text-[#111c2d] hover:bg-white'
-                        }`}
-                        title={showBoundingBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
-                      >
-                        {showBoundingBoxes ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    )}
-
+                  {/* Remove Single Photo Control */}
+                  <div className="absolute top-2 right-2 z-20">
                     <button
                       type="button"
                       onClick={() => {
@@ -466,7 +421,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                           handleClearCanvas();
                         }
                       }}
-                      className="p-1.5 bg-[#ba1a1a] text-white rounded-lg hover:bg-[#93000a] shadow-md transition-colors cursor-pointer"
+                      className="p-1.5 bg-[#ba1a1a]/90 hover:bg-[#ba1a1a] text-white rounded-lg shadow-md transition-colors cursor-pointer"
                       title="Remove This Photo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -537,155 +492,58 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                   </div>
                 )}
 
-                {/* AI Detection & Decomposition Results Card */}
+                {/* AI Identification Summary Card (Clean, No Bounding Boxes, No Confidence Percentages) */}
                 {detectionResult && !isAnalyzing && (
-                  detectionResult.isGarbageDetected ? (
-                    <div className="p-3.5 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-teal-50/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-xs">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </span>
-                          <div>
-                            <h4 className="text-xs font-bold text-[#001e40] flex items-center gap-1.5">
-                              <span>{detectionResult.classLabel}</span>
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-mono font-semibold">
-                                {Math.round(detectionResult.confidence * 100)}% Certainty
-                              </span>
-                            </h4>
-                            <p className="text-[11px] text-[#43474f]">
-                              {detectionResult.source?.modelInference || 'Computer Vision Multi-Object Engine'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleApplyAiInsights}
-                          className="text-[11px] px-2 py-1 rounded bg-[#001e40] text-white font-semibold hover:bg-[#003366] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                        >
-                          <Sparkles className="w-3 h-3 text-amber-300" />
-                          <span>Apply AI</span>
-                        </button>
-                      </div>
-
-                      {/* Amount Metrics Grid */}
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-white/80 p-2 rounded-lg border border-emerald-100 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-[#737780] font-semibold mb-0.5">
-                            <Scale className="w-3 h-3 text-emerald-600" />
-                            <span>Est. Weight</span>
-                          </div>
-                          <p className="text-sm font-extrabold text-[#001e40]">
-                            ~{detectionResult.estimatedAmount.weightKg} kg
-                          </p>
-                        </div>
-
-                        <div className="bg-white/80 p-2 rounded-lg border border-emerald-100 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-[#737780] font-semibold mb-0.5">
-                            <Box className="w-3 h-3 text-blue-600" />
-                            <span>Est. Volume</span>
-                          </div>
-                          <p className="text-sm font-extrabold text-[#001e40]">
-                            {detectionResult.estimatedAmount.volumeM3} m³
-                          </p>
-                          <span className="text-[10px] text-[#737780]">
-                            ({detectionResult.estimatedAmount.volumeLiters} L)
-                          </span>
-                        </div>
-
-                        <div className="bg-white/80 p-2 rounded-lg border border-emerald-100 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-[#737780] font-semibold mb-0.5">
-                            <Maximize2 className="w-3 h-3 text-amber-600" />
-                            <span>Ground Area</span>
-                          </div>
-                          <p className="text-sm font-extrabold text-[#001e40]">
-                            {detectionResult.estimatedAmount.spreadAreaSqM} m²
-                          </p>
-                          <span className="text-[10px] text-[#737780]">
-                            depth: {detectionResult.estimatedAmount.pileDepthCm || 10}cm
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Scene Decomposition Breakdown: Context vs Unwanted Litter */}
-                      {(Boolean(detectionResult.unwantedObjects?.length) || Boolean(detectionResult.contextObjects?.length)) && (
-                        <div className="space-y-1.5 pt-1 bg-white/70 p-2.5 rounded-lg border border-emerald-100">
-                          {detectionResult.unwantedObjects && detectionResult.unwantedObjects.length > 0 && (
-                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-red-700 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-                                Unwanted Objects / Litter:
-                              </p>
-                              <div className="flex flex-wrap gap-1 mt-0.5">
-                                {detectionResult.unwantedObjects.map((item, i) => (
-                                  <span 
-                                    key={i} 
-                                    className="text-[10px] bg-red-50 px-2 py-0.5 rounded-md border border-red-200 text-red-800 font-semibold"
-                                  >
-                                    {item}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {detectionResult.contextObjects && detectionResult.contextObjects.length > 0 && (
-                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block"></span>
-                                Identified Environment:
-                              </p>
-                              <div className="flex flex-wrap gap-1 mt-0.5">
-                                {detectionResult.contextObjects.map((item, i) => (
-                                  <span 
-                                    key={i} 
-                                    className="text-[10px] bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200 text-sky-800 font-medium"
-                                  >
-                                    {item}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Recommended Crew & SLA */}
-                      <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-[11px] text-[#43474f]">
-                        <span className="flex items-center gap-1 font-semibold text-[#001e40]">
-                          <HardHat className="w-3.5 h-3.5 text-amber-600" />
-                          {detectionResult.estimatedAmount.recommendedCrew}
-                        </span>
-                        <span className="flex items-center gap-1 font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded">
-                          <Clock className="w-3 h-3" />
-                          {detectionResult.estimatedAmount.recommendedSlaMinutes || 30}m SLA
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3.5 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/80 to-slate-50 space-y-2">
+                  <div className={`p-3.5 rounded-xl border ${
+                    detectionResult.isGarbageDetected 
+                      ? 'border-emerald-200 bg-emerald-50/70' 
+                      : 'border-blue-200 bg-blue-50/70'
+                  } space-y-2.5`}>
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="p-1.5 rounded-lg bg-blue-600 text-white shadow-xs">
-                          <ShieldCheck className="w-4 h-4" />
+                        <span className={`p-1.5 rounded-lg text-white shadow-xs ${
+                          detectionResult.isGarbageDetected ? 'bg-emerald-600' : 'bg-emerald-600'
+                        }`}>
+                          {detectionResult.isGarbageDetected ? <CheckCircle2 className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                         </span>
                         <div>
-                          <h4 className="text-xs font-bold text-[#001e40] flex items-center gap-1.5">
-                            <span>{detectionResult.classLabel}</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-mono font-semibold">
-                              {Math.round(detectionResult.confidence * 100)}% Verified Clear
-                            </span>
+                          <h4 className="text-xs font-bold text-[#001e40]">
+                            {detectionResult.isGarbageDetected ? detectionResult.classLabel : 'Sanitary / Clean Area Verified'}
                           </h4>
                           <p className="text-[11px] text-[#43474f]">
-                            AI Scene Decomposition verified: No uncontained solid waste or litter detected (0.0 kg).
+                            {detectionResult.isGarbageDetected 
+                              ? 'Issue identified • Form fields automatically populated' 
+                              : 'Surface verified clean • No solid waste detected'}
                           </p>
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-700 bg-white/90 p-2.5 rounded-lg border border-blue-100 leading-relaxed font-sans">
-                        {detectionResult.aiSummary}
-                      </p>
+
+                      {detectionResult.isGarbageDetected ? (
+                        <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-amber-500" />
+                          <span>Data Filled</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                          <Ban className="w-3 h-3 text-amber-700" />
+                          <span>Report Blocked</span>
+                        </span>
+                      )}
                     </div>
-                  )
+
+                    {detectionResult.isGarbageDetected && detectionResult.estimatedAmount && (
+                      <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs text-[#43474f]">
+                        <span className="flex items-center gap-1 font-semibold text-[#001e40]">
+                          <Scale className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Est. Amount: ~{detectionResult.estimatedAmount.weightKg} kg</span>
+                        </span>
+                        <span className="flex items-center gap-1 font-semibold text-[#001e40]">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Housekeeping SLA: {detectionResult.estimatedAmount.recommendedSlaMinutes || 30}m</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             ) : (
@@ -732,9 +590,9 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                         }}
                         className="text-left p-1 rounded-lg border border-slate-200 bg-white hover:border-blue-500 hover:shadow-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
                       >
-                        <img src={sample.url} alt={sample.label} className="w-9 h-9 rounded object-cover" />
+                        <img src={sample.url} alt={sample.title} className="w-9 h-9 rounded object-cover" />
                         <div className="text-[10px] pr-1">
-                          <p className="font-semibold text-slate-800 leading-tight">{sample.label}</p>
+                          <p className="font-semibold text-slate-800 leading-tight">{sample.title}</p>
                           <span className="text-[9px] text-slate-400 uppercase">{sample.category}</span>
                         </div>
                       </button>
@@ -846,6 +704,17 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 />
               </div>
 
+              {/* False report blocked banner */}
+              {isSubmissionBlocked && (
+                <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    <span className="font-bold text-amber-950 block">False Incident Submission Blocked:</span>
+                    <span>Computer Vision verified this area is clean with zero litter or solid waste detected. Submitting false reports to campus housekeeping crews is disabled.</span>
+                  </div>
+                </div>
+              )}
+
               {/* Priority Notice */}
               <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
                 <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
@@ -878,11 +747,25 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || isAnalyzing}
-                  className="px-5 py-2 bg-[#001e40] text-white font-bold text-xs rounded-lg hover:bg-[#003366] active:scale-[0.98] transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                  disabled={isSubmitting || isAnalyzing || isSubmissionBlocked}
+                  className={`px-5 py-2 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-sm ${
+                    isSubmissionBlocked 
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' 
+                      : 'bg-[#001e40] text-white hover:bg-[#003366] active:scale-[0.98] cursor-pointer'
+                  } disabled:opacity-60`}
+                  title={isSubmissionBlocked ? 'Area verified clean: false incident reporting blocked' : undefined}
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? 'Submitting...' : 'Submit Report'}</span>
+                  {isSubmissionBlocked ? (
+                    <>
+                      <Ban className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Submission Blocked</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{isSubmitting ? 'Submitting...' : 'Submit Report'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
