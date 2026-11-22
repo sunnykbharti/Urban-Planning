@@ -62,6 +62,7 @@ TRAINING_LABELS = {
     "images (12).jpeg": "litter_pile",
     "images (8).jpeg": "litter_pile",
     "images.jpeg": "litter_pile",
+    "slum_ground_litter_dump.jpg": "litter_pile",
 
     # 2. Blocked Drains, Gutters & Drainage Canals
     "download.jpeg": "blocked_drain",
@@ -71,9 +72,13 @@ TRAINING_LABELS = {
     "images (9).jpeg": "blocked_drain",
     "urban-sanitation-in-india-past-present-and-future_1.jpg": "blocked_drain",
     "WhatsApp Image 2026-10-15 at 14.13.58.jpeg": "blocked_drain",
+    "ditch_clogged_drain.jpg": "blocked_drain",
+    "river_ghat_canal_waste.jpg": "blocked_drain",
 
     # 3. Clean Areas, Pathways & Dustbin Infrastructure
     "Hostel_Dormitory.jpg": "bin_empty",
+    "civil_pipe_construction_clean.jpg": "bin_empty",
+    "supermarket_store_aisle_clean.jpg": "bin_empty",
     "images (11).jpeg": "bin_empty",
     "images (2).jpeg": "bin_empty",
     "images (4).jpeg": "bin_empty",
@@ -134,7 +139,7 @@ def extract_visual_features(image_path: str) -> np.ndarray:
     # 2. Deep Features (ResNet-50)
     model, weights, transform, pool5_extractor = _get_feature_extractor()
     deep_embedding = np.zeros(2048, dtype=np.float32)
-    semantic_scores = np.zeros(16, dtype=np.float32)
+    semantic_scores = np.zeros(20, dtype=np.float32)
 
     if model and transform and pool5_extractor:
         try:
@@ -152,7 +157,8 @@ def extract_visual_features(image_path: str) -> np.ndarray:
                 target_cats = [
                     'ashcan', 'plastic_bag', 'garbage_truck', 'dam', 'submarine',
                     'lumbermill', 'toilet_seat', 'grate', 'patio', 'park_bench',
-                    'palace', 'mosque', 'library', 'breakwater', 'sandbar', 'valley'
+                    'palace', 'mosque', 'library', 'breakwater', 'sandbar', 'valley',
+                    'grocery_store', 'confectionery', 'bookshop', 'cliff'
                 ]
                 for idx, t_cat in enumerate(target_cats):
                     for c_idx, c_name in enumerate(cats):

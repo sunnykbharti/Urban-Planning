@@ -146,7 +146,7 @@ UNWANTED_LITTER_OBJECTS = {
 DRAIN_KEYWORDS = {'drain', 'gutter', 'water', 'clog', 'sewer', 'nullah', 'canal', 'pipe', 'culvert', 'sludge', 'puddle', 'grate'}
 DRAIN_CLASSES = {
     'dam', 'submarine', 'breakwater', 'conduit', 'culvert', 'sewer', 'gutter', 'drain',
-    'lakeside', 'sandbar', 'lumbermill', 'canal', 'toilet_seat', 'grate', 'manhole_cover'
+    'lakeside', 'sandbar', 'canal', 'toilet_seat', 'grate', 'manhole_cover'
 }
 
 CLEAN_CAMPUS_SCENES = {
@@ -154,7 +154,8 @@ CLEAN_CAMPUS_SCENES = {
     'park_bench', 'lawn', 'golfcourse', 'courtyard', 'patio',
     'greenhouse', 'gazebo', 'promontory', 'campus', 'academic_gown',
     'library', 'cinema', 'bookshop', 'restaurant', 'dining_table', 'street_sign',
-    'china_cabinet', 'shoji', 'wardrobe', 'cash_machine', 'turnstile', 'flagpole'
+    'china_cabinet', 'shoji', 'wardrobe', 'cash_machine', 'turnstile', 'flagpole',
+    'grocery_store', 'confectionery', 'bakery', 'toyshop'
 }
 
 TRUE_LANDMARK_CLASSES = CLEAN_CAMPUS_SCENES
