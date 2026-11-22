@@ -153,8 +153,8 @@ export async function uploadAndDetectGarbageAPI(
         const width = img.naturalWidth || 800;
         const height = img.naturalHeight || 600;
 
-        // Try direct Gemini Vision API if key is available
-        if (geminiApiKey && geminiApiKey !== 'MY_GEMINI_API_KEY') {
+        // Try direct Gemini Vision API if a valid Google AI Studio key (starts with AIza) is available
+        if (geminiApiKey && geminiApiKey.trim().startsWith('AIza')) {
           try {
             const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
             const mimeType = dataUrl.includes(';') ? dataUrl.split(';')[0].replace('data:', '') : 'image/jpeg';
@@ -187,37 +187,28 @@ Return ONLY valid JSON matching this schema:
   "aiSummary": "2-3 sentences summary"
 }`;
 
-            const models = [
-              'gemini-3.8-flash',
-              'gemini-flash-latest',
-              'gemini-2.5-flash-lite',
-              'gemini-2.5-flash',
-              'gemini-2.0-flash',
-              'gemini-1.5-flash'
-            ];
-            for (const modelName of models) {
-              try {
-                const geminiRes = await fetch(
-                  `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey.trim()}`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      contents: [{
-                        parts: [
-                          { text: geminiPrompt },
-                          { inline_data: { mime_type: mimeType, data: rawBase64 } }
-                        ]
-                      }],
-                      generationConfig: {
-                        temperature: 0.1,
-                        response_mime_type: 'application/json'
-                      }
-                    })
+            const geminiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey.trim()}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: AbortSignal.timeout(3000),
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [
+                      { text: geminiPrompt },
+                      { inline_data: { mime_type: mimeType, data: rawBase64 } }
+                    ]
+                  }],
+                  generationConfig: {
+                    temperature: 0.1,
+                    response_mime_type: 'application/json'
                   }
-                );
+                })
+              }
+            );
 
-                if (geminiRes.ok) {
+            if (geminiRes.ok) {
                   const geminiData = await geminiRes.json();
                   const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
                   if (rawText) {
@@ -275,7 +266,7 @@ Return ONLY valid JSON matching this schema:
                       source: {
                         type: sourceType,
                         sensorId: 'GEMINI_CLIENT_DIRECT',
-                        modelInference: `Google Gemini Multimodal Vision (${modelName})`
+                        modelInference: 'Google Gemini Multimodal Vision (Cloud)'
                       },
                       imageTelemetry: { width, height },
                       aiSummary: parsed.aiSummary || 'Gemini Multimodal Vision zero-shot inspection complete.'
@@ -283,7 +274,7 @@ Return ONLY valid JSON matching this schema:
 
                     resolve({
                       success: true,
-                      message: `Analyzed with ${modelName} zero-shot multimodal vision.`,
+                      message: `Analyzed with Gemini zero-shot multimodal vision.`,
                       file: {
                         filename,
                         url: dataUrl,
@@ -295,14 +286,10 @@ Return ONLY valid JSON matching this schema:
                     return;
                   }
                 }
-              } catch (modelErr) {
-                console.warn(`[ClientAPI] Gemini direct call to ${modelName} failed:`, modelErr);
+              } catch {
+                // Cloud vision unavailable, seamlessly proceed to local CV analysis
               }
             }
-          } catch (geminiOuterErr) {
-            console.warn('[ClientAPI] Client-side Gemini vision failed, falling back to heuristic:', geminiOuterErr);
-          }
-        }
 
         // Contextual class inference from filename or notes (fallback)
         const lowerName = (filename + ' ' + notes).toLowerCase();

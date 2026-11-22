@@ -189,6 +189,10 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
         return None
 
     api_key = api_key.strip()
+    # Google AI Studio API keys strictly begin with 'AIzaSy' or 'AIza'
+    # Bypasses non-AI Studio tokens to avoid 15+ second HTTP timeouts and 503/404 errors
+    if not api_key.startswith("AIza"):
+        return None
 
     try:
         with open(image_path, "rb") as f:
@@ -258,35 +262,18 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
             }
         }
 
-        # Try contemporary active flash models
-        models_to_try = [
-            "gemini-3.8-flash",
-            "gemini-flash-latest",
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash"
-        ]
-
-        resp_data = None
-        for m in models_to_try:
-            endpoint_url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
-            try:
-                req = urllib.request.Request(
-                    endpoint_url,
-                    data=json.dumps(payload).encode("utf-8"),
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": api_key
-                    }
-                )
-                with urllib.request.urlopen(req, timeout=14) as resp:
-                    resp_data = json.loads(resp.read().decode("utf-8"))
-                    if resp_data and "candidates" in resp_data and len(resp_data["candidates"]) > 0:
-                        break
-            except Exception as ep_err:
-                print(f"[DetectionService] Gemini endpoint error ({m}): {ep_err}")
-                continue
+        # Fast single attempt with 3s timeout
+        endpoint_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        req = urllib.request.Request(
+            endpoint_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key
+            }
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            resp_data = json.loads(resp.read().decode("utf-8"))
 
         if not resp_data or "candidates" not in resp_data:
             return None

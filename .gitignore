@@ -20,6 +20,8 @@ frontend/node_modules/
 
 # CCTV Captures & Temporary storage
 backend/captures/
+backend/uploads/*
+!backend/uploads/.gitkeep
 backend/data/*.json
 !backend/data/.gitkeep
 
