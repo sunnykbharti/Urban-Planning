@@ -41,6 +41,19 @@ try:
 except ImportError:
     YOLO_AVAILABLE = False
 
+# Supervised Waste ML Feature Classifier Pipeline (Trained on CSJMU Civic Dataset)
+_waste_ml_pipeline = None
+try:
+    import sys
+    _backend_dir = os.path.dirname(os.path.abspath(__file__))
+    if _backend_dir not in sys.path:
+        sys.path.insert(0, _backend_dir)
+    import ml_classifier
+    from ml_classifier import WasteMLPipeline, extract_visual_features
+    _waste_ml_pipeline = WasteMLPipeline.load()
+except Exception as e:
+    print(f"[DetectionService] ML Pipeline load notice: {e}")
+
 DETECTION_CLASSES = [
     {
         "id": "overflow",
@@ -559,6 +572,56 @@ def analyze_garbage_image(
         print(f"[DetectionService] Image load error: {e}")
         return simulate_detection(source_type=source_type)
 
+    # 3. Supervised Machine Learning Feature Classifier Pipeline (Primary Decision Engine)
+    # Extracts deep ResNet-50 embeddings, domain activations, chromatic & texture features,
+    # then classifies via PCA-RandomForest & GradientBoosting trained on the CSJMU dataset.
+    ml_result = None
+    if _waste_ml_pipeline is not None:
+        try:
+            feats = extract_visual_features(image_path)
+            ml_result = _waste_ml_pipeline.predict(feats)
+        except Exception as e:
+            print(f"[DetectionService] ML inference notice: {e}")
+            ml_result = None
+
+    # Immediate Clean Guard: If ML pipeline verifies this is a clean area or upright dustbin, block clean reporting
+    if ml_result and ml_result.get("primaryClass") == "bin_empty":
+        return {
+            "isGarbageDetected": False,
+            "confidence": round(float(ml_result.get("confidence", 0.98)), 2),
+            "primaryClass": "bin_empty",
+            "classLabel": "Sanitary Clean Environment / Dustbin",
+            "defaultSeverity": "NORMAL",
+            "detectedEnvironment": "Campus Precinct / Sanitary Station",
+            "contextObjects": ["Sanitary Facility", "Paved Surface"],
+            "unwantedObjects": [],
+            "estimatedAmount": {
+                "weightKg": 0.0,
+                "volumeM3": 0.0,
+                "volumeLiters": 0,
+                "spreadAreaSqM": 0.0,
+                "pileSeverity": "LOW",
+                "binFillLevelPct": 0,
+                "compositionBreakdown": [],
+                "recommendedCrew": "None Required (Area Clear)",
+                "recommendedSlaMinutes": 720
+            },
+            "boundingBoxes": [],
+            "source": {
+                "type": source_type,
+                "sensorId": "CSJMU_ML_PIPELINE",
+                "modelInference": "ResNet50-PCA + Ensemble-RandomForest (Supervised Campus ML)"
+            },
+            "imageTelemetry": {
+                "width": img_w,
+                "height": img_h,
+                "contextObjectsCount": 1,
+                "unwantedObjectsCount": 0,
+                "fallbackTriggered": False
+            },
+            "aiSummary": "Computer Vision verified: Clean area / upright dustbin in sanitary condition. Zero uncontained solid waste or civic maintenance defects detected."
+        }
+
     # A. Spatial Clutter Analysis & Computer Vision Feature Extraction
     bgr_full = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2BGR)
     hsv_full = cv2.cvtColor(bgr_full, cv2.COLOR_BGR2HSV)
@@ -614,14 +677,16 @@ def analyze_garbage_image(
     norm_top_label = top_scene_label.lower().replace(' ', '_')
 
     is_drain_scene = (
-        not has_plastic_bag and
-        not has_trash_can and
-        norm_top_label not in CLEAN_CAMPUS_SCENES and
-        (has_drain_keyword or has_drain_class)
+        (ml_result is not None and ml_result.get("primaryClass") == "blocked_drain") or (
+            not has_plastic_bag and
+            not has_trash_can and
+            norm_top_label not in CLEAN_CAMPUS_SCENES and
+            (has_drain_keyword or has_drain_class)
+        )
     )
 
     # 1. Clean Dustbin Guard: Standalone trash can / receptacle with no uncontained garbage
-    if norm_top_label in ['ashcan', 'trash_can', 'wastebasket'] and not has_plastic_bag and not has_garbage_truck and not is_drain_scene:
+    if (ml_result is None or ml_result.get("primaryClass") == "bin_empty") and norm_top_label in ['ashcan', 'trash_can', 'wastebasket'] and not has_plastic_bag and not has_garbage_truck and not is_drain_scene:
         return {
             "isGarbageDetected": False,
             "confidence": 0.96,
@@ -663,6 +728,7 @@ def analyze_garbage_image(
 
     # 2. Clean Campus Scene / Landmark Guard (Lawn, Courtyard, Pathway, Monument with zero clutter)
     is_clean_scene = (
+        (ml_result is None or ml_result.get("primaryClass") == "bin_empty") and
         (norm_top_label in CLEAN_CAMPUS_SCENES or (green_ratio_full > 0.35 and edge_density_full < 0.16)) and
         not has_plastic_bag and
         not has_garbage_truck and
@@ -778,7 +844,7 @@ def analyze_garbage_image(
 
         # STRICT DUSTBIN SANITARY RULE: A dustbin itself is clean infrastructure.
         # Only treat as overflow if there is dense multi-patch clutter on the ground.
-        if not has_dense_waste_clutter and len(unwanted_detections) == 0:
+        if (ml_result is None or ml_result.get("primaryClass") == "bin_empty") and not has_dense_waste_clutter and len(unwanted_detections) == 0:
             return {
                 "isGarbageDetected": False,
                 "confidence": 0.96,
@@ -840,7 +906,8 @@ def analyze_garbage_image(
 
     # E. DECISION SYNTHESIS
     has_unwanted_items = len(unwanted_detections) > 0
-    is_waste_confirmed = has_unwanted_items or has_dense_waste_clutter or (has_trash_can and len(waste_patches) >= 1)
+    ml_confirms_issue = bool(ml_result and ml_result.get("primaryClass") in ["blocked_drain", "overflow", "litter_pile"])
+    is_waste_confirmed = has_unwanted_items or has_dense_waste_clutter or (has_trash_can and len(waste_patches) >= 1) or ml_confirms_issue
 
     # Case 1: Surface / Room is completely Clean (No unwanted items, no dense clutter)
     if not is_waste_confirmed:
@@ -896,7 +963,16 @@ def analyze_garbage_image(
         }
 
     # Case 2: Litter / Unwanted Items Detected
-    if is_drain_scene or "drain" in notes_lower or "canal" in notes_lower or "water" in notes_lower or "clog" in notes_lower or top_scene_label in ['submarine', 'cannon', 'pole', 'drain']:
+    if ml_result and ml_result.get("primaryClass") == "blocked_drain":
+        primary_class = "blocked_drain"
+        class_label = "Blocked Storm Drain / Drainage Canal Waste"
+    elif ml_result and ml_result.get("primaryClass") == "overflow":
+        primary_class = "overflow"
+        class_label = "Bin Overflow / Uncontained Waste"
+    elif ml_result and ml_result.get("primaryClass") == "litter_pile":
+        primary_class = "litter_pile"
+        class_label = "Municipal Litter Pile / Solid Waste"
+    elif is_drain_scene or "drain" in notes_lower or "canal" in notes_lower or "water" in notes_lower or "clog" in notes_lower or top_scene_label in ['submarine', 'cannon', 'pole', 'drain']:
         primary_class = "blocked_drain"
         class_label = "Blocked Storm Drain / Drainage Canal Waste"
     elif has_trash_can and (has_dense_waste_clutter or any(d["weightShareKg"] > 0.3 for d in unwanted_detections)):
@@ -962,11 +1038,72 @@ def analyze_garbage_image(
     total_litter_items = len(unwanted_detections)
     clutter_count = len(waste_patches)
 
-    if clutter_count >= 8:
+    if not unwanted_detections and not waste_patches:
+        if primary_class == "blocked_drain":
+            final_boxes.insert(0, {
+                "id": "bbox-drain-1",
+                "label": "Blocked Storm Drain / Silt & Debris",
+                "category": "drain",
+                "confidence": round(float(ml_result.get("confidence", 0.96)) if ml_result else 0.96, 2),
+                "box": {"ymin": 0.20, "xmin": 0.15, "ymax": 0.85, "xmax": 0.85},
+                "color": "#ef4444",
+                "weightShareKg": 18.0
+            })
+            weight_kg = 18.0
+            spread_area_sqm = 2.0
+            volume_m3 = 0.5
+            volume_liters = 500
+            severity = "CRITICAL"
+            sla_minutes = 30
+            crew = "Rapid Response Desilting & SWM Crew (3-4 Workers + Tipper Truck)"
+        elif primary_class == "overflow":
+            final_boxes.insert(0, {
+                "id": "bbox-overflow-1",
+                "label": "Bin Overflow / Uncontained Waste",
+                "category": "litter",
+                "confidence": round(float(ml_result.get("confidence", 0.95)) if ml_result else 0.95, 2),
+                "box": {"ymin": 0.20, "xmin": 0.20, "ymax": 0.85, "xmax": 0.80},
+                "color": "#ef4444",
+                "weightShareKg": 12.0
+            })
+            weight_kg = 12.0
+            spread_area_sqm = 1.2
+            volume_m3 = 0.25
+            volume_liters = 250
+            severity = "HIGH"
+            sla_minutes = 45
+            crew = "Sanitation Beat Alpha (2 Workers + Wheeled Bin Cart & Rake)"
+        else:
+            final_boxes.insert(0, {
+                "id": "bbox-litter-1",
+                "label": "Municipal Litter / Solid Waste",
+                "category": "litter",
+                "confidence": round(float(ml_result.get("confidence", 0.95)) if ml_result else 0.95, 2),
+                "box": {"ymin": 0.30, "xmin": 0.15, "ymax": 0.85, "xmax": 0.85},
+                "color": "#ef4444",
+                "weightShareKg": 4.5
+            })
+            weight_kg = 4.5
+            spread_area_sqm = 0.9
+            volume_m3 = 0.08
+            volume_liters = 80
+            severity = "MEDIUM"
+            sla_minutes = 30
+            crew = "Sanitation Beat Sweepers (Housekeeping Sweeper with Broom & Bin)"
+    elif primary_class == "blocked_drain":
+        weight_kg = max(round(clutter_count * 3.5 + 4.0, 1), 18.0)
+        spread_area_sqm = max(round(clutter_count * 0.45 + 1.2, 2), 2.0)
+        volume_m3 = round(spread_area_sqm * 0.35, 2)
+        volume_liters = int(volume_m3 * 1000)
+        severity = "CRITICAL"
+        sla_minutes = 30
+        crew = "Rapid Response Desilting & SWM Crew (3-4 Workers + Tipper Truck)"
+    elif clutter_count >= 8:
         # Extreme municipal heap / clogged canal
         weight_kg = round(clutter_count * 3.5 + 4.0, 1)
         spread_area_sqm = round(clutter_count * 0.45 + 1.2, 2)
         volume_m3 = round(spread_area_sqm * 0.35, 2)
+        volume_liters = int(volume_m3 * 1000)
         severity = "CRITICAL"
         sla_minutes = 30
         crew = "Rapid Response Desilting & SWM Crew (3-4 Workers + Tipper Truck)"
@@ -974,6 +1111,7 @@ def analyze_garbage_image(
         weight_kg = round(clutter_count * 2.2 + 2.5, 1)
         spread_area_sqm = round(clutter_count * 0.35 + 0.8, 2)
         volume_m3 = round(spread_area_sqm * 0.25, 2)
+        volume_liters = int(volume_m3 * 1000)
         severity = "HIGH"
         sla_minutes = 45
         crew = "Sanitation Beat Alpha (2 Workers + Wheeled Bin Cart & Rake)"
@@ -983,24 +1121,22 @@ def analyze_garbage_image(
         weight_kg = max(0.15, min(2.5, weight_kg))
         spread_area_sqm = round(max(0.25, total_litter_items * 0.3), 2)
         volume_m3 = round(spread_area_sqm * 0.08, 3)
+        volume_liters = int(volume_m3 * 1000)
         severity = "LOW" if total_litter_items <= 2 else "MEDIUM"
         sla_minutes = 15 if severity == "LOW" else 30
         crew = "Sanitation Beat Sweepers (Housekeeping Sweeper with Broom & Bin)"
 
-    volume_liters = int(volume_m3 * 1000)
-    confidence = round(random.uniform(0.92, 0.96), 2)
+    confidence = round(float(ml_result.get("confidence", 0.95)) if ml_result else random.uniform(0.92, 0.96), 2)
 
     unwanted_names = list(dict.fromkeys([d.get("name", d["label"].split(" (")[0]) for d in unwanted_detections]))
     env_names = list(dict.fromkeys([d.get("name", d["label"].split(" (")[0]) for d in env_detections]))
 
-    context_str = ", ".join(env_names[:3]) if env_names else "Campus Ground / Floor"
-    unwanted_str = ", ".join(unwanted_names) if unwanted_names else "scattered debris"
-
-    ai_summary = (
-        f"AI Scene Decomposition identified environment containing {context_str}. "
-        f"Detected unwanted objects: {unwanted_str} (~{weight_kg} kg). "
-        f"Flagged as campus litter requiring housekeeping attention. Recommended: {crew} under {sla_minutes} min SLA."
-    )
+    if primary_class == "blocked_drain":
+        ai_summary = f"Computer Vision verified: Drainage infrastructure blockage / silt buildup (~{weight_kg} kg). Dispatched to {crew} under {sla_minutes} min SLA."
+    elif primary_class == "overflow":
+        ai_summary = f"Computer Vision verified: Waste receptacle overflowing (~{weight_kg} kg). Dispatched to {crew} under {sla_minutes} min SLA."
+    else:
+        ai_summary = f"Computer Vision verified: Uncontained solid waste / litter detected (~{weight_kg} kg). Dispatched to {crew} under {sla_minutes} min SLA."
 
     return {
         "isGarbageDetected": True,
