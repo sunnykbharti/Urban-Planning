@@ -80,7 +80,8 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
   const hasAnalyzedPhotos = photoUrls.length > 0 && allDetectionsList.length > 0;
   const anyGarbageDetected = allDetectionsList.some(d => d.isGarbageDetected);
   const isCleanArea = hasAnalyzedPhotos && !anyGarbageDetected;
-  const isSubmissionBlocked = isCleanArea && (category === 'garbage' || !category);
+  const isSubmissionBlocked = isCleanArea;
+  const hasPhotoEvidence = photoUrls.length > 0 || Boolean(photoUrl);
 
   if (!isOpen) return null;
 
@@ -155,36 +156,20 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
       const allUnwanted = Array.from(new Set(allDets.flatMap(d => d.unwantedObjects || [])));
       const totalWeight = Math.round(allDets.reduce((acc: number, d: GarbageDetectionResult) => acc + (d.estimatedAmount?.weightKg || 0), 0) * 10) / 10;
 
-      // Auto-populate form data based on AI identification
+      // Form fields: accurately auto-select detected category
       if (anyGarbage) {
-        const hasDrain = allDets.some(d => d.primaryClass === 'blocked_drain');
-        setCategory(hasDrain ? 'waterlogging' : 'garbage');
-
-        if (activeDet?.defaultSeverity) {
-          const sevLower = activeDet.defaultSeverity.toLowerCase();
-          setSeverity(sevLower === 'critical' || sevLower === 'high' ? 'urgent' : 'normal');
-        }
-
-        const unwantedSummary = allUnwanted.slice(0, 2).join(' & ');
-        setTitle(
-          unwantedSummary 
-            ? `Campus Litter: ${unwantedSummary}` 
-            : (activeDet?.classLabel || 'Campus Litter Detected')
+        const hasDrain = allDets.some(d => 
+          d.primaryClass === 'blocked_drain' || 
+          (d.classLabel && (
+            d.classLabel.toLowerCase().includes('drain') || 
+            d.classLabel.toLowerCase().includes('water') || 
+            d.classLabel.toLowerCase().includes('clog') ||
+            d.classLabel.toLowerCase().includes('canal')
+          ))
         );
-
-        if (activeDet?.aiSummary) {
-          const multiPhotoPrefix = updatedUrls.length > 1 ? `[Verified across ${updatedUrls.length} photos] ` : '';
-          setDescription(`${multiPhotoPrefix}${activeDet.aiSummary}`);
-        }
+        setCategory(hasDrain ? 'waterlogging' : (suggestedCategory || 'garbage'));
       } else {
-        // When AI verifies no litter or waste: do NOT pre-select waste category or title
         setCategory('');
-        setTitle('');
-        if (activeDet?.aiSummary) {
-          setDescription(activeDet.aiSummary);
-        } else {
-          setDescription('AI Computer Vision verified clean area. No solid waste or litter detected.');
-        }
       }
     } catch (err) {
       console.error('Failed to process batch image upload:', err);
@@ -255,8 +240,12 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmissionBlocked) {
-      alert('False Report Blocked: Computer Vision verified this scene is clean with zero litter or waste. Disagreeing reports for clean areas cannot be dispatched.');
+    if (isSubmissionBlocked || isCleanArea) {
+      alert('False Report Blocked: Computer Vision verified this scene is clean with zero litter or maintenance problems. Only genuine civic issues can be dispatched.');
+      return;
+    }
+    if (!hasPhotoEvidence) {
+      alert('Photo Evidence Required: Please upload a photo to verify the incident before submitting.');
       return;
     }
     if (!category) {
@@ -340,12 +329,11 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
         {/* Header */}
         <header className="px-5 sm:px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <span>Report Waste / Civic Issue</span>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Report Civic / Maintenance Issue
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Submit photo evidence to trigger Computer Vision decomposition &amp; dispatch campus sanitation.
+              Submit photo evidence to lodge a campus maintenance report.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -374,23 +362,23 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
           onSubmit={handleSubmit} 
           className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5"
         >
-          {/* Left Column: Visual Evidence, Multi-Photo Canvas, & AI Detection (7 cols) */}
+          {/* Left Column: Visual Evidence & Multi-Photo Canvas (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
                 <Camera className="w-3.5 h-3.5 text-[#001e40]" />
-                <span>Photo Evidence &amp; AI Decomposition</span>
+                <span>Photo Evidence</span>
               </label>
               {storedFileName && (
-                <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-mono flex items-center gap-1">
-                  <FileCheck className="w-3 h-3" /> Stored: {storedFileName.slice(0, 14)}...
+                <span className="text-[10px] text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-mono flex items-center gap-1">
+                  <FileCheck className="w-3 h-3 text-emerald-600" /> Attached
                 </span>
               )}
             </div>
 
             {photoUrl ? (
               <div className="space-y-3">
-                {/* Active Photo Canvas with Bounding Boxes */}
+                {/* Active Photo Canvas */}
                 <div className="relative rounded-xl overflow-hidden border border-[#c3c6d1] bg-[#111c2d] shadow-sm">
                   <img 
                     src={photoUrl} 
@@ -398,13 +386,13 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                     className="w-full h-56 sm:h-64 object-cover rounded-xl"
                   />
 
-                  {/* AI Scanning Progress Overlay */}
+                  {/* Scanning Progress Overlay */}
                   {isAnalyzing && (
                     <div className="absolute inset-0 bg-[#001e40]/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-white z-20 animate-in fade-in">
                       <div className="w-12 h-12 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin mb-3" />
                       <p className="text-sm font-bold flex items-center gap-1.5 text-center">
                         <Scan className="w-4 h-4 text-emerald-400 animate-pulse" />
-                        <span>{analysisStatus || 'Identifying and auto-filling form data...'}</span>
+                        <span>{analysisStatus || 'Checking photo evidence...'}</span>
                       </p>
                     </div>
                   )}
@@ -439,7 +427,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                       </span>
                       <label className="text-[11px] font-bold text-blue-700 hover:text-blue-900 cursor-pointer flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-50 transition-colors">
                         <Plus className="w-3 h-3" />
-                        <span>+ Add More (Auto-AI)</span>
+                        <span>+ Add More</span>
                         <input
                           type="file"
                           multiple
@@ -452,8 +440,6 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
 
                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                       {photoUrls.map((url, idx) => {
-                        const det = photoDetections[url];
-                        const isWaste = det?.isGarbageDetected;
                         return (
                           <div 
                             key={idx}
@@ -466,14 +452,6 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                             <span className="absolute bottom-0.5 left-0.5 px-1 bg-black/70 text-[9px] text-white font-bold rounded">
                               #{idx + 1}
                             </span>
-                            {det && (
-                              <span 
-                                className={`absolute top-0.5 left-0.5 w-2 h-2 rounded-full ${
-                                  isWaste ? 'bg-red-500 ring-1 ring-white' : 'bg-emerald-400 ring-1 ring-white'
-                                }`} 
-                                title={isWaste ? 'Litter Detected' : 'Clean Surface'}
-                              />
-                            )}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -492,57 +470,24 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                   </div>
                 )}
 
-                {/* AI Identification Summary Card (Clean, No Bounding Boxes, No Confidence Percentages) */}
-                {detectionResult && !isAnalyzing && (
-                  <div className={`p-3.5 rounded-xl border ${
-                    detectionResult.isGarbageDetected 
-                      ? 'border-emerald-200 bg-emerald-50/70' 
-                      : 'border-blue-200 bg-blue-50/70'
-                  } space-y-2.5`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`p-1.5 rounded-lg text-white shadow-xs ${
-                          detectionResult.isGarbageDetected ? 'bg-emerald-600' : 'bg-emerald-600'
-                        }`}>
-                          {detectionResult.isGarbageDetected ? <CheckCircle2 className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                        </span>
-                        <div>
-                          <h4 className="text-xs font-bold text-[#001e40]">
-                            {detectionResult.isGarbageDetected ? detectionResult.classLabel : 'Sanitary / Clean Area Verified'}
-                          </h4>
-                          <p className="text-[11px] text-[#43474f]">
-                            {detectionResult.isGarbageDetected 
-                              ? 'Issue identified • Form fields automatically populated' 
-                              : 'Surface verified clean • No solid waste detected'}
-                          </p>
-                        </div>
+                {/* Clean Area Notice ONLY if Area is Verified Clean (No green explanation card) */}
+                {isCleanArea && !isAnalyzing && (
+                  <div className="p-3 rounded-lg border border-amber-300 bg-amber-50 text-xs text-amber-900 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                      <div>
+                        <h4 className="font-bold text-slate-900">
+                          Sanitary Clean Area Verified
+                        </h4>
+                        <p className="text-[11px] text-slate-600">
+                          No waste or maintenance incident detected • Reporting disabled
+                        </p>
                       </div>
-
-                      {detectionResult.isGarbageDetected ? (
-                        <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                          <Sparkles className="w-3 h-3 text-amber-500" />
-                          <span>Data Filled</span>
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                          <Ban className="w-3 h-3 text-amber-700" />
-                          <span>Report Blocked</span>
-                        </span>
-                      )}
                     </div>
-
-                    {detectionResult.isGarbageDetected && detectionResult.estimatedAmount && (
-                      <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs text-[#43474f]">
-                        <span className="flex items-center gap-1 font-semibold text-[#001e40]">
-                          <Scale className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Est. Amount: ~{detectionResult.estimatedAmount.weightKg} kg</span>
-                        </span>
-                        <span className="flex items-center gap-1 font-semibold text-[#001e40]">
-                          <Clock className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Housekeeping SLA: {detectionResult.estimatedAmount.recommendedSlaMinutes || 30}m</span>
-                        </span>
-                      </div>
-                    )}
+                    <span className="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Ban className="w-3 h-3 text-amber-700" />
+                      <span>Clean Space</span>
+                    </span>
                   </div>
                 )}
               </div>
@@ -706,11 +651,11 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
 
               {/* False report blocked banner */}
               {isSubmissionBlocked && (
-                <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 flex items-start gap-2.5 shadow-xs animate-in fade-in">
+                  <Ban className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
-                    <span className="font-bold text-amber-950 block">False Incident Submission Blocked:</span>
-                    <span>Computer Vision verified this area is clean with zero litter or solid waste detected. Submitting false reports to campus housekeeping crews is disabled.</span>
+                    <span className="font-bold text-amber-950 block text-[12px]">Clean Space Verified — Reporting Blocked</span>
+                    <span>Computer Vision verified this location is clean with no solid waste, litter, or maintenance issues. The CSJMU Civic Operations system only entertains genuine, verified incidents. Reporting clean spaces is strictly prohibited.</span>
                   </div>
                 </div>
               )}
@@ -719,8 +664,8 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
               <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
                 <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                 <div className="text-[11px] leading-relaxed">
-                  <span className="font-bold text-slate-800 block">Automated Dispatch Protocol:</span>
-                  Triage priority and SLA dispatch are assigned automatically based on computer-vision hazard classification and zone protocols.
+                  <span className="font-semibold text-slate-800 block">Civic integrity guard:</span>
+                  Work orders are dispatched only for genuine civic incidents verified by Computer Vision.
                 </div>
               </div>
             </div>
@@ -747,18 +692,31 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || isAnalyzing || isSubmissionBlocked}
+                  disabled={isSubmitting || isAnalyzing || isSubmissionBlocked || !hasPhotoEvidence}
                   className={`px-5 py-2 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-sm ${
                     isSubmissionBlocked 
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' 
+                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300' 
+                      : !hasPhotoEvidence
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
                       : 'bg-[#001e40] text-white hover:bg-[#003366] active:scale-[0.98] cursor-pointer'
-                  } disabled:opacity-60`}
-                  title={isSubmissionBlocked ? 'Area verified clean: false incident reporting blocked' : undefined}
+                  } disabled:opacity-70`}
+                  title={
+                    isSubmissionBlocked 
+                      ? 'Clean space verified: Only genuine incidents can be dispatched' 
+                      : !hasPhotoEvidence 
+                      ? 'Upload photo evidence to verify the incident' 
+                      : undefined
+                  }
                 >
                   {isSubmissionBlocked ? (
                     <>
-                      <Ban className="w-3.5 h-3.5 text-rose-500" />
-                      <span>Submission Blocked</span>
+                      <Ban className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Reporting Blocked (Clean Area)</span>
+                    </>
+                  ) : !hasPhotoEvidence ? (
+                    <>
+                      <Camera className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Photo Evidence Required</span>
                     </>
                   ) : (
                     <>

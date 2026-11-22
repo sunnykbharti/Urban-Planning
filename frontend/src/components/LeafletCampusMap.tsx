@@ -258,13 +258,12 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
     if (!showLandmarks) return;
 
     CSJMU_LANDMARKS.forEach(landmark => {
-      // Badge icon for building
+      // Plain text with white halo for building label (no dark pill)
       const iconHtml = `
-        <div class="group relative cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110">
-          <div class="px-2 py-0.5 rounded-md bg-slate-900/85 backdrop-blur-sm text-white text-[10px] font-bold border border-slate-700 shadow-md flex items-center gap-1 whitespace-nowrap">
-            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-            <span>${landmark.shortName}</span>
-          </div>
+        <div class="cursor-pointer whitespace-nowrap select-none" style="text-align: center; transform: translate(-50%, -50%);">
+          <span style="font-size: 11px; font-weight: 600; color: #1e293b; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 6px #fff, 0 0 8px #fff; letter-spacing: 0.01em;">
+            ${landmark.shortName}
+          </span>
         </div>
       `;
 
@@ -332,9 +331,9 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
           : '';
 
         const markerBadgeIcon = isUrgent 
-          ? '!' 
+          ? '•' 
           : isYellow 
-          ? '▲' 
+          ? '•' 
           : '✓';
 
         const clusterBadge = group.length > 1 && indexInGroup === 0 ? `
@@ -462,17 +461,17 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
   };
 
   return (
-    <div className={`flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm ${compact ? 'p-3' : 'p-5 space-y-4'}`}>
+    <div className={`flex flex-col bg-white rounded-[6px] border border-slate-200 overflow-hidden ${compact ? 'p-3' : 'p-4 space-y-3'}`}>
       {/* Top Header & Severity Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
-              {title || (userRole === 'student' ? 'Campus Infrastructure & Waste Map' : userRole === 'bvg_worker' ? 'Sanitation Beat Route & Incident Map' : userRole === 'management' ? 'Campus Spatial Triage & Work Orders' : 'CSJMU Operations Command Map')}
+            <h2 className="text-base font-semibold text-slate-900">
+              {title || (userRole === 'student' ? 'Campus map' : userRole === 'bvg_worker' ? 'Beat route map' : userRole === 'management' ? 'Campus map' : 'Campus map')}
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            {subtitle || 'Geospatial view of CSJMU Kalyanpur campus. Markers color-coded by incident severity.'}
+            {subtitle || 'Geospatial view of campus reports and facilities.'}
           </p>
         </div>
 

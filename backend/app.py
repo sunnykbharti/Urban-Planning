@@ -189,7 +189,7 @@ def upload_and_detect_endpoint():
         )
 
         file_size = os.path.getsize(saved_path)
-        port = int(os.environ.get("PORT", 5000))
+        port = int(os.environ.get("PORT", 5001))
         relative_url = f"/uploads/{saved_filename}"
         full_url = f"http://127.0.0.1:{port}{relative_url}"
 
@@ -275,10 +275,10 @@ def create_incident():
     # Garbage detection & estimated amount payload if present
     garbage_detection = data.get("garbageDetection")
     
-    # Safeguard against false reports: If AI verified clean area and report category is garbage, reject
-    if garbage_detection and garbage_detection.get("isGarbageDetected") is False and data.get("category", "garbage") == "garbage":
+    # Safeguard against false reports: If AI verified clean area, strictly reject submission
+    if garbage_detection and garbage_detection.get("isGarbageDetected") is False:
         return jsonify({
-            "error": "False incident rejected: Computer Vision verified that this area is clean with no solid waste or litter detected.",
+            "error": "False report rejected: Computer Vision verified that this area is completely clean and sanitary. Only genuine maintenance or waste issues can be reported.",
             "isFalseReport": True
         }), 400
 

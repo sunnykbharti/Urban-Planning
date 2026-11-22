@@ -52,59 +52,116 @@ import {
   verifyAndCloseAPI 
 } from './api/client';
 import { CheckCircle2, AlertTriangle, Info, Server, Flame, X } from 'lucide-react';
+import { Footer } from './components/Footer';
 
-const SEED_DATA_VERSION = 'v3.1';
+const SEED_DATA_VERSION = 'v3.2';
 
 // Check if seed version is up to date, otherwise initialize fresh seeded data
 if (typeof window !== 'undefined') {
-  const currentVer = localStorage.getItem('csjmu_seed_version');
-  if (currentVer !== SEED_DATA_VERSION) {
-    localStorage.setItem('csjmu_reports', JSON.stringify(initialReports));
-    localStorage.setItem('csjmu_activities', JSON.stringify(initialActivities));
-    localStorage.setItem('csjmu_leave_requests', JSON.stringify(initialLeaveRequests));
-    localStorage.setItem('csjmu_reassign_requests', JSON.stringify(initialReassignmentRequests));
-    localStorage.setItem('csjmu_credentials', JSON.stringify(initialCredentials));
-    localStorage.setItem('csjmu_seed_version', SEED_DATA_VERSION);
+  try {
+    const currentVer = localStorage.getItem('csjmu_seed_version');
+    if (currentVer !== SEED_DATA_VERSION) {
+      localStorage.setItem('csjmu_reports', JSON.stringify(initialReports));
+      localStorage.setItem('csjmu_activities', JSON.stringify(initialActivities));
+      localStorage.setItem('csjmu_leave_requests', JSON.stringify(initialLeaveRequests));
+      localStorage.setItem('csjmu_reassign_requests', JSON.stringify(initialReassignmentRequests));
+      localStorage.setItem('csjmu_credentials', JSON.stringify(initialCredentials));
+      localStorage.setItem('csjmu_seed_version', SEED_DATA_VERSION);
+    }
+  } catch (err) {
+    console.warn('Could not initialize seed data:', err);
   }
 }
 
 export default function App() {
-  // Application State
+  // Toast Alert Notification state (declared early so handlers can reference it)
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'urgent' | 'info' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'urgent' | 'info' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Application State with resilient JSON parse fallbacks
   const [reports, setReports] = useState<MaintenanceReport[]>(() => {
-    const saved = localStorage.getItem('csjmu_reports');
-    return saved ? JSON.parse(saved) : initialReports;
+    try {
+      const saved = localStorage.getItem('csjmu_reports');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (err) {
+      console.warn('Invalid csjmu_reports in localStorage:', err);
+    }
+    return initialReports;
   });
 
   const [blocks] = useState<CampusBlock[]>(initialBlocks);
 
   const [activities, setActivities] = useState<ActivityEvent[]>(() => {
-    const saved = localStorage.getItem('csjmu_activities');
-    return saved ? JSON.parse(saved) : initialActivities;
+    try {
+      const saved = localStorage.getItem('csjmu_activities');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (err) {
+      console.warn('Invalid csjmu_activities in localStorage:', err);
+    }
+    return initialActivities;
   });
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(() => {
-    const saved = localStorage.getItem('csjmu_leave_requests');
-    return saved ? JSON.parse(saved) : initialLeaveRequests;
+    try {
+      const saved = localStorage.getItem('csjmu_leave_requests');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (err) {
+      console.warn('Invalid csjmu_leave_requests in localStorage:', err);
+    }
+    return initialLeaveRequests;
   });
 
   const [reassignmentRequests, setReassignmentRequests] = useState<ReassignmentRequest[]>(() => {
-    const saved = localStorage.getItem('csjmu_reassign_requests');
-    return saved ? JSON.parse(saved) : initialReassignmentRequests;
+    try {
+      const saved = localStorage.getItem('csjmu_reassign_requests');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (err) {
+      console.warn('Invalid csjmu_reassign_requests in localStorage:', err);
+    }
+    return initialReassignmentRequests;
   });
 
   const [credentials, setCredentials] = useState<UserCredential[]>(() => {
-    const saved = localStorage.getItem('csjmu_credentials');
-    return saved ? JSON.parse(saved) : initialCredentials;
+    try {
+      const saved = localStorage.getItem('csjmu_credentials');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (err) {
+      console.warn('Invalid csjmu_credentials in localStorage:', err);
+    }
+    return initialCredentials;
   });
 
   const [userRole, setUserRole] = useState<UserRole>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const r = params.get('role') as UserRole;
-      if (r && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(r)) return r;
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const r = params.get('role') as UserRole;
+        if (r && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(r)) return r;
+      }
+      const saved = localStorage.getItem('csjmu_user_role') as UserRole;
+      return (saved && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(saved)) ? saved : 'student';
+    } catch {
+      return 'student';
     }
-    const saved = localStorage.getItem('csjmu_user_role') as UserRole;
-    return (saved && ['student', 'bvg_worker', 'management', 'super_admin', 'operator', 'admin'].includes(saved)) ? saved : 'student';
   });
 
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => {
@@ -209,21 +266,22 @@ export default function App() {
   const [reportDrawerLocation, setReportDrawerLocation] = useState<string>('UIET Block 1 (Pedestrian Quad)');
   const [reportDrawerCoords, setReportDrawerCoords] = useState<{ x: number; y: number }>({ x: 38, y: 38 });
   const [selectedReportDetails, setSelectedReportDetails] = useState<MaintenanceReport | null>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('modal') === '1') {
-        const saved = localStorage.getItem('csjmu_reports');
-        const list = saved ? JSON.parse(saved) : initialReports;
-        return list && list.length > 0 ? list[0] : null;
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('modal') === '1') {
+          const saved = localStorage.getItem('csjmu_reports');
+          const list = saved ? JSON.parse(saved) : initialReports;
+          return Array.isArray(list) && list.length > 0 ? list[0] : null;
+        }
       }
+    } catch {
+      // ignore
     }
     return null;
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   
-  // Toast Alert Notification state
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'urgent' | 'info' } | null>(null);
-
   // Backend Connection Status
   const [backendStatus, setBackendStatus] = useState<{ online: boolean; version?: string }>({ online: false });
 
@@ -261,11 +319,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('csjmu_credentials', JSON.stringify(credentials));
   }, [credentials]);
-
-  const showToast = (text: string, type: 'success' | 'urgent' | 'info' = 'success') => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 3500);
-  };
 
   // Handlers
   const handleCreateReport = (newReportData: Omit<MaintenanceReport, 'id' | 'createdAt' | 'timeAgo'>) => {
@@ -525,23 +578,25 @@ export default function App() {
     showToast('Seed demo data reloaded for all roles', 'info');
   };
 
-  const urgentCount = reports.filter(r => r.severity === 'urgent' && r.status !== 'resolved').length;
+  const safeReports = Array.isArray(reports) ? reports : initialReports;
+  const urgentCount = safeReports.filter(r => r && r.severity === 'urgent' && r.status !== 'resolved').length;
 
   // Filtered by top global search query if any
-  const displayedReports = reports.filter(r => {
+  const displayedReports = safeReports.filter(r => {
+    if (!r) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      r.title.toLowerCase().includes(q) ||
-      r.location.toLowerCase().includes(q) ||
-      r.description.toLowerCase().includes(q) ||
-      r.category.toLowerCase().includes(q)
+      (r.title || '').toLowerCase().includes(q) ||
+      (r.location || '').toLowerCase().includes(q) ||
+      (r.description || '').toLowerCase().includes(q) ||
+      (r.category || '').toLowerCase().includes(q)
     );
   });
 
   if (appView === 'landing') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="Landing Page Error">
         <LandingPageView
           onNavigateToLogin={() => setAppView('login')}
           onNavigateToApp={() => {
@@ -583,14 +638,14 @@ export default function App() {
             </div>
           </div>
         )}
-      </>
+      </ErrorBoundary>
     );
   }
 
   // STRICT AUTHENTICATION GUARD: Without login, no entry to app strictly!
   if (!isAuthenticated || appView === 'login') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="Sign In Screen Error">
         <LoginPageView
           onLoginSuccess={(role, profile) => {
             handleAuthSuccess(role, profile);
@@ -598,6 +653,7 @@ export default function App() {
           onBackToLanding={() => setAppView('landing')}
           credentials={credentials}
         />
+        <Footer onNavigateToLanding={() => setAppView('landing')} />
         {/* Global Toast Notification */}
         {toastMessage && (
           <div className="fixed bottom-4 right-4 z-50 pointer-events-none max-w-sm w-full p-2">
@@ -628,12 +684,12 @@ export default function App() {
             </div>
           </div>
         )}
-      </>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9ff] text-[#111c2d] flex flex-col font-sans selection:bg-[#dee8ff] selection:text-[#001e40]">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
       {/* Top Navigation Bar */}
       <TopNavBar
         searchQuery={searchQuery}
@@ -675,8 +731,9 @@ export default function App() {
           onNavigateToLanding={() => setAppView('landing')}
         />
 
-        {/* Main Content Area Canvas */}
-        <main className="flex-1 ml-0 md:ml-[240px] p-4 md:p-8 max-w-[1600px] w-full min-h-[calc(100vh-4rem)] transition-all">
+        {/* Main Content Area Canvas + Footer (Offset by sidebar width so footer is never obscured) */}
+        <div className="flex-1 ml-0 md:ml-[240px] flex flex-col min-h-[calc(100vh-4rem)] transition-all">
+          <main className="flex-1 p-4 md:p-8 max-w-[1600px] w-full">
           {/* Status Indicator & Optional Dev Controls */}
           {(() => {
             const isDev = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === '1';
@@ -866,6 +923,28 @@ export default function App() {
             )}
           </ErrorBoundary>
         </main>
+
+        {/* Uber-style Footer */}
+        <Footer 
+          onNavigateToLanding={() => {
+            setAppView('landing');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateToLogin={() => {
+            setAppView('login');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateToTab={(tab) => {
+            setActiveTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenReportDrawer={() => {
+            setReportDrawerLocation('UIET Block 1');
+            setReportDrawerCoords({ x: 38, y: 38 });
+            setIsReportDrawerOpen(true);
+          }}
+        />
+        </div>
       </div>
 
       {/* Report Issue Slide-Over Drawer (Screen 2 matching Image 3) */}

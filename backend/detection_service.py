@@ -130,9 +130,21 @@ UNWANTED_LITTER_OBJECTS = {
     'cake': 'Food Scrap'
 }
 
-TRUE_LANDMARK_CLASSES = {
-    'mosque', 'palace', 'monastery', 'church', 'triumphal_arch', 'castle'
+DRAIN_KEYWORDS = {'drain', 'gutter', 'water', 'clog', 'sewer', 'nullah', 'canal', 'pipe', 'culvert', 'sludge', 'puddle', 'grate'}
+DRAIN_CLASSES = {
+    'dam', 'submarine', 'breakwater', 'conduit', 'culvert', 'sewer', 'gutter', 'drain',
+    'lakeside', 'sandbar', 'lumbermill', 'canal', 'toilet_seat', 'grate', 'manhole_cover'
 }
+
+CLEAN_CAMPUS_SCENES = {
+    'mosque', 'palace', 'monastery', 'church', 'triumphal_arch', 'castle',
+    'park_bench', 'lawn', 'golfcourse', 'courtyard', 'patio',
+    'greenhouse', 'gazebo', 'promontory', 'campus', 'academic_gown',
+    'library', 'cinema', 'bookshop', 'restaurant', 'dining_table', 'street_sign',
+    'china_cabinet', 'shoji', 'wardrobe', 'cash_machine', 'turnstile', 'flagpole'
+}
+
+TRUE_LANDMARK_CLASSES = CLEAN_CAMPUS_SCENES
 
 # Global cached models
 _scene_model = None
@@ -176,45 +188,53 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
     if not api_key or api_key == "MY_GEMINI_API_KEY":
         return None
 
+    api_key = api_key.strip()
+
     try:
         with open(image_path, "rb") as f:
             b64_data = base64.b64encode(f.read()).decode("utf-8")
 
         prompt = (
-            "You are an expert AI Vision Inspector for university campuses, classrooms, computer labs, "
-            "supermarkets, and urban civic areas.\n\n"
-            "Analyze this image comprehensively by doing TWO distinct tasks:\n"
-            "1. SCENE CONTEXT & ENVIRONMENT DECOMPOSITION: Identify main context elements (e.g., study desk, "
-            "computer/laptop, keyboard, chair, tiled/carpeted floor, supermarket shelf, aisle, shopping cart, "
-            "campus lawn, pathway, trash can).\n"
-            "2. UNWANTED OBJECTS & LITTER IDENTIFICATION: Identify any unwanted, misplaced, or discarded items "
-            "(e.g., plastic water bottles, disposable cups, crumpled paper/notes, snack packets/polythene, "
-            "dried leaves/foliage debris, food scraps, or overflowing waste bins).\n"
-            "If an unwanted item (like a bottle, dried leaves, or paper scrap) is on the floor, ground, or desk, "
-            "classify isGarbageDetected as true!\n\n"
-            "Return ONLY a valid JSON object (no markdown, no code blocks) with this exact schema:\n"
+            "You are an expert AI Vision Inspector for university campuses, municipal urban roads, "
+            "classrooms, pathways, and civic precincts.\n\n"
+            "Analyze this image comprehensively for solid waste, litter, garbage piles, overflowing bins, "
+            "blocked drains, paver damage, or clean sanitary conditions.\n\n"
+            "TASKS:\n"
+            "1. SCENE CONTEXT: Identify main environment elements (e.g. campus pathway, road, quad lawn, "
+            "study desk, building exterior, storm drain, dustbin).\n"
+            "2. WASTE & LITTER INSPECTION: Identify any trash, plastic bags, discarded bottles, disposable cups, "
+            "crumpled paper, wrappers, cardboard, food waste, sludge, or overflowing bins.\n\n"
+            "CRITICAL CLEAN SPACES & DUSTBIN RULE:\n"
+            "1. DUSTBINS & TRASH CANS: A dustbin, trash can, waste receptacle, or recycling bin itself is a legitimate campus sanitation facility, NOT garbage or litter!\n"
+            "An upright dustbin with painted lettering (e.g. 'DONATED BY...', 'USE ME', 'CSJMU') standing on pavers, grass, or indoors with NO garbage overflowing onto the ground MUST be classified with:\n"
+            "'isGarbageDetected': false, 'primaryClass': 'bin_empty', 'classLabel': 'Sanitary Waste Receptacle (Dustbin Clean)', 'severity': 'NORMAL', 'estimatedWeightKg': 0.0, 'estimatedVolumeM3': 0.0, 'spreadAreaSqM': 0.0.\n"
+            "A dustbin is NEVER garbage unless uncontained trash is visibly spilling over the brim onto the surrounding floor!\n"
+            "2. CLEAN SPACES: If the image depicts a clean campus lawn, grass, trees, park, outdoor pathway, study desk, empty room, or walkway with NO uncontained trash or litter, you MUST set 'isGarbageDetected': false, 'primaryClass': 'bin_empty', 'classLabel': 'Sanitary Clean Environment (Campus Lawn & Walkway)', 'severity': 'NORMAL', 'estimatedWeightKg': 0.0.\n"
+            "Under NO circumstances should healthy grass, tree canopies, sunlit walkways, or clean dustbins be classified as litter or debris!\n"
+            "Only set 'isGarbageDetected' to true if there is actual, genuine visible uncontained garbage spilling on the ground.\n\n"
+            "Return ONLY a valid JSON object matching this schema (no markdown, no backticks):\n"
             "{\n"
             '  "isGarbageDetected": boolean,\n'
-            '  "detectedEnvironment": "University Classroom / Lab" | "Campus Pathway / Lawn" | "Supermarket / Retail Aisle" | "Corridor / Hallway" | "Cafeteria / Canteen" | "Public Area",\n'
-            '  "primaryClass": "litter_pile" | "overflow" | "blocked_drain" | "bin_full" | "bin_empty",\n'
-            '  "classLabel": "concise descriptive title of detection",\n'
-            '  "confidence": number between 0.85 and 0.99,\n'
+            '  "detectedEnvironment": "Campus Pathway / Lawn" | "Urban Street / Road" | "University Classroom / Lab" | "Drainage / Canal" | "Corridor / Quad" | "Public Area",\n'
+            '  "primaryClass": "overflow" | "litter_pile" | "blocked_drain" | "bin_full" | "bin_empty",\n'
+            '  "classLabel": "Concise descriptive title (e.g. Municipal Litter Pile or Clean Pathway)",\n'
+            '  "confidence": number between 0.88 and 0.99,\n'
             '  "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "NORMAL",\n'
-            '  "contextObjects": ["Desk", "Laptop", "Floor", "Trash Can"],\n'
-            '  "unwantedObjects": ["Plastic Bottle on floor", "Crushed paper scrap", "Dried leaves"],\n'
-            '  "estimatedWeightKg": number (realistic weight in kg, e.g. 0.2 for bottle/paper, 0.0 if clean),\n'
-            '  "estimatedVolumeM3": number (realistic volume in m³, e.g. 0.005 for bottle/can, 0.0 if clean),\n'
+            '  "contextObjects": ["Pathway", "Wall", "Tree Canopy"],\n'
+            '  "unwantedObjects": ["Plastic bags", "Discarded beverage bottle"],\n'
+            '  "estimatedWeightKg": number (realistic weight in kg, e.g. 0.5 to 25.0, 0.0 if clean),\n'
+            '  "estimatedVolumeM3": number (realistic volume in m³, e.g. 0.01 to 0.5, 0.0 if clean),\n'
             '  "spreadAreaSqM": number (ground area in m², 0.0 if clean),\n'
             '  "boundingBoxes": [\n'
             '     {\n'
-            '       "label": "string (e.g. \'Plastic Bottle\' or \'Study Desk\')",\n'
+            '       "label": "string label (e.g. \'Plastic Waste\' or \'Campus Walkway\')",\n'
             '       "category": "litter" | "environment",\n'
-            '       "confidence": number between 0.80 and 0.99,\n'
-            '       "box": {"ymin": float between 0.0 and 1.0, "xmin": float, "ymax": float, "xmax": float},\n'
-            '       "color": "#hex (#ef4444 for litter, #f97316 for paper, #d97706 for leaves, #0284c7 for desk/laptop, #64748b for floor)"\n'
+            '       "confidence": number between 0.85 and 0.99,\n'
+            '       "box": {"ymin": float 0.0-1.0, "xmin": float 0.0-1.0, "ymax": float 0.0-1.0, "xmax": float 0.0-1.0},\n'
+            '       "color": "#ef4444" (for litter) or "#0284c7" (for environment)\n'
             '     }\n'
             '  ],\n'
-            '  "aiSummary": "2-3 sentence clear summary describing the environment, what context objects were found, what unwanted litter was detected, and recommended housekeeping/sanitation action."\n'
+            '  "aiSummary": "2-3 sentence clear operational summary describing what was observed, objects detected, and recommended civic action."\n'
             "}"
         )
 
@@ -238,34 +258,55 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
             }
         }
 
-        # Try gemini-2.0-flash first, then fallback to gemini-1.5-flash
+        # Try contemporary active flash models
         models_to_try = [
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            "gemini-3.8-flash",
+            "gemini-flash-latest",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash"
         ]
 
         resp_data = None
-        for endpoint_url in models_to_try:
+        for m in models_to_try:
+            endpoint_url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
             try:
                 req = urllib.request.Request(
                     endpoint_url,
                     data=json.dumps(payload).encode("utf-8"),
-                    headers={"Content-Type": "application/json"}
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": api_key
+                    }
                 )
-                with urllib.request.urlopen(req, timeout=12) as resp:
+                with urllib.request.urlopen(req, timeout=14) as resp:
                     resp_data = json.loads(resp.read().decode("utf-8"))
-                    if resp_data and "candidates" in resp_data:
+                    if resp_data and "candidates" in resp_data and len(resp_data["candidates"]) > 0:
                         break
             except Exception as ep_err:
-                print(f"[DetectionService] Gemini endpoint error ({endpoint_url.split('/models/')[1].split(':')[0]}): {ep_err}")
+                print(f"[DetectionService] Gemini endpoint error ({m}): {ep_err}")
                 continue
 
         if not resp_data or "candidates" not in resp_data:
             return None
 
-        text = resp_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        candidate = resp_data["candidates"][0]
+        parts = candidate.get("content", {}).get("parts", [])
+        if not parts:
+            return None
+
+        text = parts[0].get("text", "").strip()
+        # Clean markdown codeblocks if present
         if text.startswith("```"):
             text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+        # Resilient JSON extraction
+        start_idx = text.find("{")
+        end_idx = text.rfind("}")
+        if start_idx != -1 and end_idx != -1:
+            text = text[start_idx:end_idx+1]
+
         parsed = json.loads(text)
 
         is_waste = parsed.get("isGarbageDetected", False)
@@ -309,11 +350,11 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
                 "pileSeverity": severity,
                 "binFillLevelPct": 130 if parsed.get("primaryClass") == "overflow" else None,
                 "compositionBreakdown": [
-                    {"item": "Plastic Bottles & Packaging", "percentage": 45},
-                    {"item": "Discarded Paper & Notes", "percentage": 35},
+                    {"item": "Plastic Packaging & Bottles", "percentage": 45},
+                    {"item": "Discarded Paper Scrap", "percentage": 35},
                     {"item": "Organic & Leaf Debris", "percentage": 20}
                 ] if is_waste else [],
-                "recommendedCrew": "Sanitation Beat Sweepers (Housekeeping with Broom & Bin)" if is_waste else "None Required (Area Clear)",
+                "recommendedCrew": "Sanitation Beat Sweepers (Housekeeping with Broom & Cart)" if is_waste else "None Required (Area Clear)",
                 "recommendedSlaMinutes": 15 if severity == "LOW" else (30 if severity == "MEDIUM" else 60)
             },
             "boundingBoxes": final_boxes,
@@ -331,18 +372,27 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
 
 def _detect_dried_leaves_and_foliage(arr: np.ndarray, img_w: int, img_h: int) -> List[Dict[str, Any]]:
     """
-    Identifies dried leaves, fallen foliage, and organic debris on university campus floors,
-    corridors, stairs, and paved walkways using HSV color bounds and texture gradient entropy.
+    Identifies dried leaves and organic debris on corridors, stairs, and paved walkways.
+    STRICT SUPPRESSION: If the scene contains natural green lawn, grass, or tree canopy,
+    this function returns [] to prevent false positive tickets on clean campus gardens.
     """
     detections = []
     try:
         bgr = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2BGR)
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
+        # Measure green vegetation ratio (Hue: 35-85, Saturation: 25-255)
+        green_mask = cv2.inRange(hsv, np.array([35, 25, 25]), np.array([85, 255, 255]))
+        green_ratio = np.count_nonzero(green_mask) / float(img_w * img_h)
+
+        # Campus lawns and tree areas are clean green environments - do NOT flag as leaf debris
+        if green_ratio > 0.10:
+            return []
+
         # Dried brown/amber/golden-olive leaves HSV bounds
-        # H: 10 - 35 (brown/amber/golden-tan), S: 45 - 230, V: 30 - 200
-        lower_leaf = np.array([10, 45, 30])
-        upper_leaf = np.array([35, 230, 200])
+        # H: 10 - 32, S: 65 - 230, V: 30 - 180
+        lower_leaf = np.array([10, 65, 30])
+        upper_leaf = np.array([32, 230, 180])
         mask = cv2.inRange(hsv, lower_leaf, upper_leaf)
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
@@ -353,15 +403,14 @@ def _detect_dried_leaves_and_foliage(arr: np.ndarray, img_w: int, img_h: int) ->
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            # Filter for small to medium leaf clusters (0.1% to 12% of image)
-            if 0.001 * img_area < area < 0.12 * img_area:
+            # Filter for small to medium leaf clusters (0.2% to 6% of image)
+            if 0.002 * img_area < area < 0.06 * img_area:
                 x, y, w, h = cv2.boundingRect(cnt)
-                # Compute gradient variance inside the patch to confirm crinkled texture (leaves)
                 patch_gray = cv2.cvtColor(bgr[y:y+h, x:x+w], cv2.COLOR_BGR2GRAY)
                 laplacian_var = cv2.Laplacian(patch_gray, cv2.CV_64F).var()
 
-                if laplacian_var > 65.0:  # Textured organic leaf cluster
-                    conf = min(0.94, max(0.75, 0.68 + (laplacian_var / 500.0)))
+                if laplacian_var > 90.0:  # Confirmed crinkled texture
+                    conf = min(0.92, max(0.75, 0.70 + (laplacian_var / 600.0)))
                     detections.append({
                         "label": "Dried Leaves / Plant Litter",
                         "category": "litter",
@@ -373,26 +422,32 @@ def _detect_dried_leaves_and_foliage(arr: np.ndarray, img_w: int, img_h: int) ->
                             "xmax": round(min(1.0, (x + w) / img_w), 3)
                         },
                         "color": "#d97706",
-                        "weightShareKg": round(max(0.05, (area / img_area) * 1.2), 2)
+                        "weightShareKg": round(max(0.05, (area / img_area) * 0.8), 2)
                     })
     except Exception as e:
         print(f"[DetectionService] Leaf detection warning: {e}")
-    return detections[:3]
+    return detections[:2]
 
 
 def _detect_discarded_paper_and_wrappers(arr: np.ndarray, img_w: int, img_h: int) -> List[Dict[str, Any]]:
     """
-    Identifies crumpled paper pieces, torn notebook pages, receipts, and packaging wrappers
-    discarded on campus floors or under desks.
+    Identifies crumpled paper pieces, torn notebook pages, receipts, and packaging wrappers.
+    STRICT SUPPRESSION: Clean sunlit walkways or open outdoor scenes with greenery are ignored.
     """
     detections = []
     try:
         bgr = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2BGR)
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
+        # Check for outdoor greenery
+        green_mask = cv2.inRange(hsv, np.array([35, 25, 25]), np.array([85, 255, 255]))
+        green_ratio = np.count_nonzero(green_mask) / float(img_w * img_h)
+        if green_ratio > 0.08:
+            return []
+
         # High-luminance (white/light paper), low-saturation mask
-        lower_white = np.array([0, 0, 185])
-        upper_white = np.array([180, 40, 255])
+        lower_white = np.array([0, 0, 200])
+        upper_white = np.array([180, 30, 255])
         mask = cv2.inRange(hsv, lower_white, upper_white)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -400,16 +455,15 @@ def _detect_discarded_paper_and_wrappers(arr: np.ndarray, img_w: int, img_h: int
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            # Paper scrap area: 0.05% to 6% of image
-            if 0.0005 * img_area < area < 0.06 * img_area:
+            # Paper scrap area: 0.05% to 3% of image
+            if 0.0005 * img_area < area < 0.03 * img_area:
                 x, y, w, h = cv2.boundingRect(cnt)
-                # Ignore top 20% of image (ceiling lights or windows)
-                if (y / img_h) > 0.20:
+                if (y / img_h) > 0.30:  # Must be on floor/desk level
                     aspect_ratio = float(w) / max(1, h)
-                    if 0.2 < aspect_ratio < 4.5:
+                    if 0.3 < aspect_ratio < 3.5:
                         patch_gray = cv2.cvtColor(bgr[y:y+h, x:x+w], cv2.COLOR_BGR2GRAY)
                         edge_std = np.std(patch_gray)
-                        if edge_std > 20.0:
+                        if edge_std > 28.0:
                             detections.append({
                                 "label": "Discarded Paper Scrap / Wrapper",
                                 "category": "litter",
@@ -421,17 +475,18 @@ def _detect_discarded_paper_and_wrappers(arr: np.ndarray, img_w: int, img_h: int
                                     "xmax": round(min(1.0, (x + w) / img_w), 3)
                                 },
                                 "color": "#f97316",
-                                "weightShareKg": 0.06
+                                "weightShareKg": 0.05
                             })
     except Exception as e:
         print(f"[DetectionService] Paper detection warning: {e}")
-    return detections[:3]
+    return detections[:2]
 
 
 def _analyze_spatial_waste_clutter(arr: np.ndarray) -> List[Dict[str, Any]]:
     """
     Performs high-resolution 4x4 spatial grid analysis.
     Identifies uncontained plastic scatter, open drains, and garbage dumpsites.
+    SUPPRESSES: Natural grass, tree leaves, sky, and uniform pavement surfaces.
     """
     h, w, _ = arr.shape
     rows, cols = 4, 4
@@ -441,17 +496,34 @@ def _analyze_spatial_waste_clutter(arr: np.ndarray) -> List[Dict[str, Any]]:
     for r in range(rows):
         for c in range(cols):
             p = arr[r*patch_h:(r+1)*patch_h, c*patch_w:(c+1)*patch_w]
+
+            # 1. Check for natural foliage / green lawn / trees / bushes
+            # arr is in RGB float32
+            r_chan = p[:, :, 0]
+            g_chan = p[:, :, 1]
+            b_chan = p[:, :, 2]
+            foliage_ratio = np.mean((g_chan > r_chan * 1.05) & (g_chan > b_chan * 1.05))
+            color_std = float(np.mean(np.std(p, axis=(0, 1))))
+
+            # 2. Check for clear sky or clean uniform pavement
+            if color_std < 14.0:
+                continue
+
             gray = np.mean(p, axis=2)
             gy, gx = np.gradient(gray)
             grad = np.sqrt(gx**2 + gy**2)
 
             edge_dens = float(np.mean(grad))
             edge_var = float(np.var(grad))
-            color_std = float(np.mean(np.std(p, axis=(0, 1))))
+
+            # Only skip as clean greenery if the patch is low-variance uniform grass
+            if foliage_ratio > 0.40 and color_std < 32.0 and edge_var < 180.0:
+                continue
 
             clutter_score = edge_dens * 0.4 + (edge_var / 20.0) * 0.4 + color_std * 0.2
 
-            if edge_dens > 21.0 and edge_var > 175.0:
+            # Real municipal waste dumps & drain sludge have high variance and multi-color scatter
+            if edge_dens > 13.0 and edge_var > 170.0 and color_std > 22.0:
                 waste_patches.append({
                     "r": r,
                     "c": c,
@@ -500,15 +572,33 @@ def analyze_garbage_image(
         print(f"[DetectionService] Image load error: {e}")
         return simulate_detection(source_type=source_type)
 
-    # A. Spatial Clutter Analysis
+    # A. Spatial Clutter Analysis & Computer Vision Feature Extraction
+    bgr_full = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2BGR)
+    hsv_full = cv2.cvtColor(bgr_full, cv2.COLOR_BGR2HSV)
+    green_mask_full = cv2.inRange(hsv_full, np.array([35, 25, 25]), np.array([85, 255, 255]))
+    green_ratio_full = np.count_nonzero(green_mask_full) / float(img_w * img_h)
+
+    gray_full = cv2.cvtColor(bgr_full, cv2.COLOR_BGR2GRAY)
+    edges_full = cv2.Canny(gray_full, 40, 130)
+    edge_density_full = np.count_nonzero(edges_full) / float(img_w * img_h)
+
+    dark_water_mask = (hsv_full[:, :, 2] < 70) & (edges_full == 0)
+    dark_water_ratio = np.count_nonzero(dark_water_mask) / float(img_w * img_h)
+
+    lines_drain = cv2.HoughLinesP(edges_full, 1, np.pi/180, threshold=25, minLineLength=15, maxLineGap=4)
+    grate_lines = 0
+    if lines_drain is not None and len(lines_drain) > 20:
+        angles = [np.degrees(np.arctan2(l[0][3] - l[0][1], l[0][2] - l[0][0])) % 180 for l in lines_drain]
+        hist, _ = np.histogram(angles, bins=18, range=(0, 180))
+        grate_lines = int(np.max(hist))
+
     waste_patches = _analyze_spatial_waste_clutter(arr)
     has_dense_waste_clutter = len(waste_patches) >= 2
 
-    # B. ResNet Scene Classification (monuments & ashcan detection)
+    # B. ResNet Scene Classification (monuments, lawns, courtyards & ashcan detection)
     scene_model, scene_weights, scene_transform = _get_scene_model()
     top_scene_label = "general"
     top_scene_prob = 0.5
-    is_true_monument = False
     top_categories = []
 
     if scene_model:
@@ -522,22 +612,86 @@ def analyze_garbage_image(
 
             top_scene_label = top_categories[0]
             top_scene_prob = float(top5.values[0].item())
-
-            if top_scene_label in TRUE_LANDMARK_CLASSES and top_scene_prob > 0.35:
-                is_true_monument = True
         except Exception as e:
             print(f"[DetectionService] Scene inference error: {e}")
 
-    # Monument Guard (e.g. Taj Mahal or Palace with zero clutter)
-    if is_true_monument and not has_dense_waste_clutter:
-        monument_name = top_scene_label.replace("_", " ").title()
+    # Core object indicators from ResNet & Keywords
+    has_plastic_bag = any('plastic bag' in c for c in top_categories[:3])
+    has_trash_can = any(c in ['ashcan', 'trash_can', 'wastebasket'] for c in top_categories[:2])
+    has_garbage_truck = any('garbage truck' in c for c in top_categories[:2])
+
+    notes_lower = ((user_notes or "") + " " + os.path.basename(image_path)).lower()
+    has_drain_keyword = any(k in notes_lower for k in DRAIN_KEYWORDS)
+    has_drain_class = any(any(d in top_categories[i].lower().replace(' ', '_') for d in DRAIN_CLASSES) and (i == 0 or float(top5.values[i].item()) > 0.03) for i in range(min(3, len(top_categories))))
+
+    norm_top_label = top_scene_label.lower().replace(' ', '_')
+
+    is_drain_scene = (
+        not has_plastic_bag and
+        not has_trash_can and
+        norm_top_label not in CLEAN_CAMPUS_SCENES and
+        (has_drain_keyword or has_drain_class)
+    )
+
+    # 1. Clean Dustbin Guard: Standalone trash can / receptacle with no uncontained garbage
+    if norm_top_label in ['ashcan', 'trash_can', 'wastebasket'] and not has_plastic_bag and not has_garbage_truck and not is_drain_scene:
         return {
             "isGarbageDetected": False,
-            "confidence": round(max(0.92, top_scene_prob), 2),
+            "confidence": 0.96,
             "primaryClass": "bin_empty",
-            "classLabel": f"Sanitary / Clean Scene ({monument_name})",
+            "classLabel": "Sanitary Waste Receptacle (Dustbin Clean)",
             "defaultSeverity": "NORMAL",
-            "contextObjects": [monument_name, "Architectural Plaza"],
+            "detectedEnvironment": "Campus Dustbin Station / Walkway",
+            "contextObjects": ["Waste Receptacle (Dustbin)", "Paved Ground"],
+            "unwantedObjects": [],
+            "estimatedAmount": {
+                "weightKg": 0.0,
+                "volumeM3": 0.0,
+                "volumeLiters": 0,
+                "spreadAreaSqM": 0.0,
+                "pileSeverity": "LOW",
+                "binFillLevelPct": 35,
+                "compositionBreakdown": [],
+                "recommendedCrew": "None Required (Area Clear)",
+                "recommendedSlaMinutes": 720
+            },
+            "boundingBoxes": [
+                {
+                    "id": "bbox-bin-clean",
+                    "label": "Campus Dustbin (Clean)",
+                    "category": "environment",
+                    "confidence": 0.95,
+                    "box": {"ymin": 0.15, "xmin": 0.2, "ymax": 0.88, "xmax": 0.8},
+                    "color": "#10b981",
+                    "weightShareKg": 0.0
+                }
+            ],
+            "source": {
+                "type": source_type,
+                "sensorId": "AI_VISION_HYBRID_ENGINE",
+                "modelInference": "ResNet50-ReceptacleGuard + YOLOv8"
+            },
+            "aiSummary": "Computer Vision verified: Campus waste receptacle (dustbin) in normal sanitary condition. No overflow or uncontained ground waste detected."
+        }
+
+    # 2. Clean Campus Scene / Landmark Guard (Lawn, Courtyard, Pathway, Monument with zero clutter)
+    is_clean_scene = (
+        (norm_top_label in CLEAN_CAMPUS_SCENES or (green_ratio_full > 0.35 and edge_density_full < 0.16)) and
+        not has_plastic_bag and
+        not has_garbage_truck and
+        not is_drain_scene
+    )
+
+    if is_clean_scene:
+        scene_name = "Campus Quad Lawn & Pathway" if green_ratio_full > 0.35 else top_scene_label.replace("_", " ").title()
+        return {
+            "isGarbageDetected": False,
+            "confidence": round(max(0.93, top_scene_prob), 2),
+            "primaryClass": "bin_empty",
+            "classLabel": f"Sanitary Clean Environment ({scene_name})",
+            "defaultSeverity": "NORMAL",
+            "detectedEnvironment": "Campus Pathway / Lawn" if green_ratio_full > 0.35 else "Campus Precinct",
+            "contextObjects": [scene_name, "Walkway Surface", "Greenery"],
             "unwantedObjects": [],
             "estimatedAmount": {
                 "weightKg": 0.0,
@@ -554,9 +708,9 @@ def analyze_garbage_image(
             "source": {
                 "type": source_type,
                 "sensorId": "AI_VISION_HYBRID_ENGINE",
-                "modelInference": "ResNet50-LandmarkGuard + YOLOv8-Decomposer"
+                "modelInference": "ResNet50-SceneGuard + YOLOv8-Decomposer"
             },
-            "aiSummary": f"Deep Learning verified: Scene identified as {monument_name}. Area verified clean with no solid waste or litter detected."
+            "aiSummary": f"AI Computer Vision verified: {scene_name}. The area is completely sanitary with zero solid waste, litter, or civic maintenance hazards detected."
         }
 
     # C. YOLOv8 Scene & Object Decomposition
@@ -623,6 +777,8 @@ def analyze_garbage_image(
     # Check for Trash Can in ResNet
     has_trash_can = any(c in ['ashcan', 'trash_can', 'wastebasket'] for c in top_categories)
     if has_trash_can:
+        # Painted text on dustbins ("DONATED BY...", "USE ME") or paver cracks are NOT discarded paper
+        unwanted_detections = [d for d in unwanted_detections if "Paper" not in d["label"] and "Leaves" not in d["label"]]
         env_detections.append({
             "label": "Campus Waste Bin / Trash Can",
             "name": "Waste Receptacle",
@@ -632,6 +788,55 @@ def analyze_garbage_image(
             "color": "#8b5cf6",
             "weightShareKg": 0.0
         })
+
+        # STRICT DUSTBIN SANITARY RULE: A dustbin itself is clean infrastructure.
+        # Only treat as overflow if there is dense multi-patch clutter on the ground.
+        if not has_dense_waste_clutter and len(unwanted_detections) == 0:
+            return {
+                "isGarbageDetected": False,
+                "confidence": 0.96,
+                "primaryClass": "bin_empty",
+                "classLabel": "Sanitary Waste Receptacle (Dustbin Clean)",
+                "defaultSeverity": "NORMAL",
+                "detectedEnvironment": "Campus Dustbin Station / Walkway",
+                "contextObjects": ["Waste Receptacle (Dustbin)", "Paved Ground"],
+                "unwantedObjects": [],
+                "estimatedAmount": {
+                    "weightKg": 0.0,
+                    "volumeM3": 0.0,
+                    "volumeLiters": 0,
+                    "spreadAreaSqM": 0.0,
+                    "pileSeverity": "LOW",
+                    "binFillLevelPct": 35,
+                    "compositionBreakdown": [],
+                    "recommendedCrew": "None Required (Area Clear)",
+                    "recommendedSlaMinutes": 720
+                },
+                "boundingBoxes": [
+                    {
+                        "id": "bbox-bin-clean",
+                        "label": "Campus Dustbin (Clean)",
+                        "category": "environment",
+                        "confidence": 0.95,
+                        "box": {"ymin": 0.15, "xmin": 0.2, "ymax": 0.88, "xmax": 0.8},
+                        "color": "#10b981",
+                        "weightShareKg": 0.0
+                    }
+                ],
+                "source": {
+                    "type": source_type,
+                    "sensorId": "AI_VISION_HYBRID_ENGINE",
+                    "modelInference": "ResNet50-ReceptacleGuard + YOLOv8"
+                },
+                "imageTelemetry": {
+                    "width": img_w,
+                    "height": img_h,
+                    "contextObjectsCount": len(env_detections),
+                    "unwantedObjectsCount": 0,
+                    "fallbackTriggered": False
+                },
+                "aiSummary": "Computer Vision verified: Campus waste receptacle (dustbin) in normal sanitary condition. No overflow or uncontained ground waste detected."
+            }
 
     # Floor / Ground plane recognition: if we have furniture or items, lower region is the floor
     has_desk_or_pc = any("Desk" in d["label"] or "Laptop" in d["label"] or "Computer" in d["label"] for d in env_detections)
@@ -704,11 +909,9 @@ def analyze_garbage_image(
         }
 
     # Case 2: Litter / Unwanted Items Detected
-    notes_lower = (user_notes or "").lower()
-
-    if "drain" in notes_lower or "canal" in notes_lower or top_scene_label in ['submarine', 'cannon', 'pole', 'drain']:
+    if is_drain_scene or "drain" in notes_lower or "canal" in notes_lower or "water" in notes_lower or "clog" in notes_lower or top_scene_label in ['submarine', 'cannon', 'pole', 'drain']:
         primary_class = "blocked_drain"
-        class_label = "Blocked Drainage / Canal Waste"
+        class_label = "Blocked Storm Drain / Drainage Canal Waste"
     elif has_trash_can and (has_dense_waste_clutter or any(d["weightShareKg"] > 0.3 for d in unwanted_detections)):
         primary_class = "overflow"
         class_label = "Bin Overflow / Uncontained Waste"
@@ -717,10 +920,10 @@ def analyze_garbage_image(
         unwanted_names = list(dict.fromkeys([d.get("name", d["label"].split(" (")[0]) for d in unwanted_detections]))
         if "Dried Leaves / Plant Litter" in unwanted_names:
             class_label = "Campus Corridor Debris (Dried Leaves & Litter)"
-        elif "Plastic / Beverage Bottle" in unwanted_names:
-            class_label = "Campus Litter (Plastic Bottle & Paper)"
+        elif "Plastic / Beverage Bottle" in unwanted_names or has_plastic_bag:
+            class_label = "Campus Litter (Plastic & Solid Waste)"
         else:
-            class_label = f"Campus Litter ({unwanted_names[0] if unwanted_names else 'Scattered Litter'})"
+            class_label = f"Campus Litter ({unwanted_names[0] if unwanted_names else 'Municipal Litter Pile'})"
 
     # Assemble Bounding Boxes: Unwanted litter items FIRST, then context environment items
     final_boxes = []

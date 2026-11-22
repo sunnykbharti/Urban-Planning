@@ -31,7 +31,7 @@ export const PipelineVisualizer: React.FC = () => {
   });
   const [resolutionResult, setResolutionResult] = useState<AuthorityResolution>({
     zoneId: 'zone-academic',
-    zoneName: 'Academic Precinct (UIET Campus)',
+    zoneName: 'Academic campus area (UIET)',
     ward: 'Ward 4 - Academic Division',
     authority: 'CSJMU Directorate of Estate & Works',
     department: 'Campus Solid Waste & Academic Sanitation',

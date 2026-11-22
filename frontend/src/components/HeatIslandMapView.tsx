@@ -373,7 +373,7 @@ export const HeatIslandMapView: React.FC = () => {
     });
   }, [sectors, activeMetric, selectedSectorId]);
 
-  // Waste Incidents Overlay
+  // High-Stress Zones Overlay (Top 2-3 worst thermal zones only, no harsh '!' icons)
   useEffect(() => {
     if (!mapInstanceRef.current || !wasteLayerGroupRef.current) return;
     const group = wasteLayerGroupRef.current;
@@ -381,45 +381,41 @@ export const HeatIslandMapView: React.FC = () => {
 
     if (!showWasteOverlay) return;
 
-    // Filter reports with valid coordinates
-    reports.forEach((report) => {
-      let lat = 26.5020;
-      let lng = 80.2670;
+    // Show markers only on the top 2-3 worst zones
+    const worstSectors = [...sectors]
+      .sort((a, b) => b.metrics.surfaceTempC - a.metrics.surfaceTempC)
+      .slice(0, 3);
 
-      if (report.gps && report.gps.latitude && report.gps.longitude) {
-        lat = report.gps.latitude;
-        lng = report.gps.longitude;
-      } else if (report.coordinates) {
-        // Approximate projection from percentage bounds onto campus
-        lat = 26.4985 + (1 - report.coordinates.y / 100) * 0.0090;
-        lng = 80.2635 + (report.coordinates.x / 100) * 0.0100;
-      }
+    worstSectors.forEach((sector, idx) => {
+      const feat = (heatZonesJson.features as any[]).find(f => f.id === sector.id);
+      const coords = feat?.properties?.center || [26.5028, 80.2658];
 
       const iconHtml = `
-        <div style="background-color: #ef4444; color: white; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border-radius: 9999px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer;">
-          !
+        <div style="background-color: #dc2626; color: white; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); border-radius: 9999px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; cursor: pointer;">
+          ${idx + 1}
         </div>
       `;
 
       const customIcon = L.divIcon({
-        className: 'custom-waste-marker',
+        className: 'custom-heat-stress-marker',
         html: iconHtml,
-        iconSize: [22, 22],
-        iconAnchor: [11, 11]
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
       });
 
-      const marker = L.marker([lat, lng], { icon: customIcon });
+      const marker = L.marker([coords[0], coords[1]], { icon: customIcon });
       const popupHtml = `
         <div style="font-family: ui-sans-serif, system-ui; font-size: 11px; padding: 4px; line-height: 1.35; color: #0f172a;">
-          <div style="font-weight: 700; color: #dc2626; margin-bottom: 2px;">Waste Grievance Report</div>
-          <div style="font-weight: 600; margin-bottom: 2px;">${report.title || 'Uncollected Waste'}</div>
-          <div style="color: #64748b; font-size: 10px;">Status: <b>${report.status}</b> • Severity: <b>${report.severity}</b></div>
+          <div style="font-weight: 600; color: #dc2626; margin-bottom: 2px;">Hot Zone #${idx + 1}</div>
+          <div style="font-weight: 600; margin-bottom: 2px;">${sector.name}</div>
+          <div style="color: #64748b; font-size: 10px;">LST: <b>${sector.metrics.surfaceTempC}°C</b> • Paved: <b>${sector.metrics.pavedSurfacePct}%</b></div>
         </div>
       `;
       marker.bindPopup(popupHtml);
+      marker.on('click', () => setSelectedSectorId(sector.id));
       marker.addTo(group);
     });
-  }, [reports, showWasteOverlay]);
+  }, [sectors, showWasteOverlay]);
 
   // Recenter Map Helper
   const handleRecenterMap = () => {
@@ -462,194 +458,128 @@ export const HeatIslandMapView: React.FC = () => {
   const avgPaved = summary?.avgPavedSurfacePct || (sectors.length ? +(sectors.reduce((acc, s) => acc + s.metrics.pavedSurfacePct, 0) / sectors.length).toFixed(1) : 63.1);
 
   return (
-    <div className="space-y-6 max-w-[1720px] mx-auto p-2 sm:p-4 pb-20">
-      {/* Institutional Module Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
-                <Thermometer className="w-3.5 h-3.5 text-blue-600" />
-                Urban Microclimate &amp; Heat Island (UHI) Observatory
-              </span>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-medium">
-                Landsat-9 TIRS-2 (Band 10 ST) &bull; Sentinel-2 MSI
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-              Campus Heat Island &amp; Microclimate Zonal Model
+    <div className="space-y-4 max-w-[1720px] mx-auto p-2 sm:p-4 pb-20">
+      {/* Module Header */}
+      <div className="bg-white border border-slate-200 rounded-[6px] p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-base sm:text-lg font-semibold text-slate-900">
+              Campus heat island and microclimate zones
             </h1>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-4xl leading-relaxed">
-              Spatial Land Surface Temperature (LST) and vegetation canopy analysis for the CSJMU Kanpur (UIET) precinct. Evaluates thermal hotspots, impervious pavement loads, and scientifically bounded microclimate mitigation interventions.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Satellite surface temperature and vegetation coverage across campus.
             </p>
           </div>
 
-          {/* Right Controls: Seasonal Switcher & Waste Overlay Toggle */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          {/* Right Controls: Seasonal Switcher & Hot Zones Overlay Toggle */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
             {/* Seasonal Switcher */}
-            <div className="bg-slate-50 p-1 rounded-xl border border-slate-200 flex items-center">
+            <div className="bg-slate-100 p-0.5 rounded-[6px] flex items-center text-xs">
               <button
                 onClick={() => setSeason('pre_monsoon')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-[6px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                   season === 'pre_monsoon'
-                    ? 'bg-[#1d4ed8] text-white shadow-xs'
+                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Landsat-9 overpass: May 18, 2024 at 10:48 AM IST"
               >
                 <Sun className="w-3.5 h-3.5" />
-                <span>Pre-Monsoon (May 2024)</span>
+                <span>Pre-monsoon (May)</span>
               </button>
               <button
                 onClick={() => setSeason('post_monsoon')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-[6px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                   season === 'post_monsoon'
-                    ? 'bg-[#1d4ed8] text-white shadow-xs'
+                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Landsat-9 overpass: Oct 12, 2024 at 10:49 AM IST"
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Post-Monsoon (Oct 2024)</span>
+                <span>Post-monsoon (Oct)</span>
               </button>
             </div>
 
-            {/* Waste Incidents Toggle */}
+            {/* Hot Zones Overlay Toggle */}
             <button
               onClick={() => setShowWasteOverlay(!showWasteOverlay)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`px-3 py-1 rounded-[6px] border text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
                 showWasteOverlay
-                  ? 'bg-amber-50 border-amber-300 text-amber-900 shadow-xs'
+                  ? 'bg-rose-50 border-rose-300 text-rose-800'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <AlertTriangle className={`w-3.5 h-3.5 ${showWasteOverlay ? 'text-amber-600' : 'text-slate-400'}`} />
-              <span>Waste Grievance Overlay</span>
+              <span>Hot zones layer</span>
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Provenance & Acquisition Date Subtitle Strip */}
-        <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500 gap-2">
-          <div className="flex items-center gap-4">
-            <span>
-              Acquisition Date:{' '}
-              <strong className="text-slate-700 font-mono">
-                {season === 'pre_monsoon' ? '18 May 2024 (10:48 AM IST)' : '12 October 2024 (10:49 AM IST)'}
-              </strong>
-            </span>
-            <span className="hidden sm:inline">&bull;</span>
-            <span className="hidden sm:inline">
-              Thermal Calibration: <strong className="text-slate-700">USGS USGS Level-2 ST_B10 (Planck Law + Atmospheric Correction)</strong>
-            </span>
+      {/* Compact Plain Stats Strip */}
+      <div className="bg-white border border-slate-200 rounded-[6px] p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+          <div>
+            <div className="text-[11px] text-slate-500">Peak heat</div>
+            <div className="text-sm font-semibold text-slate-900 mt-0.5">{peakTemp}&deg;C</div>
+            <div className="text-[11px] text-slate-400 truncate">Central workshop</div>
           </div>
-          <div className="text-[10px] text-slate-400 font-mono">
-            CRS: EPSG:4326 (WGS 84) &bull; Native Sensor Grid: ~100m
+          <div>
+            <div className="text-[11px] text-slate-500">Coolest spot</div>
+            <div className="text-sm font-semibold text-slate-900 mt-0.5">{coolTemp}&deg;C</div>
+            <div className="text-[11px] text-slate-400 truncate">Botanical garden</div>
           </div>
+          <div>
+            <div className="text-[11px] text-slate-500">Hottest vs coolest spot</div>
+            <div className="text-sm font-semibold text-slate-900 mt-0.5">{deltaRange}&deg;C</div>
+            <div className="text-[11px] text-slate-400">Difference</div>
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-500">Zones above 42&deg;C</div>
+            <div className="text-sm font-semibold text-slate-900 mt-0.5">{criticalCount} zones</div>
+            <div className="text-[11px] text-slate-400">High priority</div>
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-500">Tree canopy</div>
+            <div className="text-sm font-semibold text-slate-900 mt-0.5">{avgCanopy}%</div>
+            <div className="text-[11px] text-slate-400">Campus average</div>
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-500">Paved area</div>
+            <div className="text-sm font-semibold text-slate-900 mt-0.5">{avgPaved}%</div>
+            <div className="text-[11px] text-slate-400">Impervious ground</div>
+          </div>
+        </div>
+
+        {/* Calculation footnote */}
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500 gap-2">
+          <span>Surface temperatures measured by Landsat-9 ST; canopy and paved cover derived from Sentinel-2.</span>
+          <button
+            onClick={() => setShowMethodology(!showMethodology)}
+            className="text-indigo-700 hover:underline font-medium cursor-pointer"
+          >
+            How this is calculated
+          </button>
         </div>
       </div>
 
-      {/* Summary KPI Strip (Computed from Real Zonal Dataset) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-            <span>Peak Hot Zone LST</span>
-            <span className="px-1.5 py-0.2 rounded bg-red-50 text-red-700 border border-red-200 text-[9px] font-mono">MEASURED</span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-red-600 font-mono">
-            {peakTemp}&deg;C
-          </div>
-          <span className="text-[11px] text-slate-500 truncate block mt-0.5">
-            {season === 'pre_monsoon' ? 'Central Workshop' : 'Courtyard Concourse'}
+      {/* Layer Selector Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-[6px] border border-slate-200">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-slate-500 font-medium px-1">
+            Choropleth metric:
           </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-            <span>Cool Oasis Sink</span>
-            <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-mono">MEASURED</span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-emerald-700 font-mono">
-            {coolTemp}&deg;C
-          </div>
-          <span className="text-[11px] text-slate-500 truncate block mt-0.5">
-            Botanical Garden Pond
-          </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-            <span>Campus &Delta;T Gradient</span>
-            <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-mono">MEASURED</span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-amber-600 font-mono">
-            {deltaRange}&deg;C
-          </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
-            Macro-thermal differential
-          </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-            <span>Critical Hot Zones</span>
-            <span className="px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-mono">DERIVED</span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-rose-600 font-mono">
-            {criticalCount} Zones
-          </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
-            LST &ge; 42&deg;C &amp; dense transit
-          </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-            <span>Average Tree Canopy</span>
-            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[9px] font-mono">DERIVED</span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-slate-800 font-mono">
-            {avgCanopy}%
-          </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
-            Sentinel-2 NDVI &ge; 0.40
-          </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500">
-            <span>Average Paved Surface</span>
-            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[9px] font-mono">DERIVED</span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-slate-800 font-mono">
-            {avgPaved}%
-          </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
-            Impervious albedo ratio
-          </span>
-        </div>
-      </div>
-
-      {/* Layer Selector & Map Legend Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 px-1">
-            <Layers className="w-4 h-4 text-blue-700" />
-            Choropleth Metric:
-          </span>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1">
             {[
-              { id: 'temperature', label: 'Land Surface Temp (LST, °C)' },
-              { id: 'canopy', label: 'Tree Canopy Cover (%)' },
-              { id: 'pavement', label: 'Paved Surface (%)' },
-              { id: 'composite', label: 'Composite Risk' }
+              { id: 'temperature', label: 'Surface temperature' },
+              { id: 'canopy', label: 'Tree canopy' },
+              { id: 'pavement', label: 'Paved area' },
+              { id: 'composite', label: 'Composite risk' }
             ].map((metric) => (
               <button
                 key={metric.id}
                 onClick={() => setActiveMetric(metric.id as ActiveMetric)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-[6px] text-xs font-medium transition-colors cursor-pointer ${
                   activeMetric === metric.id
-                    ? 'bg-[#0f172a] text-white shadow-xs'
+                    ? 'bg-slate-900 text-white font-semibold'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
@@ -658,122 +588,107 @@ export const HeatIslandMapView: React.FC = () => {
             ))}
           </div>
         </div>
-
-        {/* Dynamic Legend */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200">
-          <span className="text-[10px] text-slate-400 uppercase font-bold">
-            {activeMetric === 'temperature' ? 'LST Ramp:' :
-             activeMetric === 'canopy' ? 'Canopy Cover:' :
-             activeMetric === 'pavement' ? 'Impervious Density:' : 'Risk Level:'}
-          </span>
-          
-          {activeMetric === 'temperature' && (
-            <div className="flex items-center gap-1.5 font-mono text-[11px]">
-              <span className="w-3 h-3 rounded-xs bg-[#84cc16]" title="< 31°C Cool Sink" />
-              <span>&lt; 31&deg;C</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#f59e0b]" title="34 - 37°C Moderate" />
-              <span>35&deg;C</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#dc2626]" title="40 - 43°C High Stress" />
-              <span>41&deg;C</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#7f1d1d]" title=">= 43°C Extreme" />
-              <span className="font-bold text-red-700">43&deg;C+</span>
-            </div>
-          )}
-
-          {activeMetric === 'canopy' && (
-            <div className="flex items-center gap-1.5 font-mono text-[11px]">
-              <span className="w-3 h-3 rounded-xs bg-[#d97706]" title="< 15% Sparse" />
-              <span>&lt; 15%</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#65a30d]" title="25 - 40% Moderate" />
-              <span>30%</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#14532d]" title=">= 60% Dense" />
-              <span className="font-bold text-emerald-800">60%+</span>
-            </div>
-          )}
-
-          {activeMetric === 'pavement' && (
-            <div className="flex items-center gap-1.5 font-mono text-[11px]">
-              <span className="w-3 h-3 rounded-xs bg-[#cbd5e1]" title="< 30% Low" />
-              <span>&lt; 30%</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#64748b]" title="50 - 70% Moderate" />
-              <span>60%</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span className="w-3 h-3 rounded-xs bg-[#1e293b]" title=">= 85% High Impervious" />
-              <span className="font-bold text-slate-900">85%+</span>
-            </div>
-          )}
-
-          {activeMetric === 'composite' && (
-            <div className="flex items-center gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#15803d]" /> Refuge</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#0284c7]" /> Moderate</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#ea580c]" /> High</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#991b1b]" /> Critical</span>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Main Grid: Left Map Canvas, Right Planning & Verification Suite */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
         {/* Left Column: Leaflet GIS Choropleth Canvas (xl:col-span-7) */}
-        <div className="xl:col-span-7 bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between">
+        <div className="xl:col-span-7 bg-white rounded-[6px] border border-slate-200 p-3 flex flex-col justify-between">
           {/* Map Top Bar */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-            <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-bold text-slate-800 tracking-wide uppercase">
-                CSJMU Campus Choropleth &bull; 8 Scientific Polygons
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleRecenterMap}
-                className="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
-                title="Reset zoom to CSJMU Campus"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Center Campus</span>
-              </button>
-            </div>
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
+            <span className="text-xs font-semibold text-slate-800">
+              Campus map &bull; 8 zones
+            </span>
+            <button
+              onClick={handleRecenterMap}
+              className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-[4px] transition-colors flex items-center gap-1 cursor-pointer"
+              title="Reset zoom to CSJMU Campus"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Center map</span>
+            </button>
           </div>
 
           {/* Leaflet Map DOM Element */}
-          <div className="relative w-full h-[520px] rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
+          <div className="relative w-full h-[520px] rounded-[6px] border border-slate-200 overflow-hidden bg-slate-100">
             <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-            {/* In-Map Helper Capsule */}
-            <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-[11px] text-slate-700 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              <span>Click any zone polygon to inspect botanical &amp; thermal properties</span>
+            {/* Small Collapsed Legend at Corner (Not overlapping labels) */}
+            <div className="absolute bottom-3 right-3 z-[1000]">
+              <details className="bg-white/95 backdrop-blur-xs border border-slate-200 rounded-[6px] shadow-xs text-xs p-2 max-w-xs open:w-56">
+                <summary className="font-medium text-[11px] text-slate-700 cursor-pointer select-none">
+                  Legend
+                </summary>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 space-y-1 text-[11px]">
+                  {activeMetric === 'temperature' && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#7f1d1d]" />
+                        <span>43&deg;C+ (Extreme heat)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#dc2626]" />
+                        <span>40 - 43&deg;C (High stress)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#f59e0b]" />
+                        <span>34 - 37&deg;C (Moderate)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#84cc16]" />
+                        <span>&lt; 31&deg;C (Cool sink)</span>
+                      </div>
+                    </div>
+                  )}
+                  {activeMetric === 'canopy' && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#14532d]" />
+                        <span>60%+ (Dense canopy)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#65a30d]" />
+                        <span>25 - 40% (Moderate)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#d97706]" />
+                        <span>&lt; 15% (Sparse canopy)</span>
+                      </div>
+                    </div>
+                  )}
+                  {activeMetric === 'pavement' && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#1e293b]" />
+                        <span>85%+ (Paved asphalt)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#64748b]" />
+                        <span>50 - 70% (Mixed)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#cbd5e1]" />
+                        <span>&lt; 30% (Permeable ground)</span>
+                      </div>
+                    </div>
+                  )}
+                  {activeMetric === 'composite' && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#991b1b]" /> Critical</div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#ea580c]" /> High</div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#0284c7]" /> Moderate</div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#15803d]" /> Refuge</div>
+                    </div>
+                  )}
+                </div>
+              </details>
             </div>
-
-            {/* Waste Incident Overlay Active Chip */}
-            {showWasteOverlay && (
-              <div className="absolute top-3 right-3 z-[1000] bg-amber-500/90 text-white px-2.5 py-1 rounded-md shadow-sm text-[10px] font-bold flex items-center gap-1.5">
-                <AlertTriangle className="w-3 h-3" />
-                <span>Waste Incidents Visible ({reports.length})</span>
-              </div>
-            )}
           </div>
 
           {/* Sensor Grid Disclaimer Footer */}
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span>
-                Landsat-9 thermal infrared resolution (~100m native) resampled to 30m by USGS. Small campus courtyard polygons (&lt;100m) exhibit mixed-pixel effects.
-              </span>
-            </div>
-            <span className="font-mono text-[10px] text-slate-400 shrink-0 hidden sm:inline">
-              EPSG:4326
-            </span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Landsat-9 thermal infrared resolution resampled to 30m by USGS.</span>
+            <span className="text-[10px] text-slate-400">EPSG:4326</span>
           </div>
         </div>
 
@@ -883,49 +798,40 @@ export const HeatIslandMapView: React.FC = () => {
                 </span>
               </div>
 
-              {/* Data Provenance Matrix */}
-              <div>
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                  Metric Provenance &amp; Acquisition Lineage
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-0.5">
-                      <span>Surface LST</span>
-                      <span className="text-red-700 font-mono">MEASURED</span>
+              {/* Collapsed Data Sources Lineage Section */}
+              <details className="border border-slate-200 rounded-[6px] overflow-hidden group">
+                <summary className="text-xs font-medium text-slate-800 p-2.5 bg-slate-50 cursor-pointer select-none flex items-center justify-between">
+                  <span>Where this data comes from</span>
+                  <span className="text-[10px] text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 border-t border-slate-100 bg-white">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded border border-slate-100 bg-slate-50/50">
+                      <div className="text-[10px] text-slate-500 mb-0.5">Surface temperature</div>
+                      <div className="font-semibold text-slate-900">{selectedSector.metrics.surfaceTempC}&deg;C</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Landsat-9 Band 10 ST</div>
                     </div>
-                    <div className="font-bold text-slate-900 text-sm">{selectedSector.metrics.surfaceTempC}&deg;C</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Landsat 9 TIRS-2 Band 10 ST</div>
-                  </div>
 
-                  <div className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-0.5">
-                      <span>Tree Canopy</span>
-                      <span className="text-emerald-700 font-mono">DERIVED</span>
+                    <div className="p-2 rounded border border-slate-100 bg-slate-50/50">
+                      <div className="text-[10px] text-slate-500 mb-0.5">Tree canopy</div>
+                      <div className="font-semibold text-slate-900">{selectedSector.metrics.treeCanopyPct}%</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Sentinel-2 NDVI &ge; 0.40</div>
                     </div>
-                    <div className="font-bold text-slate-900 text-sm">{selectedSector.metrics.treeCanopyPct}%</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Sentinel-2 NDVI &ge; 0.40 proxy</div>
-                  </div>
 
-                  <div className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-0.5">
-                      <span>Paved Surface</span>
-                      <span className="text-slate-700 font-mono">DERIVED</span>
+                    <div className="p-2 rounded border border-slate-100 bg-slate-50/50">
+                      <div className="text-[10px] text-slate-500 mb-0.5">Paved surface</div>
+                      <div className="font-semibold text-slate-900">{selectedSector.metrics.pavedSurfacePct}%</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Sentinel-2 NDBI + OSM</div>
                     </div>
-                    <div className="font-bold text-slate-900 text-sm">{selectedSector.metrics.pavedSurfacePct}%</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Sentinel-2 NDBI + OSM Roads</div>
-                  </div>
 
-                  <div className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-0.5">
-                      <span>Footfall Exposure</span>
-                      <span className="text-amber-700 font-mono">ASSUMED</span>
+                    <div className="p-2 rounded border border-slate-100 bg-slate-50/50">
+                      <div className="text-[10px] text-slate-500 mb-0.5">Footfall exposure</div>
+                      <div className="font-semibold text-slate-900">{selectedSector.metrics.pedestrianFootfall}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Timetable estimate</div>
                     </div>
-                    <div className="font-bold text-slate-900 text-sm">{selectedSector.metrics.pedestrianFootfall}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Campus Timetable Estimate</div>
                   </div>
                 </div>
-              </div>
+              </details>
 
               {/* Recommended Botanical Species & Silvicultural Cautions */}
               {selectedSector.recommendedSpecies && selectedSector.recommendedSpecies.length > 0 && (

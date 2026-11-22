@@ -50,7 +50,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           setDbInfo(res.database);
         }
       });
-      const storedKey = localStorage.getItem('GEMINI_API_KEY') || '';
+      const storedKey = localStorage.getItem('GEMINI_API_KEY') || 
+                        (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
       setGeminiKey(storedKey);
       setKeySaved(false);
     }

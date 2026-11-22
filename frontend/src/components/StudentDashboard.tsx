@@ -166,10 +166,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <button
           id="report-hazard-button"
           onClick={onOpenReportDrawer}
-          className="px-3.5 py-1.5 rounded bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          className="px-3.5 py-1.5 rounded-[6px] bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
         >
           <Camera className="w-3.5 h-3.5" />
-          <span>Lodge Incident</span>
+          <span>Report a problem</span>
         </button>
       </section>
 
@@ -179,7 +179,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         {/* LEFT COLUMN: Ticketing Tool Incident Queue (5 cols on desktop) */}
         <section 
           aria-label="Incident Queue" 
-          className="lg:col-span-5 bg-white border border-slate-200 rounded-lg p-3 sm:p-4 shadow-2xs flex flex-col h-auto lg:h-[660px]"
+          className="lg:col-span-5 bg-white border border-slate-200 rounded-[6px] p-3 sm:p-4 flex flex-col h-auto lg:h-[660px]"
         >
           {/* Queue Filter Controls */}
           <div className="pb-3 border-b border-slate-200 space-y-2 shrink-0">
@@ -349,7 +349,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         {/* RIGHT COLUMN: Interactive Campus Map (7 cols on desktop) */}
         <section 
           aria-label="Campus Incident Map"
-          className="lg:col-span-7 bg-white border border-slate-200 rounded-lg p-2 sm:p-3 shadow-2xs"
+          className="lg:col-span-7 bg-white border border-slate-200 rounded-[6px] p-2 sm:p-3"
         >
           <LeafletCampusMap
             reports={filteredReports}
@@ -359,8 +359,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             userRole="student"
             compact={false}
             height="620px"
-            title="Campus Incident Triage Map"
-            subtitle="Geospatial display of active waste hazards and CCTV detection locations."
+            title="Campus map"
+            subtitle="Locations of active waste hazards and CCTV cameras."
           />
         </section>
       </div>

@@ -121,7 +121,7 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
                 <span>FIELD OPERATOR TERMINAL</span>
               </span>
               <span className="text-xs bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full font-mono">
-                BEAT: ALPHA-01 (Ward 42 • UIET Academic Precinct)
+                Beat Alpha-01 (Ward 42 • UIET campus area)
               </span>
             </div>
 
@@ -224,8 +224,8 @@ export const OperatorDashboard: React.FC<OperatorDashboardProps> = ({
         userRole="operator"
         compact={true}
         height="420px"
-        title="CSJMU Beat Dispatch &amp; Route Triage Map"
-        subtitle="Geographic tracking of field maintenance tickets. Red pins mark critical hazards."
+        title="Beat dispatch and route map"
+        subtitle="Map of field maintenance tickets and hazards."
       />
 
       {/* Work Orders Header & Filters */}

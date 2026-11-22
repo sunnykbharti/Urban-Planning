@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -6,15 +6,12 @@ import {
   YAxis, 
   Tooltip, 
   ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
   LineChart, 
   Line, 
   CartesianGrid, 
   Legend 
 } from 'recharts';
-import { BarChart3, TrendingUp, Clock, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Clock, ShieldCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { MaintenanceReport } from '../types';
 
 interface AnalyticsViewProps {
@@ -22,15 +19,19 @@ interface AnalyticsViewProps {
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ reports }) => {
+  const [reportingPeriod, setReportingPeriod] = useState<string>('current_month');
+
+  // Horizontal bar data for categories
   const categoryData = [
-    { name: 'Infrastructure', count: 38, urgent: 8, fill: '#001e40' },
-    { name: 'Plumbing', count: 24, urgent: 4, fill: '#003366' },
-    { name: 'Electrical', count: 22, urgent: 5, fill: '#3a5f94' },
-    { name: 'Waterlogging', count: 18, urgent: 6, fill: '#799dd6' },
-    { name: 'HVAC', count: 12, urgent: 2, fill: '#50606f' },
-    { name: 'Safety / Glass', count: 10, urgent: 3, fill: '#ba1a1a' }
+    { name: 'Infrastructure', total: 38, urgent: 8 },
+    { name: 'Plumbing', total: 24, urgent: 4 },
+    { name: 'Electrical', total: 22, urgent: 5 },
+    { name: 'Waterlogging', total: 18, urgent: 6 },
+    { name: 'HVAC', total: 12, urgent: 2 },
+    { name: 'Safety & glass', total: 10, urgent: 3 }
   ];
 
+  // Daily trend with straight segments (no curve smoothing)
   const weeklyTrendData = [
     { day: 'Mon', reported: 14, resolved: 11 },
     { day: 'Tue', reported: 18, resolved: 15 },
@@ -42,142 +43,149 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ reports }) => {
   ];
 
   const blockPerformance = [
-    { block: 'Block 1 (CSE/IT)', reports: 28, avgHours: 3.2 },
-    { block: 'Block 2 (ME/Civil)', reports: 34, avgHours: 4.8 },
+    { block: 'UIET Block 1', reports: 28, avgHours: 3.2 },
+    { block: 'UIET Block 2', reports: 34, avgHours: 4.8 },
     { block: 'Central Library', reports: 22, avgHours: 2.1 },
     { block: 'Science Block B', reports: 19, avgHours: 3.6 },
-    { block: 'Hostels (Dorm 4-5)', reports: 31, avgHours: 5.1 },
-    { block: 'Mechanical Workshop', reports: 15, avgHours: 2.9 }
+    { block: 'Hostels', reports: 31, avgHours: 5.1 },
+    { block: 'Workshop', reports: 15, avgHours: 2.9 }
   ];
 
-  const COLORS = ['#001e40', '#003366', '#3a5f94', '#799dd6', '#ba1a1a', '#50606f'];
+  // Target evaluations: only flag red when breaching target
+  const avgTriageMins = 42;
+  const triageTargetMins = 60; // 42 < 60 is GOOD (within target, not red)
+
+  const slaCompliance = 94.2;
+  const slaTarget = 90.0; // 94.2 >= 90 is GOOD (reaches target, not red)
+
+  const urgentHours = 2.4;
+  const urgentTargetHours = 2.0; // 2.4 > 2.0 breaches target -> flag red!
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#c3c6d1] pb-4">
+      <div className="bg-white border border-slate-200 rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-[#001e40]" />
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111c2d] tracking-tight">
-              Campus Infrastructure Analytics
-            </h1>
-          </div>
-          <p className="text-sm md:text-base text-[#43474f] mt-1">
-            Service Level Agreements (SLA), resolution velocity, and spatial incident heat analysis for UIET.
+          <h1 className="text-[20px] font-semibold text-slate-900 leading-tight">
+            Waste analytics
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            How fast issues get reported and closed.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-[#c3c6d1] text-xs font-semibold text-[#001e40]">
-          <span>Reporting Period: Aug 2026</span>
+        {/* Real reporting period selector defaulting to current month */}
+        <div className="flex items-center gap-2 text-xs">
+          <label className="text-slate-500">Period:</label>
+          <select
+            value={reportingPeriod}
+            onChange={(e) => setReportingPeriod(e.target.value)}
+            className="px-2.5 py-1 rounded-[6px] border border-slate-200 bg-white text-slate-800 text-xs font-medium cursor-pointer focus:outline-hidden"
+          >
+            <option value="current_month">Current month (Nov 2026)</option>
+            <option value="last_month">Last month (Oct 2026)</option>
+            <option value="last_quarter">Last 90 days</option>
+            <option value="year_to_date">Year to date</option>
+          </select>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-[#c3c6d1] shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#737780] font-bold uppercase mb-2">
-            <span>Avg Triage Time</span>
-            <Clock className="w-4 h-4 text-[#003366]" />
-          </div>
-          <p className="text-2xl font-bold text-[#001e40]">42 Mins</p>
-          <span className="text-[11px] text-[#2e7d32] font-semibold">↓ 14% faster than last month</span>
+      {/* KPI Cards: Only red when breaching target */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white p-3.5 rounded-[6px] border border-slate-200">
+          <div className="text-[11px] text-slate-500">Average response time</div>
+          <div className="text-lg font-semibold text-slate-900 mt-1">{avgTriageMins} mins</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Target: under {triageTargetMins} mins</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-[#c3c6d1] shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#737780] font-bold uppercase mb-2">
-            <span>SLA Compliance</span>
-            <ShieldCheck className="w-4 h-4 text-[#2e7d32]" />
-          </div>
-          <p className="text-2xl font-bold text-[#001e40]">94.2%</p>
-          <span className="text-[11px] text-[#2e7d32] font-semibold">Target: 90% reached</span>
+        <div className="bg-white p-3.5 rounded-[6px] border border-slate-200">
+          <div className="text-[11px] text-slate-500">SLA compliance</div>
+          <div className="text-lg font-semibold text-slate-900 mt-1">{slaCompliance}%</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Target: 90%</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-[#c3c6d1] shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#737780] font-bold uppercase mb-2">
-            <span>Active Dispatch Teams</span>
-            <CheckCircle2 className="w-4 h-4 text-[#001e40]" />
-          </div>
-          <p className="text-2xl font-bold text-[#001e40]">5 Crews</p>
-          <span className="text-[11px] text-[#43474f]">12 Technicians on duty</span>
+        <div className="bg-white p-3.5 rounded-[6px] border border-slate-200">
+          <div className="text-[11px] text-slate-500">Active duty crews</div>
+          <div className="text-lg font-semibold text-slate-900 mt-1">5 crews</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">12 personnel on beat</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-[#c3c6d1] shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#737780] font-bold uppercase mb-2">
-            <span>Urgent Resolution Speed</span>
-            <AlertTriangle className="w-4 h-4 text-[#ba1a1a]" />
-          </div>
-          <p className="text-2xl font-bold text-[#ba1a1a]">2.4 Hours</p>
-          <span className="text-[11px] text-[#737780]">Average closure time</span>
+        {/* Breaches target (2.4h > 2.0h) -> flags red */}
+        <div className="bg-white p-3.5 rounded-[6px] border border-slate-200">
+          <div className="text-[11px] text-slate-500">Urgent hazard resolution</div>
+          <div className="text-lg font-semibold text-rose-700 mt-1">{urgentHours} hours</div>
+          <div className="text-[11px] text-rose-700 font-medium mt-0.5">Breaches 2.0h target by 24m</div>
         </div>
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Weekly Inflow vs Resolution */}
-        <div className="bg-white p-5 rounded-xl border border-[#c3c6d1] shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-[#e7eeff] pb-2">
-            <h3 className="text-sm font-bold text-[#001e40] uppercase tracking-wider">
-              Weekly Report Velocity &amp; Resolution
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Chart 1: Daily inflow vs resolution (straight segments, 2px line, no smoothing) */}
+        <div className="bg-white p-4 rounded-[6px] border border-slate-200 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-[14px] font-semibold text-slate-900">
+              Daily reports filed and resolved
             </h3>
-            <span className="text-xs text-[#737780]">Daily Count</span>
+            <span className="text-[11px] text-slate-400">Past 7 days</span>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weeklyTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f3ff" />
-                <XAxis dataKey="day" stroke="#737780" fontSize={12} />
-                <YAxis stroke="#737780" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
                 <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="reported" name="New Reports Filed" stroke="#001e40" strokeWidth={2.5} />
-                <Line type="monotone" dataKey="resolved" name="Resolved &amp; Closed" stroke="#2e7d32" strokeWidth={2.5} />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#64748b' }} />
+                {/* Straight segments: type="linear", strokeWidth={2} */}
+                <Line type="linear" dataKey="reported" name="New reports" stroke="#475569" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="linear" dataKey="resolved" name="Resolved" stroke="#16a34a" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 2: Category Breakdown */}
-        <div className="bg-white p-5 rounded-xl border border-[#c3c6d1] shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-[#e7eeff] pb-2">
-            <h3 className="text-sm font-bold text-[#001e40] uppercase tracking-wider">
-              Issue Volume by Maintenance Category
+        {/* Chart 2: Category breakdown (Horizontal bars so category labels aren't rotated; neutral color for total, muted red for urgent) */}
+        <div className="bg-white p-4 rounded-[6px] border border-slate-200 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-[14px] font-semibold text-slate-900">
+              Volume by maintenance category
             </h3>
-            <span className="text-xs text-[#737780]">Total vs Urgent</span>
+            <span className="text-[11px] text-slate-400">Total vs urgent</span>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f3ff" />
-                <XAxis dataKey="name" stroke="#737780" fontSize={11} interval={0} angle={-15} textAnchor="end" height={45} />
-                <YAxis stroke="#737780" fontSize={12} />
+              <BarChart data={categoryData} layout="vertical" margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} tickLine={false} width={95} />
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="count" name="Total Volume" fill="#001e40" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="urgent" name="Urgent Hazards" fill="#ba1a1a" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#64748b' }} />
+                {/* Neutral color for total, muted red for urgent */}
+                <Bar dataKey="total" name="Total volume" fill="#64748b" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="urgent" name="Urgent hazards" fill="#dc2626" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 3: Block Incident Density */}
-        <div className="bg-white p-5 rounded-xl border border-[#c3c6d1] shadow-xs space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-[#e7eeff] pb-2">
-            <h3 className="text-sm font-bold text-[#001e40] uppercase tracking-wider">
-              UIET Campus Zone Repair Load &amp; Avg Resolution Duration
+        {/* Chart 3: Campus area workload */}
+        <div className="bg-white p-4 rounded-[6px] border border-slate-200 space-y-3 lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-[14px] font-semibold text-slate-900">
+              Campus area workload and average hours to close
             </h3>
-            <span className="text-xs text-[#737780]">Hours to Close</span>
+            <span className="text-[11px] text-slate-400">By facility</span>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={blockPerformance} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f3ff" />
-                <XAxis type="number" stroke="#737780" fontSize={12} />
-                <YAxis dataKey="block" type="category" stroke="#737780" fontSize={11} width={150} />
+              <BarChart data={blockPerformance} layout="vertical" margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                <YAxis dataKey="block" type="category" stroke="#94a3b8" fontSize={11} tickLine={false} width={100} />
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="reports" name="Total Reports" fill="#3a5f94" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="avgHours" name="Avg Resolution Time (Hours)" fill="#003366" radius={[0, 4, 4, 0]} />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#64748b' }} />
+                <Bar dataKey="reports" name="Reports count" fill="#64748b" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="avgHours" name="Avg hours to close" fill="#334155" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

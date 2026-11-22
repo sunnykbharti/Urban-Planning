@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Campusr — Closed-Loop Campus Operations &amp; Civic Governance</title>
-  <meta name="description" content="Closed-loop campus operations and infrastructure governance. Multimodal incident reporting, computer vision CCTV sweeps, authority resolution dispatch, and microclimate heat-island planning.">
+  <meta name="description" content="Campus civic operations, infrastructure maintenance &amp; environmental governance.">
 
   <!-- Inter Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,16 +19,6 @@
         extend: {
           fontFamily: {
             sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          },
-          colors: {
-            canvas: '#FAF9F6',
-            brand: {
-              50: '#EEF2FF',
-              100: '#E0E7FF',
-              600: '#4F46E5',
-              700: '#4338CA',
-              800: '#3730A3',
-            }
           }
         }
       }
@@ -37,574 +27,369 @@
 
   <style>
     body {
-      background-color: #FAF9F6;
-      color: #1C1917;
+      background-color: #ffffff;
+      color: #000000;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
   </style>
 </head>
-<body class="min-h-screen antialiased">
+<body class="min-h-screen bg-white text-black antialiased">
 
-  <!-- 1. PLAIN FULL-WIDTH NAVBAR -->
-  <header class="w-full bg-white border-b border-stone-200 sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+  <!-- 1. UBER-STYLE BLACK TOP NAVBAR -->
+  <header class="w-full bg-black text-white h-16 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 h-full flex items-center justify-between">
       
-      <!-- Logo -->
-      <a href="#" class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-md bg-indigo-700 flex items-center justify-center text-white">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </div>
-        <span class="font-bold text-base tracking-tight text-stone-900">Campusr</span>
-      </a>
+      <!-- Left: Brand & Nav Links -->
+      <div class="flex items-center gap-8">
+        <a href="#" class="text-2xl font-bold tracking-tight text-white hover:text-gray-200 transition-colors">
+          Campusr
+        </a>
 
-      <!-- Simple Nav Links -->
-      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-stone-600">
-        <a href="#how-it-works" class="hover:text-indigo-700 transition-colors">How it works</a>
-        <a href="#features" class="hover:text-indigo-700 transition-colors">Core Features</a>
-        <a href="#contact" class="hover:text-indigo-700 transition-colors">Contact</a>
-        <a href="#terms" class="hover:text-indigo-700 transition-colors">Terms</a>
-      </nav>
+        <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-300">
+          <a href="#explore" class="hover:text-white transition-colors">Overview</a>
+          <a href="#how-it-works" class="hover:text-white transition-colors">Operations</a>
+          <a href="#plan" class="hover:text-white transition-colors">Planning</a>
+          <a href="#features" class="hover:text-white transition-colors">Services</a>
+          <a href="#terms" class="hover:text-white transition-colors">Governance</a>
+        </nav>
+      </div>
 
-      <!-- Action Buttons on Right -->
-      <div class="flex items-center gap-3">
-        <a href="http://localhost:3000/?view=login" class="px-3.5 py-1.5 text-sm font-medium text-stone-700 hover:text-indigo-700 hover:bg-stone-50 border border-stone-200 rounded-md transition-colors">
+      <!-- Right: Location, Help, Login, Launch App -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <span class="hidden sm:inline-flex text-xs font-medium text-gray-300 px-2 py-1 rounded-full border border-gray-700">
+          CSJMU Kanpur
+        </span>
+
+        <a href="mailto:support@campusr.io" class="text-sm font-medium text-gray-300 hover:text-white transition-colors hidden sm:inline">
+          Help
+        </a>
+
+        <a href="http://localhost:3000/?view=login" class="text-sm font-medium text-white hover:text-gray-300 px-3 py-1.5 transition-colors">
           Log in
         </a>
-        <a href="http://localhost:3000/?view=login" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-700 hover:bg-indigo-800 rounded-md transition-colors shadow-sm">
-          Launch App &rarr;
+
+        <a href="http://localhost:3000/?view=login" class="px-4 py-2 text-sm font-semibold text-black bg-white hover:bg-gray-200 rounded-full transition-colors">
+          Sign in
         </a>
       </div>
 
     </div>
   </header>
 
-  <!-- 2. LEFT-ALIGNED HERO WITH REAL PLATFORM PREVIEW -->
-  <section class="py-16 sm:py-20 border-b border-stone-200">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+  <!-- 2. HERO SECTION (MATCHING UBER SCREENSHOT 1) -->
+  <section class="py-12 lg:py-20 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         
-        <!-- Left: Text & Action -->
-        <div class="lg:col-span-6">
-          <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-stone-900 leading-tight">
-            Closed-loop campus operations &amp; civic governance.
+        <!-- Left: Dispatch Request Box -->
+        <div class="lg:col-span-6 xl:col-span-5">
+          
+          <div class="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-2">
+            <svg class="w-3.5 h-3.5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <span>CSJMU Precinct, Kanpur • <span class="underline">Live Operations</span></span>
+          </div>
+
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-black leading-[1.08] mb-6">
+            Request civic action
           </h1>
-          <p class="mt-4 text-base sm:text-lg text-stone-600 leading-relaxed">
-            From student incident reports and automated CCTV garbage detection to field contractor dispatch and heat-island microclimate tracking — Campusr resolves campus maintenance with verified accountability.
-          </p>
 
-          <div class="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <a href="http://localhost:3000/?view=login" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-sm rounded-md transition-colors text-center shadow-sm">
-              Sign In to Campus Portal
-            </a>
-            <a href="http://localhost:3000/?view=login" class="px-5 py-2.5 bg-white hover:bg-stone-50 border border-stone-300 text-stone-700 font-medium text-sm rounded-md transition-colors text-center">
-              Sign In to Enter &rarr;
-            </a>
-          </div>
-
-          <div class="mt-8 pt-6 border-t border-stone-200 flex flex-wrap items-center gap-6 text-xs text-stone-500">
-            <div>Computer Vision &amp; GIS Enabled</div>
-            <div class="w-1 h-1 rounded-full bg-stone-300"></div>
-            <div>Strict SLA Accountability</div>
-            <div class="w-1 h-1 rounded-full bg-stone-300"></div>
-            <div>Role-Based Clearance (RBAC)</div>
-          </div>
-        </div>
-
-        <!-- Right: Realistic Product UI Mockup Reflecting Actual Codebase -->
-        <div class="lg:col-span-6">
-          <div class="bg-white border border-stone-200 rounded-lg shadow-sm p-4 sm:p-5">
+          <!-- Form (Uber Style) -->
+          <div class="space-y-3">
             
-            <!-- Window Bar -->
-            <div class="flex items-center justify-between pb-3 border-b border-stone-200 mb-4 text-xs text-stone-500">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span class="font-semibold text-stone-800">Campus Incident &amp; Operations Monitor</span>
-              </div>
-              <span class="font-mono text-[11px] bg-stone-100 px-2 py-0.5 rounded">ARE Engine: Active</span>
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-gray-100 rounded-full text-xs font-semibold text-black mb-2">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>Report now ▾</span>
             </div>
 
-            <!-- Active Incident Work Order Card -->
-            <div class="bg-amber-50/70 border border-amber-200 rounded-md p-3.5 mb-3">
-              <div class="flex items-center justify-between text-xs text-amber-800 font-medium">
-                <span class="font-mono font-bold">REP-1092 • Library Approach Quad</span>
-                <span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-semibold">Urgent • In Progress</span>
-              </div>
-              <div class="text-sm font-bold text-stone-900 mt-1">Severely Cracked Walkway &amp; Paver Dislodgement</div>
-              <div class="text-xs text-stone-600 mt-0.5">Assigned: Beat 01 (Lead: Ramesh K.) • SLA Time Remaining: 1h 42m</div>
+            <!-- Location -->
+            <div class="relative flex items-center bg-gray-100 rounded-lg px-3.5 py-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-black shrink-0 mr-3"></span>
+              <input
+                type="text"
+                readonly
+                value="UIET Block 1 • Pedestrian Quad"
+                class="w-full bg-transparent text-sm font-medium text-black focus:outline-none"
+              />
+              <svg class="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             </div>
 
-            <!-- Secondary Modules: CCTV AI Stream & Microclimate Index -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
-              
-              <!-- CCTV AI Sweep -->
-              <div class="border border-stone-200 rounded-md p-2.5 text-xs bg-stone-50">
-                <div class="flex items-center justify-between font-semibold text-stone-900 mb-1">
-                  <span>CCTV AI Detection</span>
-                  <span class="text-[10px] text-emerald-700 font-mono">94% Conf</span>
-                </div>
-                <div class="text-stone-600 leading-snug">North Gate Cam 04: Overflowing bin detected. Auto-ticket generated.</div>
-              </div>
-
-              <!-- Microclimate Haven -->
-              <div class="border border-stone-200 rounded-md p-2.5 text-xs bg-stone-50">
-                <div class="flex items-center justify-between font-semibold text-stone-900 mb-1">
-                  <span>Cool Havens Index</span>
-                  <span class="text-[10px] text-indigo-700 font-mono">27°C Comfort</span>
-                </div>
-                <div class="text-stone-600 leading-snug">Central Canopy Green Haven: High shade refuge, 120m from Science Block.</div>
-              </div>
-
+            <!-- Problem -->
+            <div class="relative flex items-center bg-gray-100 rounded-lg px-3.5 py-3">
+              <span class="w-2.5 h-2.5 bg-black shrink-0 mr-3"></span>
+              <input
+                type="text"
+                readonly
+                value="Overflowing recycling bin"
+                class="w-full bg-transparent text-sm font-medium text-black focus:outline-none"
+              />
+              <svg class="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
             </div>
 
-            <!-- Bottom Verification Strip -->
-            <div class="pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
-              <span class="text-stone-500">Before &rarr; After AI Verification: <strong class="text-stone-800">Enabled</strong></span>
-              <a href="http://localhost:3000/?view=login" class="text-indigo-700 font-semibold hover:underline flex items-center gap-1">
-                <span>Sign in to access console &rarr;</span>
+            <div class="pt-2">
+              <a
+                href="http://localhost:3000/?view=login"
+                class="inline-block w-full sm:w-auto px-7 py-3.5 bg-black hover:bg-gray-800 text-white font-semibold text-sm rounded-lg transition-colors text-center"
+              >
+                Sign in to file report
               </a>
             </div>
 
           </div>
+
+        </div>
+
+        <!-- Right: Realistic Visual Preview -->
+        <div class="lg:col-span-6 xl:col-span-7">
+          <div class="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 relative aspect-[16/10] flex items-center justify-center p-6">
+            
+            <div class="w-full max-w-lg bg-white rounded-xl shadow-lg border border-gray-200 p-5 space-y-4">
+              
+              <div class="flex items-center justify-between pb-3 border-b border-gray-100 text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                  <span class="font-semibold text-black">Beat 01 Active Sweep</span>
+                </div>
+                <span class="text-gray-500 font-mono text-[11px]">SLA: 1h 42m remaining</span>
+              </div>
+
+              <div class="flex items-start gap-3.5 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  RK
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-black">Ramesh Kumar (BVG Beat Lead)</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">Assigned</span>
+                  </div>
+                  <p className="text-gray-600 mt-0.5">En route to UIET Block 1 Pedestrian Quad • Paver clearance</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="p-2.5 rounded-lg border border-gray-200 bg-white">
+                  <div class="text-[11px] text-gray-500">CCTV Camera Sweeps</div>
+                  <div class="text-sm font-bold text-black mt-0.5">18 Active cameras</div>
+                </div>
+                <div class="p-2.5 rounded-lg border border-gray-200 bg-white">
+                  <div class="text-[11px] text-gray-500">Peak Campus Comfort</div>
+                  <div class="text-sm font-bold text-black mt-0.5">27°C Shade canopy</div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
         </div>
 
       </div>
+
     </div>
   </section>
 
-  <!-- 3. HOW IT WORKS: THE 5-STAGE CLOSED LOOP -->
-  <section id="how-it-works" class="py-16 border-b border-stone-200 bg-white">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+  <!-- 3. NOTIFICATION STRIP (UBER ORANGE BANNER) -->
+  <div class="w-full bg-[#ff7d44] text-black py-3 px-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between text-xs sm:text-sm font-medium">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2 h-2 rounded-full bg-black shrink-0"></span>
+        <span>Civic SLA Promise: Urgent hazards resolved within 2.0 hours. Transparent institutional accountability.</span>
+      </div>
+      <a href="#terms" class="underline font-semibold shrink-0 ml-4 hidden sm:inline">
+        View SLA terms
+      </a>
+    </div>
+  </div>
+
+  <!-- 4. EXPLORE GRID (MATCHING UBER SCREENSHOT 2) -->
+  <section id="explore" class="py-16 lg:py-24 border-b border-gray-100 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8">
       
-      <div class="max-w-2xl mb-12">
-        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">
-          The closed-loop governance workflow
-        </h2>
-        <p class="mt-3 text-sm sm:text-base text-stone-600">
-          Sensing issues is only 10% of the problem. Campusr automates the other 90%: spatial ward mapping, authority routing, field contractor dispatch, and computer vision cleanup audits.
+      <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-black mb-10">
+        Explore what you can do with Campusr
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Incidents -->
+        <div class="bg-[#f6f6f6] rounded-2xl p-6 flex flex-col justify-between h-56 hover:bg-[#efefef] transition-colors">
+          <div>
+            <h3 class="text-lg font-bold text-black">Incidents</h3>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">
+              Report overflowing bins, broken paving, or water hazards with live status and photo evidence.
+            </p>
+          </div>
+          <div>
+            <a href="http://localhost:3000/?view=login" class="inline-block px-4 py-2 bg-white text-black font-semibold text-xs rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+              Details
+            </a>
+          </div>
+        </div>
+
+        <!-- Work Orders -->
+        <div class="bg-[#f6f6f6] rounded-2xl p-6 flex flex-col justify-between h-56 hover:bg-[#efefef] transition-colors">
+          <div>
+            <h3 class="text-lg font-bold text-black">Work orders</h3>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">
+              Direct dispatch to BVG beat leads with single-click assignment and SLA countdowns.
+            </p>
+          </div>
+          <div>
+            <a href="http://localhost:3000/?view=login" class="inline-block px-4 py-2 bg-white text-black font-semibold text-xs rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+              Details
+            </a>
+          </div>
+        </div>
+
+        <!-- Campus map -->
+        <div class="bg-[#f6f6f6] rounded-2xl p-6 flex flex-col justify-between h-56 hover:bg-[#efefef] transition-colors">
+          <div>
+            <h3 class="text-lg font-bold text-black">Campus map</h3>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">
+              Interactive GIS map with exact building footprints, waste markers, and pedestrian paths.
+            </p>
+          </div>
+          <div>
+            <a href="http://localhost:3000/?view=login" class="inline-block px-4 py-2 bg-white text-black font-semibold text-xs rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+              Details
+            </a>
+          </div>
+        </div>
+
+        <!-- CCTV Sweeps -->
+        <div class="bg-[#f6f6f6] rounded-2xl p-6 flex flex-col justify-between h-56 hover:bg-[#efefef] transition-colors">
+          <div>
+            <h3 class="text-lg font-bold text-black">CCTV sweeps</h3>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">
+              Fixed camera feeds monitor high-traffic quads and automatically flag overflow spots.
+            </p>
+          </div>
+          <div>
+            <a href="http://localhost:3000/?view=login" class="inline-block px-4 py-2 bg-white text-black font-semibold text-xs rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+              Details
+            </a>
+          </div>
+        </div>
+
+        <!-- Cool havens -->
+        <div class="bg-[#f6f6f6] rounded-2xl p-6 flex flex-col justify-between h-56 hover:bg-[#efefef] transition-colors">
+          <div>
+            <h3 class="text-lg font-bold text-black">Cool havens</h3>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">
+              Microclimate heat-island layer pinpointing high-tree-canopy shade and cool corridors.
+            </p>
+          </div>
+          <div>
+            <a href="http://localhost:3000/?view=login" class="inline-block px-4 py-2 bg-white text-black font-semibold text-xs rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+              Details
+            </a>
+          </div>
+        </div>
+
+        <!-- Planning board -->
+        <div class="bg-[#f6f6f6] rounded-2xl p-6 flex flex-col justify-between h-56 hover:bg-[#efefef] transition-colors">
+          <div>
+            <h3 class="text-lg font-bold text-black">Planning board</h3>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">
+              Track ₹ budgets, contractor assignees, and target dates across 5 clear lifecycle stages.
+            </p>
+          </div>
+          <div>
+            <a href="http://localhost:3000/?view=login" class="inline-block px-4 py-2 bg-white text-black font-semibold text-xs rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+              Details
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. UBER FOOTER (MATCHING UBER SCREENSHOT 5) -->
+  <footer class="w-full bg-black text-white font-sans antialiased">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 pt-16 pb-12">
+      
+      <div class="mb-12">
+        <a href="#" class="text-2xl lg:text-3xl font-bold tracking-tight text-white hover:text-gray-300 transition-colors">
+          Campusr
+        </a>
+        <p class="text-sm text-gray-400 mt-2">
+          Campus civic operations, infrastructure maintenance &amp; environmental governance.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        
-        <!-- The Old Way (4 cols) -->
-        <div class="md:col-span-5 bg-stone-50 border border-stone-200 rounded-lg p-6">
-          <h3 class="text-sm font-bold text-stone-900 uppercase tracking-wide mb-4">Without Campusr</h3>
-          <ul class="space-y-4 text-xs sm:text-sm text-stone-600">
-            <li class="flex items-start gap-2.5">
-              <span class="text-red-500 font-bold shrink-0">✕</span>
-              <span>Students take photos of broken infrastructure, but nobody knows which department owns the repair.</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="text-red-500 font-bold shrink-0">✕</span>
-              <span>Fixed CCTV cameras sit idle recording terabytes of video that no human monitors for overflowing waste.</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="text-red-500 font-bold shrink-0">✕</span>
-              <span>Sanitation contractors claim tickets are resolved without photographic proof or residual debris checks.</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="text-red-500 font-bold shrink-0">✕</span>
-              <span>No data on campus heat-islands or shaded zones for pedestrian navigation during peak summer heat.</span>
-            </li>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 pb-14 border-b border-gray-800">
+        <div>
+          <h4 class="text-base font-semibold text-white mb-4">Platform</h4>
+          <ul class="space-y-3 text-sm text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">About Campusr</a></li>
+            <li><a href="#explore" class="hover:text-white transition-colors">Our features</a></li>
+            <li><a href="#how-it-works" class="hover:text-white transition-colors">How it works</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Staff login</a></li>
           </ul>
         </div>
 
-        <!-- How Campusr Runs It (7 cols) -->
-        <div class="md:col-span-7 bg-white border border-stone-200 rounded-lg p-6">
-          <h3 class="text-sm font-bold text-indigo-700 uppercase tracking-wide mb-4">With Campusr Closed Loop</h3>
-          
-          <div class="space-y-5 text-sm">
-            <div class="pb-4 border-b border-stone-100">
-              <div class="font-semibold text-stone-900">1. Multimodal Detection &amp; Geotagging</div>
-              <p class="text-xs sm:text-sm text-stone-600 mt-1">
-                Ingests reports from student mobile uploads and automated CCTV video sweeps. Automatically tags GPS coordinates to the exact campus block and polygon ward.
-              </p>
-            </div>
-
-            <div class="pb-4 border-b border-stone-100">
-              <div class="font-semibold text-stone-900">2. Authority Resolution Engine (ARE) &amp; Dispatch</div>
-              <p class="text-xs sm:text-sm text-stone-600 mt-1">
-                Routes the incident to the responsible zonal supervisor and nearest contractor beat (e.g. Beat 01) with strict SLA turnaround deadlines.
-              </p>
-            </div>
-
-            <div>
-              <div class="font-semibold text-stone-900">3. AI-Assisted Before &rarr; After Verification</div>
-              <p class="text-xs sm:text-sm text-stone-600 mt-1">
-                Field crews capture a post-cleanup photo. Computer vision evaluates residual debris percentage before management approves ticket closure.
-              </p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-
-  <!-- 4. REAL CORE MODULES RUNNING IN APP -->
-  <section id="features" class="py-16 border-b border-stone-200">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
-      
-      <div class="max-w-2xl mb-12">
-        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">
-          Built-in modules running in the live application
-        </h2>
-        <p class="mt-2 text-sm sm:text-base text-stone-600">
-          Every feature below is actively implemented and available once you sign in.
-        </p>
-      </div>
-
-      <!-- Feature 1: Wide GIS Incident Map -->
-      <div class="bg-white border border-stone-200 rounded-lg p-6 sm:p-8 mb-6 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div class="lg:col-span-6">
-            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Module 1 • GIS Incident Map</span>
-            <h3 class="text-xl font-bold text-stone-900 mt-3 mb-2">Interactive Campus Map &amp; Report Drawer</h3>
-            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-              Visual GIS interface showing real-time health across academic blocks, administrative centers, hostels, and workshops. Students and staff drop pins to report hazards with photos and severity tags.
-            </p>
-            <ul class="space-y-2 text-xs sm:text-sm text-stone-600">
-              <li class="flex items-center gap-2">
-                <span class="text-indigo-700 font-bold">•</span>
-                <span>Categorization: Garbage overflow, cracked infrastructure, waterlogging, and safety hazards.</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-indigo-700 font-bold">•</span>
-                <span>Tracks status in real time: Pending &rarr; Dispatched &rarr; In Progress &rarr; Resolved.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="lg:col-span-6 bg-stone-50 border border-stone-200 rounded-md p-4">
-            <div class="text-xs font-semibold text-stone-800 mb-2">Active Campus Block Health</div>
-            <div class="space-y-2 text-xs">
-              <div class="bg-white p-2.5 rounded border border-stone-200 flex items-center justify-between">
-                <div>
-                  <span class="font-medium text-stone-900">UIET Block 1 (CSE &amp; IT)</span>
-                  <span class="text-stone-500 block text-[11px]">4 active reports • 1 urgent</span>
-                </div>
-                <span class="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Condition: Fair</span>
-              </div>
-              <div class="bg-white p-2.5 rounded border border-stone-200 flex items-center justify-between">
-                <div>
-                  <span class="font-medium text-stone-900">Central University Library</span>
-                  <span class="text-stone-500 block text-[11px]">5 active reports • 2 urgent</span>
-                </div>
-                <span class="font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">Requires Attention</span>
-              </div>
-              <div class="bg-white p-2.5 rounded border border-stone-200 flex items-center justify-between">
-                <div>
-                  <span class="font-medium text-stone-900">Science Block B Labs</span>
-                  <span class="text-stone-500 block text-[11px]">0 active reports</span>
-                </div>
-                <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Condition: Good</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feature 2 & 3: CCTV AI & Microclimate -->
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-        
-        <!-- CCTV AI -->
-        <div class="md:col-span-7 bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
-          <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Module 2 • Computer Vision Pipeline</span>
-          <h3 class="text-lg font-bold text-stone-900 mt-3 mb-2">Automated CCTV Sweeps &amp; YOLO Detection</h3>
-          <p class="text-xs sm:text-sm text-stone-600 mb-4">
-            Connected camera feeds automatically detect waste accumulation and infrastructure hazards without relying exclusively on manual reporting.
-          </p>
-
-          <div class="space-y-2 text-xs">
-            <div class="border border-stone-200 rounded-md p-3 bg-stone-50">
-              <div class="flex items-center justify-between font-semibold text-stone-900">
-                <span>6 Trained Detection Classes</span>
-                <span class="text-indigo-700 text-[11px] font-mono">YOLOv8 Ingest</span>
-              </div>
-              <div class="text-stone-600 mt-1">
-                <span class="font-mono text-[11px] text-stone-700">bin_empty</span> &bull; <span class="font-mono text-[11px] text-stone-700">bin_partial</span> &bull; <span class="font-mono text-[11px] text-stone-700">bin_full</span> &bull; <span class="font-mono text-[11px] text-stone-700">overflow</span> &bull; <span class="font-mono text-[11px] text-stone-700">litter_pile</span> &bull; <span class="font-mono text-[11px] text-stone-700">blocked_drain</span>
-              </div>
-            </div>
-
-            <div class="border border-stone-200 rounded-md p-3 hover:bg-stone-50 transition-colors">
-              <div class="flex items-center justify-between font-semibold text-stone-900">
-                <span>AI Before vs. After Cleanup Verification</span>
-                <span class="text-emerald-700 font-mono text-[11px]">Audit Proof</span>
-              </div>
-              <div class="text-stone-500 mt-1">
-                Compares resolution images against original hazard shots to confirm residual debris removal before ticket sign-off.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Heat Island & Cool Havens -->
-        <div class="md:col-span-5 bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
-          <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">Module 3 • Microclimate Governance</span>
-          <h3 class="text-lg font-bold text-stone-900 mt-3 mb-2">Heat-Island Index &amp; Cool Havens</h3>
-          <p class="text-xs sm:text-sm text-stone-600 mb-4">
-            Identifies thermal stress zones across campus quads and maps shaded canopies and eco-refuges for pedestrian comfort.
-          </p>
-
-          <div class="bg-stone-50 border border-stone-200 rounded-md p-3.5 text-xs">
-            <div class="flex items-center justify-between font-semibold text-stone-900 pb-2 border-b border-stone-200 mb-2">
-              <span>Thermal Microclimate Index</span>
-              <span class="text-indigo-700 font-medium">Zone 01 Quad</span>
-            </div>
-            <div class="space-y-1.5 text-stone-600">
-              <div class="flex justify-between">
-                <span>Library Concrete Plaza:</span>
-                <span class="font-mono font-semibold text-rose-600">38.2°C (Extreme)</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Central Tree Canopy Haven:</span>
-                <span class="font-mono font-semibold text-emerald-700">26.8°C (Comfortable)</span>
-              </div>
-            </div>
-            <div class="mt-3 pt-2 border-t border-stone-200 text-[11px] text-stone-500">
-              Guides campus capital planning for greening and canopy expansion.
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Feature 4: 4 Specialized Role Consoles -->
-      <div class="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
-        <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded">Module 4 • Role-Based Access Control (RBAC)</span>
-        <h3 class="text-base font-bold text-stone-900 mt-2 mb-3">4 Specialized Consoles Engineered for Every Stakeholder</h3>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-          <div class="p-3 bg-stone-50 border border-stone-200 rounded-md">
-            <div class="font-bold text-stone-900 mb-1">Student &amp; Citizen</div>
-            <p class="text-stone-600 leading-snug">Public civic reporting, live ticket tracking, Eco-Points leaderboard, and cool havens navigator.</p>
-          </div>
-          <div class="p-3 bg-stone-50 border border-stone-200 rounded-md">
-            <div class="font-bold text-stone-900 mb-1">Contractor Field Lead</div>
-            <p class="text-stone-600 leading-snug">Assigned beat work orders, SLA countdown timers, cleanup photo verification, and reassignment requests.</p>
-          </div>
-          <div class="p-3 bg-stone-50 border border-stone-200 rounded-md">
-            <div class="font-bold text-stone-900 mb-1">Estate Management</div>
-            <p class="text-stone-600 leading-snug">Zonal incident triage, contractor SLA audits, workforce leave authorization, and equipment dispatch.</p>
-          </div>
-          <div class="p-3 bg-stone-50 border border-stone-200 rounded-md">
-            <div class="font-bold text-stone-900 mb-1">Super Admin Console</div>
-            <p class="text-stone-600 leading-snug">Master credential directory, automated CCTV pipeline controls, and campus microclimate planning.</p>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- 5. REAL APPLICATION METRICS -->
-  <section class="py-12 border-b border-stone-200 bg-stone-50">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         <div>
-          <div class="text-2xl sm:text-3xl font-bold text-stone-900">40+</div>
-          <div class="text-xs text-stone-600 mt-1">Campus zones &amp; blocks tracked</div>
+          <h4 class="text-base font-semibold text-white mb-4">Operations</h4>
+          <ul class="space-y-3 text-sm text-gray-400">
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Report a problem</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Sanitation beats</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Work orders &amp; dispatch</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">CCTV camera sweeps</a></li>
+          </ul>
         </div>
+
         <div>
-          <div class="text-2xl sm:text-3xl font-bold text-stone-900">94.8%</div>
-          <div class="text-xs text-stone-600 mt-1">Contractor on-time SLA resolution</div>
+          <h4 class="text-base font-semibold text-white mb-4">Campus Planning</h4>
+          <ul class="space-y-3 text-sm text-gray-400">
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Cool havens &amp; canopies</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Heat island analysis</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Capital works board</a></li>
+            <li><a href="http://localhost:3000/?view=login" class="hover:text-white transition-colors">Waste analytics</a></li>
+          </ul>
         </div>
+
         <div>
-          <div class="text-2xl sm:text-3xl font-bold text-stone-900">&lt;4 Hours</div>
-          <div class="text-xs text-stone-600 mt-1">Median incident resolution SLA</div>
-        </div>
-        <div>
-          <div class="text-2xl sm:text-3xl font-bold text-stone-900">6 Classes</div>
-          <div class="text-xs text-stone-600 mt-1">YOLO computer vision detector</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6. CONTACT DETAILS -->
-  <section id="contact" class="py-16 border-b border-stone-200 bg-white">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        
-        <!-- Left: Contact Info -->
-        <div class="lg:col-span-5">
-          <h2 class="text-2xl font-bold text-stone-900">Deploy Campusr on your campus</h2>
-          <p class="mt-2 text-sm text-stone-600 leading-relaxed">
-            Whether you are a university registrar, estate director, municipal administrator, or student representative, connect with our deployment team for custom GIS mapping and camera pipeline onboarding.
-          </p>
-
-          <div class="mt-6 space-y-4 text-xs sm:text-sm">
-            <div class="p-4 border border-stone-200 rounded-md bg-stone-50">
-              <div class="font-semibold text-stone-900">Direct Institutional Inquiries</div>
-              <a href="mailto:partnerships@campusr.io" class="text-indigo-700 hover:underline font-medium block mt-0.5">
-                partnerships@campusr.io
-              </a>
-              <div class="text-stone-500 text-xs mt-1">Direct replies within 4 business hours.</div>
-            </div>
-
-            <div class="p-4 border border-stone-200 rounded-md bg-stone-50">
-              <div class="font-semibold text-stone-900">Campus Operations Desk</div>
-              <div class="text-stone-800 font-medium mt-0.5">+1 (800) 492-CAMPUS</div>
-              <div class="text-stone-500 text-xs mt-1">Monday through Friday, 9:00 AM – 6:00 PM EST</div>
-            </div>
-
-            <div class="p-4 border border-stone-200 rounded-md bg-stone-50">
-              <div class="font-semibold text-stone-900">Operations Headquarters</div>
-              <div class="text-stone-700 mt-0.5">Campusr Technologies Inc.</div>
-              <div class="text-stone-500 text-xs">440 Tech Square, 6th Floor, Cambridge, MA 02139</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Demo Form -->
-        <div class="lg:col-span-7 bg-stone-50 border border-stone-200 rounded-lg p-6 sm:p-8">
-          <h3 class="text-base font-bold text-stone-900 mb-1">Schedule an institutional walkthrough</h3>
-          <p class="text-xs text-stone-600 mb-6">We will configure a test sandbox with your campus block boundaries and camera network.</p>
-
-          <form id="contactForm" onsubmit="handleFormSubmit(event)" class="space-y-4 text-xs">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label for="name" class="block font-medium text-stone-800 mb-1">Your Name</label>
-                <input required type="text" id="name" placeholder="Dr. Jennifer Vance" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs focus:outline-none focus:border-indigo-700">
-              </div>
-              <div>
-                <label for="email" class="block font-medium text-stone-800 mb-1">Official Email</label>
-                <input required type="email" id="email" placeholder="name@university.edu" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs focus:outline-none focus:border-indigo-700">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label for="role" class="block font-medium text-stone-800 mb-1">Role / Department</label>
-                <select id="role" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs text-stone-800 focus:outline-none focus:border-indigo-700">
-                  <option value="director">Campus Director / Estate Head</option>
-                  <option value="sanitation">Municipal Sanitation Lead</option>
-                  <option value="contractor">Facility Contractor Manager</option>
-                  <option value="student">Student Representative</option>
-                </select>
-              </div>
-              <div>
-                <label for="scale" class="block font-medium text-stone-800 mb-1">Campus Scale</label>
-                <select id="scale" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs text-stone-800 focus:outline-none focus:border-indigo-700">
-                  <option value="small">Under 50 Acres / 5,000 Students</option>
-                  <option value="medium">50 – 200 Acres / 15,000 Students</option>
-                  <option value="large">200+ Acres / Multi-Campus</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label for="notes" class="block font-medium text-stone-800 mb-1">Primary operational priorities</label>
-              <textarea id="notes" rows="3" placeholder="e.g. CCTV automated garbage detection, contractor SLA accountability, or heat-island microclimate mapping..." class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md text-xs focus:outline-none focus:border-indigo-700"></textarea>
-            </div>
-
-            <button type="submit" id="submitBtn" class="w-full py-2.5 px-4 bg-indigo-700 hover:bg-indigo-800 text-white font-medium text-xs rounded-md transition-colors shadow-sm">
-              Send Walkthrough Request
-            </button>
-
-            <div id="successNotice" class="hidden p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-md text-center text-xs">
-              Thank you! Our operations engineering team has received your inquiry and will follow up today.
-            </div>
-          </form>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- 7. TERMS & CONDITIONS -->
-  <section id="terms" class="py-16 border-b border-stone-200 bg-stone-50">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6">
-      
-      <div class="mb-8">
-        <h2 class="text-xl sm:text-2xl font-bold text-stone-900">Terms &amp; Conditions</h2>
-        <p class="text-xs text-stone-500 mt-1">Last updated: January 2026</p>
-      </div>
-
-      <div class="bg-white border border-stone-200 rounded-lg p-6 sm:p-8 space-y-6 text-xs sm:text-sm text-stone-600 leading-relaxed">
-        <div>
-          <h3 class="font-bold text-stone-900 mb-1">1. Institutional Service Scope</h3>
-          <p>
-            Campusr is an urban planning, facility management, and civic operations governance platform provided by Campusr Technologies Inc. Access is provisioned under active institutional and municipal agreements.
-          </p>
-        </div>
-
-        <div class="pt-4 border-t border-stone-100">
-          <h3 class="font-bold text-stone-900 mb-1">2. Data Privacy &amp; Sensor Feeds</h3>
-          <p>
-            All CCTV video analytics, geotagged photos, and sensor telemetry remain the exclusive property of the contracting institution. Computer vision models execute edge and on-premise inference solely for object detection (waste, paver cracks, waterlogging) without facial recognition or personal profiling.
-          </p>
-        </div>
-
-        <div class="pt-4 border-t border-stone-100">
-          <h3 class="font-bold text-stone-900 mb-1">3. Role-Based Access Control &amp; Audit Logs</h3>
-          <p>
-            Clearance credentials and security PINs are enforced on all operational endpoints. Arbitrary persona switching within privileged accounts is strictly restricted. All work order modifications and before/after verification images are logged to immutable audit records.
-          </p>
-        </div>
-
-        <div class="pt-4 border-t border-stone-100">
-          <h3 class="font-bold text-stone-900 mb-1">4. Availability &amp; SLA Commitment</h3>
-          <p>
-            Campusr targets 99.9% uptime for core incident routing, dispatch queues, and microclimate feeds. Regional campus caches ensure incident reporting remains accessible during localized network downtime.
-          </p>
-        </div>
-
-        <div class="pt-4 border-t border-stone-100">
-          <h3 class="font-bold text-stone-900 mb-1">5. Legal Counsel Contact</h3>
-          <p>
-            For data processing agreements or regulatory compliance reviews, contact our legal counsel at <a href="mailto:legal@campusr.io" class="text-indigo-700 underline font-medium">legal@campusr.io</a> or mail Campusr Technologies Inc., 440 Tech Square, Cambridge, MA 02139.
-          </p>
+          <h4 class="text-base font-semibold text-white mb-4">Governance</h4>
+          <ul class="space-y-3 text-sm text-gray-400">
+            <li><a href="#terms" class="hover:text-white transition-colors">Terms of service</a></li>
+            <li><a href="#terms" class="hover:text-white transition-colors">Privacy policy</a></li>
+            <li><a href="#terms" class="hover:text-white transition-colors">SLA commitments</a></li>
+            <li><a href="mailto:support@campusr.io" class="hover:text-white transition-colors">Help &amp; support</a></li>
+          </ul>
         </div>
       </div>
 
-    </div>
-  </section>
+      <div class="pt-8 pb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-lg bg-gray-900 text-gray-300 flex items-center justify-center font-bold text-xs">in</span>
+          <span class="w-10 h-10 rounded-lg bg-gray-900 text-gray-300 flex items-center justify-center font-bold text-xs">yt</span>
+          <span class="w-10 h-10 rounded-lg bg-gray-900 text-gray-300 flex items-center justify-center font-bold text-xs">ig</span>
+          <span class="w-10 h-10 rounded-lg bg-gray-900 text-gray-300 flex items-center justify-center font-bold text-xs">x</span>
+        </div>
 
-  <!-- 8. FOOTER & COPYRIGHT -->
-  <footer class="py-8 bg-white text-xs text-stone-500">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      
-      <div class="flex items-center gap-2">
-        <span class="font-bold text-stone-900">Campusr</span>
-        <span>— Closed-Loop Campus Operations &amp; Governance.</span>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-gray-900 text-sm font-medium text-white">
+            🌐 English
+          </span>
+          <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-gray-900 text-sm font-medium text-white">
+            📍 CSJMU Kanpur Precinct
+          </span>
+        </div>
       </div>
 
-      <div class="flex items-center gap-6 text-stone-600">
-        <a href="#how-it-works" class="hover:text-stone-900 transition-colors">How it works</a>
-        <a href="#features" class="hover:text-stone-900 transition-colors">Features</a>
-        <a href="#contact" class="hover:text-stone-900 transition-colors">Contact</a>
-        <a href="#terms" class="hover:text-stone-900 transition-colors">Terms</a>
-      </div>
-
-      <div>
-        &copy; 2026 Campusr Technologies Inc. All rights reserved.
+      <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+        <p>&copy; 2026 Campusr Technologies Inc. CSJMU Civic Operations.</p>
+        <div class="flex items-center gap-6">
+          <a href="#terms" class="hover:text-gray-300 transition-colors">Privacy</a>
+          <a href="#terms" class="hover:text-gray-300 transition-colors">Accessibility</a>
+          <a href="#terms" class="hover:text-gray-300 transition-colors">Terms</a>
+        </div>
       </div>
 
     </div>
   </footer>
-
-  <!-- SCRIPT -->
-  <script>
-    function handleFormSubmit(e) {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      const notice = document.getElementById('successNotice');
-      btn.disabled = true;
-      btn.innerText = 'Sending...';
-
-      setTimeout(() => {
-        btn.innerText = 'Walkthrough Request Sent ✓';
-        btn.classList.remove('bg-indigo-700', 'hover:bg-indigo-800');
-        btn.classList.add('bg-stone-800');
-        notice.classList.remove('hidden');
-      }, 500);
-    }
-  </script>
 
 </body>
 </html>

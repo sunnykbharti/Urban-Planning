@@ -48,15 +48,15 @@ export const CampusMap: React.FC<CampusMapProps> = ({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-slate-600">
-              Chhatrapati Shahu Ji Maharaj University, Kanpur (UIET Precinct)
+            <span className="text-xs font-medium text-slate-500">
+              Chhatrapati Shahu Ji Maharaj University (UIET campus area)
             </span>
           </div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
-            Campus Geographic Map &amp; Incident Triage
+          <h1 className="text-base sm:text-lg font-semibold text-slate-900">
+            Campus map
           </h1>
-          <p className="text-xs text-slate-600 max-w-2xl mt-1 leading-relaxed">
-            Geospatial view of campus zones, waste hotspots, and active remediation work orders. Select pins to inspect field evidence or click the map to lodge a report at that coordinate.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Map of campus zones, waste hotspots, and active work orders.
           </p>
         </div>
       </div>

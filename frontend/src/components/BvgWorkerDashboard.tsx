@@ -300,8 +300,8 @@ export const BvgWorkerDashboard: React.FC<BvgWorkerDashboardProps> = ({
             userRole="bvg_worker"
             compact={true}
             height="380px"
-            title="CSJMU Beat 01 Route &amp; Incident Triage Map"
-            subtitle="Geospatial distribution of assigned tasks. Red pins indicate critical hazards."
+            title="Beat 01 route and incident map"
+            subtitle="Map of assigned field tasks and hazards."
           />
 
           {/* Assigned Work Orders List */}

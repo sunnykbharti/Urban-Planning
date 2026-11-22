@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
 import { 
-  Compass, 
   Plus, 
   Calendar, 
-  DollarSign, 
-  User, 
-  CheckCircle2, 
-  Clock, 
-  ArrowRight,
-  Sparkles,
-  Building
+  Building,
+  X
 } from 'lucide-react';
 import { PlanningProject } from '../types';
 import { initialProjects } from '../data/mockData';
@@ -17,6 +11,7 @@ import { initialProjects } from '../data/mockData';
 export const PlanningBoardView: React.FC = () => {
   const [projects, setProjects] = useState<PlanningProject[]>(initialProjects);
   const [showAddProjectModal, setShowAddProjectModal] = useState<boolean>(false);
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newBlock, setNewBlock] = useState('UIET Block 1 & 2');
   const [newBudget, setNewBudget] = useState('₹15,00,000');
@@ -39,7 +34,7 @@ export const PlanningBoardView: React.FC = () => {
       title: newTitle.trim(),
       block: newBlock,
       stage: 'Assessment',
-      budget: newBudget,
+      budget: newBudget.startsWith('₹') ? newBudget : `₹${newBudget}`,
       targetDate: 'Dec 2026',
       priority: newPriority,
       leadEngineer: 'Er. R. K. Agrawal'
@@ -54,105 +49,153 @@ export const PlanningBoardView: React.FC = () => {
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, stage: nextStage } : p));
   };
 
+  const getOverdueLabel = (targetDate: string, stage: string): string | null => {
+    if (stage === 'Completed') return null;
+    const months: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+    };
+    const parts = targetDate.trim().toLowerCase().split(/\s+/);
+    if (parts.length >= 2) {
+      const month = months[parts[0].slice(0, 3)];
+      const year = parseInt(parts[1], 10);
+      if (month !== undefined && !isNaN(year)) {
+        // Current local year is 2026, month is November (10)
+        const diffMonths = (2026 - year) * 12 + (10 - month);
+        if (diffMonths > 0) {
+          return `Overdue by ${diffMonths} ${diffMonths === 1 ? 'month' : 'months'}`;
+        }
+      }
+    }
+    return null;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#c3c6d1] pb-4">
+      <div className="bg-white border border-slate-200 rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Compass className="w-6 h-6 text-[#001e40]" />
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111c2d] tracking-tight">
-              UIET Urban Planning &amp; Infrastructure Board
-            </h1>
-          </div>
-          <p className="text-sm md:text-base text-[#43474f] mt-1">
-            Capital works, building retrofits, energy efficiency, and long-term campus masterplan roadmap.
+          <h1 className="text-[20px] font-semibold text-slate-900 leading-tight">
+            Planning board
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Capital works, building retrofits, and campus masterplan projects.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddProjectModal(true)}
-          className="px-4 py-2.5 bg-[#001e40] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#003366] flex items-center gap-2 shadow-xs cursor-pointer"
+          className="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-medium rounded-[6px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
         >
-          <Plus className="w-4 h-4" /> Propose Campus Project
+          <Plus className="w-3.5 h-3.5" />
+          <span>Propose project</span>
         </button>
       </div>
 
-      {/* Kanban Board Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto custom-scrollbar pb-4">
+      {/* Kanban Board Columns (5th column visible without horizontal scrolling at 1440px) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5 pb-4">
         {stages.map((stage) => {
           const stageProjects = projects.filter(p => p.stage === stage);
+          const stageLabel = stage === 'In Progress' ? 'In progress' : stage;
+
           return (
-            <div key={stage} className="bg-[#f0f3ff] rounded-xl border border-[#d8e3fb] p-3 flex flex-col min-w-[240px]">
+            <div 
+              key={stage} 
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text/plain') || draggedProjectId;
+                if (id) moveProject(id, stage);
+                setDraggedProjectId(null);
+              }}
+              className="bg-slate-50/70 rounded-[6px] border border-slate-200 p-3 flex flex-col min-h-[500px]"
+            >
               {/* Column Header */}
-              <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-[#c3c6d1]">
-                <h3 className="text-xs font-bold text-[#001e40] uppercase tracking-wider">
-                  {stage}
+              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-200">
+                <h3 className="text-xs font-semibold text-slate-800">
+                  {stageLabel}
                 </h3>
-                <span className="text-xs font-bold bg-[#dee8ff] text-[#001e40] px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-medium text-slate-500">
                   {stageProjects.length}
                 </span>
               </div>
 
               {/* Project Cards */}
-              <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px] custom-scrollbar">
-                {stageProjects.map((proj) => (
-                  <div
-                    key={proj.id}
-                    className="bg-white rounded-lg border border-[#c3c6d1] hover:border-[#001e40] p-3 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-mono font-bold text-[#737780]">{proj.id}</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                          proj.priority === 'High'
-                            ? 'bg-[#ffdad6] text-[#93000a]'
-                            : 'bg-[#d1e1f4] text-[#556474]'
-                        }`}>
-                          {proj.priority}
+              <div className="space-y-2.5 flex-1">
+                {stageProjects.map((proj) => {
+                  const overdueText = getOverdueLabel(proj.targetDate, proj.stage);
+
+                  return (
+                    <div
+                      key={proj.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', proj.id);
+                        setDraggedProjectId(proj.id);
+                      }}
+                      className="bg-white rounded-[6px] border border-slate-200 hover:border-slate-300 p-3 transition-colors flex flex-col justify-between cursor-grab active:cursor-grabbing space-y-2"
+                    >
+                      <div>
+                        {/* Meta: ID and Priority Dot */}
+                        <div className="flex items-center justify-between mb-1 text-xs">
+                          <span className="text-slate-500 font-normal">{proj.id}</span>
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              proj.priority === 'High' ? 'bg-rose-500' : proj.priority === 'Medium' ? 'bg-amber-500' : 'bg-slate-400'
+                            }`} />
+                            <span>{proj.priority}</span>
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h4 className="text-xs font-medium text-slate-900 leading-snug mb-2">
+                          {proj.title}
+                        </h4>
+
+                        {/* Details */}
+                        <div className="space-y-1 text-[11px] text-slate-600">
+                          <div className="flex items-center gap-1.5">
+                            <Building className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{proj.block}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-500 font-medium">₹</span>
+                            <span className="font-medium text-slate-900">{proj.budget.replace(/^[₹$]/, '')}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>Target: {proj.targetDate}</span>
+                          </div>
+                          {overdueText && (
+                            <div className="text-[11px] text-rose-700 font-medium pt-0.5">
+                              {overdueText}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Footer: Engineer & Status Dropdown */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] gap-2">
+                        <span className="text-slate-500 truncate">
+                          {proj.leadEngineer || 'Unassigned'}
                         </span>
-                      </div>
 
-                      <h4 className="text-xs font-bold text-[#111c2d] leading-snug group-hover:text-[#001e40] transition-colors mb-2">
-                        {proj.title}
-                      </h4>
-
-                      <div className="space-y-1 text-[11px] text-[#43474f] mb-3">
-                        <div className="flex items-center gap-1">
-                          <Building className="w-3 h-3 text-[#737780]" />
-                          <span className="truncate">{proj.block}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3 text-[#737780]" />
-                          <span className="font-semibold text-[#001e40]">{proj.budget}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-[#737780]" />
-                          <span>Target: {proj.targetDate}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Move stage control */}
-                    <div className="pt-2 border-t border-[#e7eeff] flex items-center justify-between text-[11px]">
-                      <span className="text-[10px] text-[#737780] truncate">Eng: {proj.leadEngineer.split(' ')[1]}</span>
-                      {stage !== 'Completed' && (
-                        <button
-                          onClick={() => {
-                            const nextIndex = stages.indexOf(stage) + 1;
-                            if (nextIndex < stages.length) {
-                              moveProject(proj.id, stages[nextIndex]);
-                            }
-                          }}
-                          className="text-[#001e40] hover:text-[#003366] font-bold flex items-center gap-0.5 hover:underline"
-                          title="Advance to next phase"
+                        <select
+                          value={proj.stage}
+                          onChange={(e) => moveProject(proj.id, e.target.value as any)}
+                          className="text-[10px] font-medium bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-700 cursor-pointer focus:outline-hidden"
+                          title="Change stage"
                         >
-                          Next <ArrowRight className="w-3 h-3" />
-                        </button>
-                      )}
+                          {stages.map(s => (
+                            <option key={s} value={s}>
+                              {s === 'In Progress' ? 'In progress' : s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );
@@ -162,75 +205,82 @@ export const PlanningBoardView: React.FC = () => {
       {/* Add Project Modal */}
       {showAddProjectModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 border border-[#c3c6d1] shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-[#c3c6d1] mb-4">
-              <h3 className="text-base font-bold text-[#001e40]">Propose Masterplan Project</h3>
-              <button onClick={() => setShowAddProjectModal(false)} className="text-[#737780] hover:text-[#111c2d]">✕</button>
+          <div className="bg-white rounded-[6px] max-w-md w-full p-5 border border-slate-200 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900">Propose project</h3>
+              <button 
+                onClick={() => setShowAddProjectModal(false)} 
+                className="p-1 text-slate-400 hover:text-slate-600 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleAddProject} className="space-y-4">
+            <form onSubmit={handleAddProject} className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-bold text-[#43474f] uppercase mb-1">Project Title</label>
+                <label className="block text-slate-700 font-medium mb-1">Project title</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Smart Solar Lighting at Central Quad"
-                  className="w-full text-xs p-2.5 border border-[#c3c6d1] rounded-lg bg-[#f0f3ff] focus:bg-white outline-none"
+                  placeholder="e.g. Solar lighting at Central Quad"
+                  className="w-full p-2 border border-slate-300 rounded-[6px] bg-white text-slate-900 focus:border-indigo-600 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#43474f] uppercase mb-1">Target Campus Block</label>
+                <label className="block text-slate-700 font-medium mb-1">Target campus block</label>
                 <input
                   type="text"
                   required
                   value={newBlock}
                   onChange={(e) => setNewBlock(e.target.value)}
                   placeholder="e.g. Science Block B & Library"
-                  className="w-full text-xs p-2.5 border border-[#c3c6d1] rounded-lg bg-[#f0f3ff] focus:bg-white outline-none"
+                  className="w-full p-2 border border-slate-300 rounded-[6px] bg-white text-slate-900 focus:border-indigo-600 outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#43474f] uppercase mb-1">Estimated Budget</label>
+                  <label className="block text-slate-700 font-medium mb-1">Estimated budget (₹)</label>
                   <input
                     type="text"
+                    required
                     value={newBudget}
                     onChange={(e) => setNewBudget(e.target.value)}
-                    placeholder="₹10,00,000"
-                    className="w-full text-xs p-2.5 border border-[#c3c6d1] rounded-lg bg-[#f0f3ff] focus:bg-white outline-none"
+                    placeholder="₹15,00,000"
+                    className="w-full p-2 border border-slate-300 rounded-[6px] bg-white text-slate-900 focus:border-indigo-600 outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-[#43474f] uppercase mb-1">Priority</label>
+                  <label className="block text-slate-700 font-medium mb-1">Priority</label>
                   <select
                     value={newPriority}
                     onChange={(e) => setNewPriority(e.target.value as any)}
-                    className="w-full text-xs p-2.5 border border-[#c3c6d1] rounded-lg bg-[#f0f3ff] focus:bg-white outline-none"
+                    className="w-full p-2 border border-slate-300 rounded-[6px] bg-white text-slate-900 focus:border-indigo-600 outline-none"
                   >
-                    <option value="High">High Priority</option>
+                    <option value="High">High</option>
                     <option value="Medium">Medium</option>
                     <option value="Low">Low</option>
                   </select>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#c3c6d1] flex justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddProjectModal(false)}
-                  className="px-4 py-2 border border-[#737780] text-xs font-semibold rounded-lg"
+                  className="px-3 py-1.5 border border-slate-300 rounded-[6px] text-slate-600 hover:bg-slate-50 font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#001e40] text-white text-xs font-bold rounded-lg hover:bg-[#003366]"
+                  className="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-[6px] font-medium cursor-pointer"
                 >
-                  Submit Proposal
+                  Propose project
                 </button>
               </div>
             </form>

@@ -4,7 +4,7 @@ export const defaultMicroclimateSectors: MicroclimateSector[] = [
   {
     id: "sec-uiet-courtyard",
     name: "UIET Central Courtyard & Transit Concourse",
-    zone: "Academic Precinct",
+    zone: "Academic campus area",
     bounds: { x: 36, y: 38, width: 14, height: 12 },
     gps: { latitude: 26.4952, longitude: 80.2921 },
     metrics: {
@@ -64,7 +64,7 @@ export const defaultMicroclimateSectors: MicroclimateSector[] = [
   {
     id: "sec-admin-parking",
     name: "Vice Chancellor Secretariat & VIP Parking Lot",
-    zone: "Administrative Precinct",
+    zone: "Administrative campus area",
     bounds: { x: 68, y: 24, width: 15, height: 12 },
     gps: { latitude: 26.4975, longitude: 80.2965 },
     metrics: {

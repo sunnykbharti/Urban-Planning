@@ -20,7 +20,8 @@ import {
   MapPin, 
   ChevronRight,
   ExternalLink,
-  Activity
+  Activity,
+  MoreVertical
 } from 'lucide-react';
 import { getSeverityBadge } from './StudentDashboard';
 
@@ -172,65 +173,60 @@ export const StaffOperationsView: React.FC<StaffOperationsViewProps> = ({
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Estate &amp; Sanitation Operations Console
-            </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
-              UIET Precinct
-            </span>
-          </div>
+          <h1 className="text-base sm:text-lg font-semibold text-slate-900">
+            Work orders
+          </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time management of automated camera telemetry, daily scheduled sweeps, and field remediation queue.
+            Manage automated camera alerts, daily sweeps, and repair tickets.
           </p>
         </div>
 
         {/* View Toggle Buttons */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md text-xs">
+        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-[6px] text-xs">
           <button
             onClick={() => setActiveTab('queue')}
-            className={`px-3 py-1 rounded font-semibold transition-colors ${
-              activeTab === 'queue' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3 py-1 rounded-[6px] font-medium transition-colors ${
+              activeTab === 'queue' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Ticket Queue ({queueReports.length})
+            Ticket queue ({queueReports.length})
           </button>
           <button
             onClick={() => setActiveTab('cameras')}
-            className={`px-3 py-1 rounded font-semibold transition-colors ${
-              activeTab === 'cameras' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3 py-1 rounded-[6px] font-medium transition-colors ${
+              activeTab === 'cameras' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Cameras ({cameras.length})
           </button>
           <button
             onClick={() => setActiveTab('sweeps')}
-            className={`px-3 py-1 rounded font-semibold transition-colors ${
-              activeTab === 'sweeps' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3 py-1 rounded-[6px] font-medium transition-colors ${
+              activeTab === 'sweeps' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Daily Sweeps (4)
+            Daily sweeps (4)
           </button>
         </div>
       </div>
 
-      {/* VIEW 1: TICKET TRIAGE QUEUE */}
+      {/* VIEW 1: TICKET QUEUE */}
       {activeTab === 'queue' && (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[6px] overflow-hidden">
           {/* Queue Filters */}
           <div className="p-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700">Filter Status:</span>
+              <span className="text-xs text-slate-600">Filter status:</span>
               <div className="flex items-center gap-1 text-[11px]">
                 {(['all', 'pending', 'in_progress', 'resolved'] as const).map(s => (
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s)}
-                    className={`px-2 py-0.5 rounded capitalize font-medium ${
-                      statusFilter === s ? 'bg-white text-slate-900 border border-slate-300 shadow-2xs font-bold' : 'text-slate-600 hover:bg-slate-200/60'
+                    className={`px-2 py-0.5 rounded-[6px] capitalize font-medium ${
+                      statusFilter === s ? 'bg-white text-slate-900 border border-slate-300 font-semibold' : 'text-slate-600 hover:bg-slate-200/60'
                     }`}
                   >
-                    {s.replace('_', ' ')}
+                    {s === 'in_progress' ? 'In progress' : s}
                   </button>
                 ))}
               </div>
@@ -243,30 +239,35 @@ export const StaffOperationsView: React.FC<StaffOperationsViewProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search ticket ID or zone..."
-                className="pl-8 pr-3 py-1 text-xs rounded border border-slate-300 bg-white text-slate-900 focus:outline-hidden focus:border-blue-600 w-full sm:w-56"
+                className="pl-8 pr-3 py-1 text-xs rounded-[6px] border border-slate-300 bg-white text-slate-900 focus:outline-hidden focus:border-indigo-600 w-full sm:w-56"
               />
             </div>
           </div>
 
-          {/* Scannable Operations Table */}
+          {/* Internal Tool Operations Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-100 text-slate-600 uppercase font-semibold text-[10px]">
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-medium text-xs">
                   <th className="py-2.5 px-3">Ticket ID</th>
-                  <th className="py-2.5 px-3">Title &amp; Zone</th>
+                  <th className="py-2.5 px-3">Title &amp; location</th>
                   <th className="py-2.5 px-3">Severity</th>
                   <th className="py-2.5 px-3">Source</th>
-                  <th className="py-2.5 px-3">Assigned Team</th>
+                  <th className="py-2.5 px-3">Assigned crew</th>
                   <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Actions</th>
+                  <th className="py-2.5 px-3 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {queueReports.map((report) => {
-                  const sev = getSeverityBadge(report.severity);
-                  const SevIcon = sev.Icon;
                   const isCctv = report.source?.type === 'CCTV_FIXED' || report.reportedBy?.role?.includes('cctv');
+                  const s = (report.severity || '').toLowerCase();
+                  const sevColor = s === 'critical' ? 'text-rose-700 bg-rose-50 border-rose-200' : s === 'urgent' || s === 'high' ? 'text-amber-800 bg-amber-50 border-amber-200' : 'text-slate-700 bg-slate-100 border-slate-200';
+                  const sevLabel = s === 'critical' ? 'Critical' : s === 'urgent' || s === 'high' ? 'High' : 'Normal';
+
+                  // Realistic crew names
+                  const rawCrew = typeof report.assignedTeam === 'object' ? report.assignedTeam?.name || report.assignedTeam?.teamName : report.assignedTeam;
+                  const crewName = !rawCrew ? null : rawCrew.toLowerCase().includes('ramesh') || rawCrew.toLowerCase().includes('beat 01') ? "Ramesh's crew" : rawCrew.toLowerCase().includes('sanitation') || rawCrew.toLowerCase().includes('beat 02') ? "Hostel maintenance" : rawCrew.toLowerCase().includes('workshop') || rawCrew.toLowerCase().includes('electrical') ? "Electrical unit" : rawCrew;
 
                   return (
                     <tr 
@@ -274,40 +275,51 @@ export const StaffOperationsView: React.FC<StaffOperationsViewProps> = ({
                       onClick={() => onSelectReport(report)}
                       className="hover:bg-slate-50 cursor-pointer transition-colors"
                     >
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-700 whitespace-nowrap">
+                      <td className="py-2.5 px-3 font-mono text-xs text-slate-600 whitespace-nowrap">
                         {report.ticketNumber || report.id}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="font-semibold text-slate-900 block truncate max-w-xs">{report.title}</span>
+                        <span className="font-medium text-slate-900 block truncate max-w-xs">{report.title}</span>
                         <span className="text-[11px] text-slate-500 block truncate max-w-xs">{report.location}</span>
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${sev.className}`}>
-                          <SevIcon className="w-3 h-3" />
-                          <span>{sev.label}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium border ${sevColor}`}>
+                          {sevLabel}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap text-[11px] text-slate-600">
                         {isCctv ? (
-                          <span className="inline-flex items-center gap-1 font-mono text-[10px] bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                            <Video className="w-3 h-3 text-slate-500" />
+                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-600">
+                            <Video className="w-3 h-3 text-slate-400" />
                             {report.source?.sensorId || 'Cam 04'}
                           </span>
                         ) : (
-                          <span>Citizen</span>
+                          <span>Student report</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 text-[11px] text-slate-600 whitespace-nowrap">
-                        {typeof report.assignedTeam === 'object' ? report.assignedTeam?.name : (report.assignedTeam || 'Sanitation Beat 01')}
+                      <td className="py-2.5 px-3 text-[11px] whitespace-nowrap">
+                        {crewName ? (
+                          <span className="text-slate-700">{crewName}</span>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectReport(report);
+                            }}
+                            className="text-indigo-700 hover:underline font-medium cursor-pointer"
+                          >
+                            Assign
+                          </button>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                          report.status === 'resolved' 
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                            : 'bg-amber-50 text-amber-900 border-amber-200'
-                        }`}>
-                          {report.status === 'resolved' ? 'Resolved' : 'Active'}
-                        </span>
+                        {report.status === 'resolved' ? (
+                          <span className="text-[11px] font-medium text-emerald-700">Resolved</span>
+                        ) : report.status === 'in_progress' ? (
+                          <span className="text-[11px] font-medium text-indigo-700">In progress</span>
+                        ) : (
+                          <span className="text-[11px] font-medium text-slate-600">Pending</span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         <button
@@ -315,9 +327,10 @@ export const StaffOperationsView: React.FC<StaffOperationsViewProps> = ({
                             e.stopPropagation();
                             onSelectReport(report);
                           }}
-                          className="text-blue-700 hover:text-blue-900 font-semibold text-[11px] hover:underline"
+                          className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                          title="Options"
                         >
-                          Triage &rarr;
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
