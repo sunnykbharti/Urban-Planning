@@ -74,11 +74,13 @@ TRAINING_LABELS = {
     "WhatsApp Image 2026-10-15 at 14.13.58.jpeg": "blocked_drain",
     "ditch_clogged_drain.jpg": "blocked_drain",
     "river_ghat_canal_waste.jpg": "blocked_drain",
+    "culvert_grate_drain_blocked.jpg": "blocked_drain",
 
     # 3. Clean Areas, Pathways & Dustbin Infrastructure
     "Hostel_Dormitory.jpg": "bin_empty",
     "civil_pipe_construction_clean.jpg": "bin_empty",
     "supermarket_store_aisle_clean.jpg": "bin_empty",
+    "clean_highway_autumn_road.jpg": "bin_empty",
     "images (11).jpeg": "bin_empty",
     "images (2).jpeg": "bin_empty",
     "images (4).jpeg": "bin_empty",
@@ -139,7 +141,7 @@ def extract_visual_features(image_path: str) -> np.ndarray:
     # 2. Deep Features (ResNet-50)
     model, weights, transform, pool5_extractor = _get_feature_extractor()
     deep_embedding = np.zeros(2048, dtype=np.float32)
-    semantic_scores = np.zeros(20, dtype=np.float32)
+    semantic_scores = np.zeros(22, dtype=np.float32)
 
     if model and transform and pool5_extractor:
         try:
@@ -158,7 +160,8 @@ def extract_visual_features(image_path: str) -> np.ndarray:
                     'ashcan', 'plastic_bag', 'garbage_truck', 'dam', 'submarine',
                     'lumbermill', 'toilet_seat', 'grate', 'patio', 'park_bench',
                     'palace', 'mosque', 'library', 'breakwater', 'sandbar', 'valley',
-                    'grocery_store', 'confectionery', 'bookshop', 'cliff'
+                    'grocery_store', 'confectionery', 'bookshop', 'cliff',
+                    'water_bottle', 'worm_fence'
                 ]
                 for idx, t_cat in enumerate(target_cats):
                     for c_idx, c_name in enumerate(cats):
