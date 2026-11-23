@@ -12,7 +12,9 @@ import {
   ReportCategory,
   UploadDetectionResponse,
   GarbageDetectionResult,
-  EstimatedAmount
+  EstimatedAmount,
+  DeveloperStats,
+  DeveloperFeedbackEntry
 } from '../types';
 
 const getApiBaseUrl = (): string => {
@@ -939,6 +941,58 @@ export async function fetchCctvRunsAPI(): Promise<any[]> {
     }
   } catch (err) {
     console.warn('Fetch CCTV runs API offline');
+  }
+  return [];
+}
+
+export async function fetchDeveloperStatsAPI(): Promise<DeveloperStats | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/developer/stats`, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Developer stats API offline', err);
+  }
+  return null;
+}
+
+export async function developerTestModelAPI(file: File): Promise<any> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_BASE_URL}/developer/test-model`, {
+    method: 'POST',
+    body: formData,
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!res.ok) {
+    throw new Error(`Model evaluation failed with status ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function submitDeveloperFeedbackAPI(feedback: Partial<DeveloperFeedbackEntry>): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/developer/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(feedback),
+    signal: AbortSignal.timeout(5000)
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to submit feedback: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function fetchDeveloperFeedbackAPI(): Promise<DeveloperFeedbackEntry[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/developer/feedback`, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data.feedback || [];
+    }
+  } catch (err) {
+    console.warn('Developer feedback API offline', err);
   }
   return [];
 }

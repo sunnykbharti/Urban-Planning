@@ -41,6 +41,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { TermsAndConditionsView } from './components/TermsAndConditionsView';
 import { PrivacyPolicyView } from './components/PrivacyPolicyView';
 import { StaffOperationsView } from './components/StaffOperationsView';
+import { DeveloperHubView } from './components/DeveloperHubView';
 import { LandingPageView } from './components/LandingPageView';
 import { LoginPageView } from './components/LoginPageView';
 import { DEFAULT_PROFILES, UserProfile } from './types';
@@ -900,6 +901,17 @@ export default function App() {
 
             {activeTab === 'analytics' && (
               <AnalyticsView reports={reports} />
+            )}
+
+            {activeTab === 'developer_hub' && (
+              <DeveloperHubView
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                onOpenReportDrawer={() => {
+                  setReportDrawerLocation('UIET Block 1');
+                  setReportDrawerCoords({ x: 38, y: 38 });
+                  setIsReportDrawerOpen(true);
+                }}
+              />
             )}
 
             {activeTab === 'terms' && (

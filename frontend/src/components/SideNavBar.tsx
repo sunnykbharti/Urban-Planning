@@ -14,7 +14,8 @@ import {
   Activity,
   TreeDeciduous,
   Scale,
-  BookOpen
+  BookOpen,
+  Terminal
 } from 'lucide-react';
 import { ActiveTab, UserRole } from '../types';
 
@@ -47,6 +48,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   const isBvg = userRole === 'bvg_worker' || userRole === 'operator';
   const isManagement = userRole === 'management';
   const isSuperAdmin = userRole === 'super_admin' || userRole === 'admin';
+  const isDeveloper = userRole === 'developer';
 
   const handleTabClick = (tab: ActiveTab) => {
     onSelectTab(tab);
@@ -137,6 +139,18 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
               </>
             )}
 
+            {/* Developer */}
+            {isDeveloper && (
+              <>
+                {navBtn('developer_hub', 'Developer Hub', <Terminal className="w-4 h-4 text-emerald-600" />)}
+                {navBtn('admin_dashboard', 'Admin console', <Shield className="w-4 h-4" />)}
+                {navBtn('cctv_pipeline', 'CCTV sweeps', <Layers className="w-4 h-4" />)}
+                {navBtn('map', 'Campus map', <MapIcon className="w-4 h-4" />)}
+                {navBtn('operations', 'Operations', <Activity className="w-4 h-4" />)}
+                {navBtn('analytics', 'Waste analytics', <BarChart3 className="w-4 h-4" />)}
+              </>
+            )}
+
             {/* Shared – Management & Admin */}
             {(isManagement || isSuperAdmin) && (
               <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-0.5">
@@ -148,6 +162,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 {navBtn('heatisland', 'Heat island', <Flame className="w-4 h-4" />)}
                 {navBtn('planning', 'Planning board', <LayoutGrid className="w-4 h-4" />)}
                 {navBtn('analytics', 'Waste analytics', <BarChart3 className="w-4 h-4" />)}
+                {navBtn('developer_hub', 'Developer Hub', <Terminal className="w-4 h-4 text-emerald-600" />)}
               </div>
             )}
           </nav>
@@ -182,6 +197,23 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           </button>
 
           <button
+            onClick={() => handleTabClick('developer_hub')}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors text-left cursor-pointer ${
+              activeTab === 'developer_hub'
+                ? 'bg-emerald-50 text-emerald-900 font-semibold border border-emerald-200'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-black'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Terminal className="w-4 h-4 text-emerald-600" />
+              <span>Developer Hub</span>
+            </div>
+            <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-semibold uppercase">
+              Dev
+            </span>
+          </button>
+
+          <button
             onClick={onOpenSettings}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-black transition-colors text-left cursor-pointer"
           >
@@ -199,7 +231,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 {currentProfile?.name || 'User'}
               </p>
               <p className="text-xs text-gray-400 truncate">
-                {isStudent ? 'Student' : isBvg ? 'Field staff' : isManagement ? 'Management' : 'Admin'}
+                {isDeveloper ? 'Lead Developer' : isStudent ? 'Student' : isBvg ? 'Field staff' : isManagement ? 'Management' : 'Admin'}
               </p>
             </div>
           </div>

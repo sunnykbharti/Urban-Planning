@@ -15,7 +15,8 @@ import {
   Sparkles,
   ArrowRight,
   UserCheck,
-  Shield
+  Shield,
+  Terminal
 } from 'lucide-react';
 import { UserRole, UserProfile, DEFAULT_PROFILES, UserCredential } from '../types';
 
@@ -37,11 +38,11 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
   credentials
 }) => {
   // Normalize current role
-  const normCurrent: 'student' | 'bvg_worker' | 'management' | 'super_admin' = 
+  const normCurrent: 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer' = 
     currentRole === 'admin' ? 'super_admin' : currentRole === 'operator' ? 'bvg_worker' : (currentRole as any) || 'student';
 
   // Selected account in modal
-  const [selectedRole, setSelectedRole] = useState<'student' | 'bvg_worker' | 'management' | 'super_admin'>(() => {
+  const [selectedRole, setSelectedRole] = useState<'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer'>(() => {
     if (targetRole) {
       return targetRole === 'admin' ? 'super_admin' : targetRole === 'operator' ? 'bvg_worker' : (targetRole as any);
     }
@@ -75,7 +76,7 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
   const activeExpectedPin = targetCred?.pin ?? activeProfile.pin;
   const isAccountSuspended = targetCred?.status === 'suspended';
 
-  const handleSelectRole = (role: 'student' | 'bvg_worker' | 'management' | 'super_admin') => {
+  const handleSelectRole = (role: 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer') => {
     setSelectedRole(role);
     setPin('');
     setError(null);
@@ -112,7 +113,7 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
   };
 
   const accounts: Array<{
-    role: 'student' | 'bvg_worker' | 'management' | 'super_admin';
+    role: 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer';
     title: string;
     name: string;
     badge: string;
@@ -132,6 +133,17 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
       icon: <GraduationCap className="w-5 h-5 text-emerald-600" />,
       colorClasses: 'hover:bg-emerald-50/60',
       activeBorder: 'border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/40'
+    },
+    {
+      role: 'developer',
+      title: 'Lead System Developer',
+      name: 'Sunny Bharti (Dev Console)',
+      badge: 'DEV-ROOT-007',
+      badgeText: 'Engineering Core',
+      pinHint: 'PIN: 0000',
+      icon: <Terminal className="w-5 h-5 text-indigo-600" />,
+      colorClasses: 'hover:bg-indigo-50/60',
+      activeBorder: 'border-indigo-600 ring-2 ring-indigo-500/30 bg-indigo-50/40'
     },
     {
       role: 'bvg_worker',

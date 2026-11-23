@@ -14,7 +14,8 @@ import {
   Check, 
   ArrowRight,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Terminal
 } from 'lucide-react';
 import { UserRole, UserProfile, DEFAULT_PROFILES, UserCredential } from '../types';
 
@@ -29,7 +30,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
   onBackToLanding,
   credentials
 }) => {
-  const [selectedRole, setSelectedRole] = useState<'student' | 'bvg_worker' | 'management' | 'super_admin'>('student');
+  const [selectedRole, setSelectedRole] = useState<'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer'>('student');
   const [emailInput, setEmailInput] = useState<string>(() => DEFAULT_PROFILES?.student?.email || 'sunny.student@csjmu.ac.in');
   const [pinInput, setPinInput] = useState<string>('');
   const [showPin, setShowPin] = useState<boolean>(false);
@@ -37,7 +38,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
   const [rememberMe, setRememberMe] = useState<boolean>(true);
 
   // Quick switch role handler
-  const handleRoleSelect = (role: 'student' | 'bvg_worker' | 'management' | 'super_admin') => {
+  const handleRoleSelect = (role: 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer') => {
     setSelectedRole(role);
     const profile = DEFAULT_PROFILES[role] || DEFAULT_PROFILES.student;
     setEmailInput(profile.email || '');
@@ -46,7 +47,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
   };
 
   // Instant demo one-click login
-  const handleQuickDemoLogin = (role: 'student' | 'bvg_worker' | 'management' | 'super_admin') => {
+  const handleQuickDemoLogin = (role: 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer') => {
     const profile = DEFAULT_PROFILES[role] || DEFAULT_PROFILES.student;
     onLoginSuccess(role, profile);
   };
@@ -119,11 +120,11 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
           <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8">
             
             {/* Role Selection Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-gray-100 rounded-lg mb-6 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-gray-100 rounded-lg mb-6 text-xs">
               <button
                 type="button"
                 onClick={() => handleRoleSelect('student')}
-                className={`py-2 px-2 rounded-md font-medium flex flex-col items-center gap-1 transition-all ${
+                className={`py-2 px-1.5 rounded-md font-medium flex flex-col items-center gap-1 transition-all ${
                   selectedRole === 'student'
                     ? 'bg-white text-black shadow-sm font-semibold'
                     : 'text-gray-500 hover:text-gray-900'
@@ -136,7 +137,7 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleRoleSelect('bvg_worker')}
-                className={`py-2 px-2 rounded font-medium flex flex-col items-center gap-1 transition-all ${
+                className={`py-2 px-1.5 rounded font-medium flex flex-col items-center gap-1 transition-all ${
                   selectedRole === 'bvg_worker'
                     ? 'bg-white text-black shadow-sm font-semibold'
                     : 'text-stone-600 hover:text-stone-900'
@@ -149,20 +150,20 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleRoleSelect('management')}
-                className={`py-2 px-2 rounded font-medium flex flex-col items-center gap-1 transition-all ${
+                className={`py-2 px-1.5 rounded font-medium flex flex-col items-center gap-1 transition-all ${
                   selectedRole === 'management'
                     ? 'bg-white text-black shadow-sm font-semibold'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                <span className="truncate">Dean / Estate</span>
+                <span className="truncate">Dean</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleRoleSelect('super_admin')}
-                className={`py-2 px-2 rounded font-medium flex flex-col items-center gap-1 transition-all ${
+                className={`py-2 px-1.5 rounded font-medium flex flex-col items-center gap-1 transition-all ${
                   selectedRole === 'super_admin'
                     ? 'bg-white text-black shadow-sm font-semibold'
                     : 'text-stone-600 hover:text-stone-900'
@@ -170,6 +171,19 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span className="truncate">Admin</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('developer')}
+                className={`py-2 px-1.5 rounded font-medium flex flex-col items-center gap-1 transition-all ${
+                  selectedRole === 'developer'
+                    ? 'bg-emerald-600 text-white shadow-sm font-semibold'
+                    : 'text-emerald-700 hover:text-emerald-900'
+                }`}
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span className="truncate">Dev</span>
               </button>
             </div>
 
@@ -186,6 +200,13 @@ export const LoginPageView: React.FC<LoginPageViewProps> = ({
                   className="px-2 py-1 bg-white border border-gray-200 text-gray-800 rounded hover:bg-gray-50 font-medium text-[11px] transition-colors"
                 >
                   Student (Sunny)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('developer')}
+                  className="px-2 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded hover:bg-emerald-100 font-medium text-[11px] transition-colors"
+                >
+                  Dev (Sunny • 0000)
                 </button>
                 <button
                   type="button"

@@ -295,10 +295,11 @@ export type ActiveTab =
   | 'planning' 
   | 'maintenance' 
   | 'analytics'
+  | 'developer_hub'
   | 'terms'
   | 'privacy';
 
-export type UserRole = 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'admin' | 'operator';
+export type UserRole = 'student' | 'bvg_worker' | 'management' | 'super_admin' | 'admin' | 'operator' | 'developer';
 
 export type RolePermission = 
   | 'lodge_report'
@@ -328,7 +329,25 @@ export interface UserProfile {
   permissions: RolePermission[];
 }
 
-export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 'super_admin', UserProfile> = {
+export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 'super_admin' | 'developer', UserProfile> = {
+  developer: {
+    id: 'USR-DEV-001',
+    name: 'Sunny Bharti (Lead Developer)',
+    role: 'developer',
+    roleTitle: 'Core Systems Architect & ML Engineer',
+    agency: 'CSJMU Civic Operations & Urban Planning Lab',
+    department: 'Urban Planning AI & Infrastructure Intelligence',
+    badgeNumber: 'DEV-AI-2026-CSJMU',
+    email: 'sunny.developer@csjmu.ac.in',
+    avatar: 'DEV',
+    pin: '',
+    permissions: [
+      'lodge_report', 'view_public_map', 'view_cool_havens',
+      'view_bvg_tasks', 'start_bvg_task', 'verify_closure',
+      'dispatch_crews', 'manage_sla', 'audit_contractors',
+      'manage_users', 'system_settings', 'database_config'
+    ]
+  },
   student: {
     id: 'USR-STU-01',
     name: 'Sunny Bharti',
@@ -391,6 +410,54 @@ export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 
     ]
   }
 };
+
+export interface DeveloperStats {
+  status: string;
+  timestamp: string;
+  system: {
+    platform: string;
+    pythonVersion: string;
+    pytorchVersion: string;
+    cudaAvailable: boolean;
+    mpsAvailable: boolean;
+    workingDir: string;
+  };
+  modelTelemetry: {
+    modelName: string;
+    pipelineLoaded: boolean;
+    trainedSamplesCount: number;
+    classes: string[];
+    featureVectorDims: number;
+    pcaComponents: number;
+    accuracy: string;
+    inferenceEngine: string;
+    averageInferenceMs: number;
+  };
+  appStats: {
+    totalIncidents: number;
+    categoryBreakdown: Record<string, number>;
+    severityBreakdown: Record<string, number>;
+    statusBreakdown: Record<string, number>;
+    totalWasteKgCollected: number;
+    activeSensors: number;
+    uploadedFilesCount: number;
+    feedbackLogsCount: number;
+  };
+}
+
+export interface DeveloperFeedbackEntry {
+  id: string;
+  timestamp: string;
+  imageName: string;
+  imageUrl?: string;
+  isCorrect: boolean;
+  errorType: 'none' | 'false_positive' | 'false_negative' | 'wrong_category' | 'other';
+  predictedClass: string;
+  expectedClass: string;
+  confidence: number;
+  developerRemarks: string;
+  source: string;
+}
 
 export type HeatIslandLayer = 
   | 'temperature'
