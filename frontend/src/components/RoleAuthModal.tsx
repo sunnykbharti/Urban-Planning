@@ -135,17 +135,6 @@ export const RoleAuthModal: React.FC<RoleAuthModalProps> = ({
       activeBorder: 'border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/40'
     },
     {
-      role: 'developer',
-      title: 'Lead System Developer',
-      name: 'Sunny Bharti (Dev Console)',
-      badge: 'DEV-ROOT-007',
-      badgeText: 'Engineering Core',
-      pinHint: 'PIN: 0000',
-      icon: <Terminal className="w-5 h-5 text-indigo-600" />,
-      colorClasses: 'hover:bg-indigo-50/60',
-      activeBorder: 'border-indigo-600 ring-2 ring-indigo-500/30 bg-indigo-50/40'
-    },
-    {
       role: 'bvg_worker',
       title: 'Sanitation Beat Lead',
       name: 'Ramesh Kumar (BVG India)',

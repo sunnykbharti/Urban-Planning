@@ -215,7 +215,9 @@ export default function App() {
     }
 
     // Direct user strictly to their role's specific dashboard
-    if (newRole === 'student') {
+    if (newRole === 'developer') {
+      setActiveTab('developer_hub');
+    } else if (newRole === 'student') {
       setActiveTab('student_dashboard');
     } else if (newRole === 'bvg_worker' || newRole === 'operator') {
       setActiveTab('bvg_dashboard');
@@ -903,7 +905,7 @@ export default function App() {
               <AnalyticsView reports={reports} />
             )}
 
-            {activeTab === 'developer_hub' && (
+            {activeTab === 'developer_hub' && userRole === 'developer' && (
               <DeveloperHubView
                 onNavigateToTab={(tab) => setActiveTab(tab)}
                 onOpenReportDrawer={() => {

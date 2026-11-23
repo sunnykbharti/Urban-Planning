@@ -68,12 +68,6 @@ export const Footer: React.FC<FooterProps> = ({
                   Staff login
                 </button>
               </li>
-              <li>
-                <button onClick={() => handleTab('developer_hub')} className="hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  Developer console
-                </button>
-              </li>
             </ul>
           </div>
 
