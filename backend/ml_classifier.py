@@ -57,12 +57,20 @@ TRAINING_LABELS = {
     "e.jpeg": "overflow",
     "garbage-2729608_1280.jpg": "overflow",
     "image4_233cbd8a59.jpg": "overflow",
+    "images (19).jpeg": "overflow",
+    "images (23).jpeg": "overflow",
     "images (1) 2.jpeg": "litter_pile",
     "images (1).jpeg": "litter_pile",
     "images (12).jpeg": "litter_pile",
     "images (8).jpeg": "litter_pile",
     "images.jpeg": "litter_pile",
     "slum_ground_litter_dump.jpg": "litter_pile",
+    "gettyimages-1497035393-612x612.jpg": "litter_pile",
+    "images (20).jpeg": "litter_pile",
+    "images (14).jpeg": "litter_pile",
+    "WhatsApp Image 2026-11-23 at 00.15.33.jpeg": "litter_pile",
+    "images (22).jpeg": "litter_pile",
+    "images (24).jpeg": "litter_pile",
 
     # 2. Blocked Drains, Gutters & Drainage Canals
     "download.jpeg": "blocked_drain",
@@ -76,6 +84,7 @@ TRAINING_LABELS = {
     "river_ghat_canal_waste.jpg": "blocked_drain",
     "culvert_grate_drain_blocked.jpg": "blocked_drain",
     "civil_pipe_construction_clean.jpg": "blocked_drain",
+    "iStock-1312738739-1080x675.jpg": "blocked_drain",
 
     # 3. Clean Areas, Pathways & Dustbin Infrastructure
     "Hostel_Dormitory.jpg": "bin_empty",
@@ -87,6 +96,7 @@ TRAINING_LABELS = {
     "images (5).jpeg": "bin_empty",
     "images (6).jpeg": "bin_empty",
     "images (7).jpeg": "bin_empty",
+    "images (21).jpeg": "bin_empty",
     "unnamed.jpg": "bin_empty",
     "WhatsApp Image 2026-10-15 at 14.13.52.jpeg": "bin_empty",
     "WhatsApp Image 2026-10-15 at 14.13.54.jpeg": "bin_empty",
@@ -281,10 +291,10 @@ class WasteMLPipeline:
     """
 
     def __init__(self):
-        self.pca = PCA(n_components=24, random_state=42)
+        self.pca = PCA(n_components=48, random_state=42)
         self.scaler = StandardScaler()
-        self.is_waste_classifier = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42)
-        self.category_classifier = GradientBoostingClassifier(n_estimators=80, max_depth=4, random_state=42)
+        self.is_waste_classifier = RandomForestClassifier(n_estimators=150, max_depth=8, class_weight='balanced', random_state=42)
+        self.category_classifier = GradientBoostingClassifier(n_estimators=100, max_depth=5, random_state=42)
         self.classes_ = ["bin_empty", "blocked_drain", "litter_pile", "overflow"]
         self.is_fitted = False
 
@@ -333,16 +343,31 @@ class WasteMLPipeline:
 
         # Binary prediction (is waste/issue detected)
         is_waste_prob = self.is_waste_classifier.predict_proba(scaled)[0]
-        is_waste = bool(self.is_waste_classifier.predict(scaled)[0] == 1)
+        p_clean_binary = float(is_waste_prob[0])
+        p_waste_binary = float(is_waste_prob[1]) if len(is_waste_prob) > 1 else 1.0 - p_clean_binary
 
         # Category prediction
         cat_probs = self.category_classifier.predict_proba(scaled)[0]
         cat_classes = list(self.category_classifier.classes_)
-        best_cat_idx = int(np.argmax(cat_probs))
-        predicted_cat = str(cat_classes[best_cat_idx])
-        confidence = float(cat_probs[best_cat_idx])
+        prob_dict = {str(cat_classes[i]): float(cat_probs[i]) for i in range(len(cat_classes))}
 
-        # Enforce consistency: if predicted as clean receptacle/monument, is_waste = False
+        waste_classes = ["blocked_drain", "litter_pile", "overflow"]
+        p_cat_waste = sum(prob_dict.get(c, 0.0) for c in waste_classes)
+        p_cat_clean = prob_dict.get("bin_empty", 0.0)
+
+        # Robust dual-layer decision:
+        # A scene is declared clean ONLY when clean probability dominates waste probability with high certainty.
+        # If waste probability is >= 0.40 or combined waste categories exceed clean, declare waste.
+        if p_waste_binary >= 0.40 or p_cat_waste > p_cat_clean or p_cat_clean < 0.55:
+            is_waste = True
+            best_waste_cat = max(waste_classes, key=lambda c: prob_dict.get(c, 0.0))
+            predicted_cat = best_waste_cat
+            confidence = max(prob_dict.get(best_waste_cat, 0.5), p_waste_binary, p_cat_waste)
+        else:
+            is_waste = False
+            predicted_cat = "bin_empty"
+            confidence = max(p_cat_clean, p_clean_binary)
+
         if predicted_cat == "bin_empty":
             is_waste = False
             class_label = "Sanitary Clean Environment / Dustbin"
