@@ -70,8 +70,8 @@ export const CampusMap: React.FC<CampusMapProps> = ({
         userRole={userRole}
         compact={false}
         height="640px"
-        title="CSJMU Kanpur Master Infrastructure & Incident Map"
-        subtitle="Zoom, pan, inspect complaint pins, or click anywhere on campus to file a new report."
+        title="Campus map"
+        subtitle="Open incidents and cameras"
       />
 
       {/* Campus Blocks Quick Summary Strip */}

@@ -191,8 +191,10 @@ export const SEVERITY_CONFIGS: Record<SeverityColor, SeverityConfig> = {
  * based on report severity and status.
  */
 export function getReportSeverityColor(report: MaintenanceReport): SeverityColor {
+  const status = (report.status || '').toLowerCase();
+  
   // If report has been resolved, it's green (resolved / safe)
-  if (report.status === 'resolved') {
+  if (status === 'resolved' || status === 'closed') {
     return 'green';
   }
 
@@ -211,6 +213,11 @@ export function getReportSeverityColor(report: MaintenanceReport): SeverityColor
   // Low severity -> GREEN
   if (sev === 'low') {
     return 'green';
+  }
+
+  // In-progress or dispatched items default to yellow
+  if (status === 'in_progress' || status === 'dispatched' || status === 'assigned') {
+    return 'yellow';
   }
 
   // Default to yellow for unclassified active reports

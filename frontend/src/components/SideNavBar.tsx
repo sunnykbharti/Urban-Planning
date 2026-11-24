@@ -112,7 +112,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
                 {navBtn('student_dashboard', 'Incidents', <Home className="w-4 h-4" />)}
                 {navBtn('operations', 'Operations', <Activity className="w-4 h-4" />)}
                 {navBtn('map', 'Explore campus', <MapIcon className="w-4 h-4" />)}
-                {navBtn('heatisland', 'Cool havens', <TreeDeciduous className="w-4 h-4" />)}
+                {navBtn('heatisland', 'Shaded spots', <TreeDeciduous className="w-4 h-4" />)}
               </>
             )}
 
@@ -168,51 +168,42 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         </div>
 
         {/* Bottom Section */}
-        <div className="flex flex-col gap-0.5 px-3 border-t border-gray-100 pt-3 pb-4">
-          {onNavigateToLanding && (
-            <button
-              onClick={onNavigateToLanding}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-black transition-colors text-left cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4 text-gray-400" />
-              <span>Landing page</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => handleTabClick('terms' as ActiveTab)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-black transition-colors text-left cursor-pointer"
-          >
-            <Scale className="w-4 h-4 text-gray-400" />
-            <span>Terms &amp; conditions</span>
-          </button>
-
-          <button
-            onClick={() => handleTabClick('privacy' as ActiveTab)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-black transition-colors text-left cursor-pointer"
-          >
-            <Shield className="w-4 h-4 text-gray-400" />
-            <span>Privacy policy</span>
-          </button>
-
+        <div className="flex flex-col gap-1 px-3 border-t border-gray-100 pt-2 pb-3">
           <button
             onClick={onOpenSettings}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-black transition-colors text-left cursor-pointer"
+            className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs text-gray-500 hover:bg-gray-50 hover:text-black transition-colors text-left cursor-pointer"
           >
-            <Settings className="w-4 h-4 text-gray-400" />
+            <Settings className="w-3.5 h-3.5 text-gray-400" />
             <span>Settings</span>
           </button>
 
+          {/* Compact links footer */}
+          <div className="px-3 py-1 text-[11px] text-gray-400 flex items-center justify-between">
+            {onNavigateToLanding && (
+              <button onClick={onNavigateToLanding} className="hover:text-gray-700 cursor-pointer">
+                Home
+              </button>
+            )}
+            <span>&bull;</span>
+            <button onClick={() => handleTabClick('terms' as ActiveTab)} className="hover:text-gray-700 cursor-pointer">
+              Terms
+            </button>
+            <span>&bull;</span>
+            <button onClick={() => handleTabClick('privacy' as ActiveTab)} className="hover:text-gray-700 cursor-pointer">
+              Privacy
+            </button>
+          </div>
+
           {/* User identity */}
-          <div className="mt-2 p-2.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-semibold text-xs flex-shrink-0">
+          <div className="mt-1 p-2 rounded-md bg-gray-50 border border-gray-200 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-[#001e40] text-white flex items-center justify-center font-semibold text-xs flex-shrink-0">
               {currentProfile?.avatar || 'U'}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate leading-tight">
+              <p className="text-xs font-semibold text-gray-900 truncate leading-tight">
                 {currentProfile?.name || 'User'}
               </p>
-              <p className="text-xs text-gray-400 truncate">
+              <p className="text-[10px] text-gray-400 truncate">
                 {isDeveloper ? 'Lead Developer' : isStudent ? 'Student' : isBvg ? 'Field staff' : isManagement ? 'Management' : 'Admin'}
               </p>
             </div>
@@ -225,7 +216,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         <button
           onClick={() => handleTabClick(isStudent ? 'student_dashboard' : isBvg ? 'bvg_dashboard' : isManagement ? 'management_dashboard' : 'admin_dashboard')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 text-[10px] font-medium transition-colors ${
-            activeTab.includes('dashboard') ? 'text-black font-semibold' : 'text-gray-400'
+            activeTab.includes('dashboard') ? 'text-[#001e40] font-semibold' : 'text-gray-400'
           }`}
         >
           <LayoutGrid className="w-4 h-4" />
@@ -235,7 +226,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         <button
           onClick={() => handleTabClick('map')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 text-[10px] font-medium transition-colors ${
-            activeTab === 'map' ? 'text-black font-semibold' : 'text-gray-400'
+            activeTab === 'map' ? 'text-[#001e40] font-semibold' : 'text-gray-400'
           }`}
         >
           <MapIcon className="w-4 h-4" />
@@ -243,21 +234,13 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         </button>
 
         <button
-          onClick={onOpenReportDrawer}
-          className="flex flex-col items-center justify-center gap-0.5 py-1 px-3 text-[10px] font-medium text-black"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Report</span>
-        </button>
-
-        <button
           onClick={() => handleTabClick(isStudent ? 'heatisland' : 'operations')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 text-[10px] font-medium transition-colors ${
-            activeTab === 'heatisland' || activeTab === 'operations' ? 'text-black font-semibold' : 'text-gray-400'
+            activeTab === 'heatisland' || activeTab === 'operations' ? 'text-[#001e40] font-semibold' : 'text-gray-400'
           }`}
         >
           {isStudent ? <TreeDeciduous className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
-          <span>{isStudent ? 'Cool havens' : 'Operations'}</span>
+          <span>{isStudent ? 'Shaded spots' : 'Operations'}</span>
         </button>
       </nav>
     </>

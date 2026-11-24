@@ -26,7 +26,8 @@ import {
   Droplet,
   Zap,
   Hammer,
-  Ban
+  Ban,
+  AlertCircle
 } from 'lucide-react';
 import { ReportCategory, ReportSeverity, MaintenanceReport, GarbageDetectionResult, BoundingBox } from '../types';
 import { samplePhotos } from '../data/mockData';
@@ -75,12 +76,13 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
     }
   }, [prefilledLocation]);
 
-  // Safeguard: Check if photos have been analyzed and verified clean of waste
+  // Safeguard & AI triage
   const allDetectionsList: GarbageDetectionResult[] = Object.values(photoDetections);
   const hasAnalyzedPhotos = photoUrls.length > 0 && allDetectionsList.length > 0;
   const anyGarbageDetected = allDetectionsList.some(d => d.isGarbageDetected);
   const isCleanArea = hasAnalyzedPhotos && !anyGarbageDetected;
-  const isSubmissionBlocked = isCleanArea;
+  // If clean area is detected by AI, require the user to explicitly select an issue category to proceed
+  const isSubmissionBlocked = isCleanArea && !category;
   const hasPhotoEvidence = photoUrls.length > 0 || Boolean(photoUrl);
 
   if (!isOpen) return null;
@@ -240,10 +242,6 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmissionBlocked || isCleanArea) {
-      alert('False Report Blocked: Computer Vision verified this scene is clean with zero litter or maintenance problems. Only genuine civic issues can be dispatched.');
-      return;
-    }
     if (!hasPhotoEvidence) {
       alert('Photo Evidence Required: Please upload a photo to verify the incident before submitting.');
       return;
@@ -649,13 +647,19 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 />
               </div>
 
-              {/* False report blocked banner */}
-              {isSubmissionBlocked && (
-                <div className="p-3.5 rounded-xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 flex items-start gap-2.5 shadow-xs animate-in fade-in">
-                  <Ban className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                  <div className="leading-relaxed">
-                    <span className="font-bold text-amber-950 block text-[12px]">Clean Space Verified — Reporting Blocked</span>
-                    <span>Computer Vision verified this location is clean with no solid waste, litter, or maintenance issues. The CSJMU Civic Operations system only entertains genuine, verified incidents. Reporting clean spaces is strictly prohibited.</span>
+              {/* AI Guidance notice when no surface litter is auto-detected */}
+              {isCleanArea && (
+                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed text-[11px]">
+                    <span className="font-semibold text-amber-950 block">
+                      {category ? 'Manual Category Confirmed' : 'AI Screening: No uncontained litter auto-detected'}
+                    </span>
+                    <span>
+                      {category 
+                        ? `You classified this as "${category.replace('_', ' ')}". Housekeeping & maintenance crew will inspect according to your category selection.`
+                        : 'Computer vision did not detect surface litter in this photo. If reporting a drain clog, civil/pipe repair, or electrical hazard, select the category above to continue.'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -665,7 +669,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                 <div className="text-[11px] leading-relaxed">
                   <span className="font-semibold text-slate-800 block">Civic integrity guard:</span>
-                  Work orders are dispatched only for genuine civic incidents verified by Computer Vision.
+                  Work orders are dispatched only for genuine civic incidents verified by Computer Vision or confirmed by reporting students.
                 </div>
               </div>
             </div>
@@ -702,7 +706,7 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                   } disabled:opacity-70`}
                   title={
                     isSubmissionBlocked 
-                      ? 'Clean space verified: Only genuine incidents can be dispatched' 
+                      ? 'Select an issue category to proceed with the report' 
                       : !hasPhotoEvidence 
                       ? 'Upload photo evidence to verify the incident' 
                       : undefined
@@ -710,8 +714,8 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 >
                   {isSubmissionBlocked ? (
                     <>
-                      <Ban className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Reporting Blocked (Clean Area)</span>
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Select Issue Category</span>
                     </>
                   ) : !hasPhotoEvidence ? (
                     <>

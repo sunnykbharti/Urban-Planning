@@ -107,7 +107,7 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-3 text-sm text-gray-400">
               <li>
                 <button onClick={() => handleTab('heatisland')} className="hover:text-white transition-colors cursor-pointer text-left">
-                  Cool havens &amp; canopies
+                  Shaded spots
                 </button>
               </li>
               <li>

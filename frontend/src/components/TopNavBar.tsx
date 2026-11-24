@@ -76,12 +76,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
         {/* Top-level nav links – desktop only */}
         <nav className="hidden lg:flex items-center gap-1 ml-4">
-          <span className="px-3 py-1.5 text-sm font-medium text-white bg-gray-800 rounded-full cursor-default">
+          <span className="px-3 py-1.5 text-sm font-medium text-white bg-gray-800 rounded-md cursor-default">
             {userRole === 'student' ? 'Dashboard' : userRole === 'bvg_worker' || userRole === 'operator' ? 'Field ops' : userRole === 'management' ? 'Management' : 'Admin'}
           </span>
-          <button onClick={onOpenReportDrawer} className="px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer">
-            Report
-          </button>
         </nav>
       </div>
 

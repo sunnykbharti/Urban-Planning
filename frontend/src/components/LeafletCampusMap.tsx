@@ -40,6 +40,7 @@ import {
 interface LeafletCampusMapProps {
   reports: MaintenanceReport[];
   blocks?: CampusBlock[];
+  selectedReportId?: string | null;
   onSelectReport?: (report: MaintenanceReport) => void;
   onOpenReportDrawerWithLocation?: (locationName: string, coords: { x: number; y: number }, gps?: { latitude: number; longitude: number }) => void;
   userRole?: UserRole;
@@ -52,6 +53,7 @@ interface LeafletCampusMapProps {
 export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
   reports,
   blocks = [],
+  selectedReportId = null,
   onSelectReport,
   onOpenReportDrawerWithLocation,
   userRole = 'student',
@@ -65,14 +67,17 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const landmarksLayerRef = useRef<L.LayerGroup | null>(null);
   const boundaryLayerRef = useRef<L.Polygon | null>(null);
+  const markerByReportIdRef = useRef<Record<string, L.Marker>>({});
 
   // Filter and view state
   const [severityFilter, setSeverityFilter] = useState<'all' | 'red' | 'yellow' | 'green'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [mapTileStyle, setMapTileStyle] = useState<'streets' | 'satellite' | 'voyager'>('voyager');
   const [showLandmarks, setShowLandmarks] = useState<boolean>(true);
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [activeReportId, setActiveReportId] = useState<string | null>(selectedReportId);
   const [clickedCoord, setClickedCoord] = useState<{ lat: number; lng: number; nearLandmark?: string } | null>(null);
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
+  const [currentZoom, setCurrentZoom] = useState<number>(compact ? 16 : 16.5);
 
   // Statistics calculation based on severity
   const totalCount = reports.length;
@@ -129,6 +134,13 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
     // Add zoom control at top right
     L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Zoom listener for collision-aware landmark visibility
+    map.on('zoomend', () => {
+      if (mapRef.current) {
+        setCurrentZoom(mapRef.current.getZoom());
+      }
+    });
 
     // Initial Tile Layer
     const tileLayer = L.tileLayer(tileUrls[mapTileStyle], {
@@ -250,6 +262,22 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
     currentTileLayerRef.current = newTileLayer;
   }, [mapTileStyle]);
 
+  // Directional collision-safe anchor configuration for campus landmarks
+  const landmarkAnchorMap: Record<string, { size: [number, number]; anchor: [number, number]; labelOffsetClass: string }> = {
+    'block-1': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'bottom-full mb-1.5' },
+    'block-2': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'top-full mt-1.5' },
+    'block-3': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'left-full ml-1.5' },
+    'canteen-quad': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'right-full mr-1.5' },
+    'health-centre': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'top-full mt-1.5' },
+    'library': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'bottom-full mb-1.5' },
+    'workshop': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'top-full mt-1.5' },
+    'science-block-b': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'bottom-full mb-1.5' },
+    'admin-block': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'left-full ml-1.5' },
+    'sports-complex': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'top-full mt-1.5' },
+    'hostels': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'bottom-full mb-1.5' },
+    'main-gate': { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'bottom-full mb-1.5' }
+  };
+
   // Update Landmark markers
   useEffect(() => {
     if (!landmarksLayerRef.current || !mapRef.current) return;
@@ -257,28 +285,32 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
     if (!showLandmarks) return;
 
+    const isZoomedIn = currentZoom >= 16.5;
+
     CSJMU_LANDMARKS.forEach(landmark => {
-      // Plain text with white halo for building label (no dark pill)
+      const cfg = landmarkAnchorMap[landmark.id] || { size: [16, 16], anchor: [8, 8], labelOffsetClass: 'top-full mt-1' };
+
       const iconHtml = `
-        <div class="cursor-pointer whitespace-nowrap select-none" style="text-align: center; transform: translate(-50%, -50%);">
-          <span style="font-size: 11px; font-weight: 600; color: #1e293b; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 6px #fff, 0 0 8px #fff; letter-spacing: 0.01em;">
+        <div class="cursor-pointer select-none group relative flex items-center justify-center" style="width: 16px; height: 16px;">
+          <div class="w-2.5 h-2.5 rounded-full bg-slate-700 border-2 border-white shadow-xs"></div>
+          <div class="${isZoomedIn ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity whitespace-nowrap absolute ${cfg.labelOffsetClass} px-1.5 py-0.5 rounded text-[10px] font-semibold text-slate-800 bg-white/95 border border-slate-200 shadow-2xs pointer-events-none z-30">
             ${landmark.shortName}
-          </span>
+          </div>
         </div>
       `;
 
       const landmarkIcon = L.divIcon({
         html: iconHtml,
         className: 'csjmu-landmark-div-icon',
-        iconSize: [120, 24],
-        iconAnchor: [60, 12]
+        iconSize: cfg.size,
+        iconAnchor: cfg.anchor
       });
 
       const marker = L.marker(landmark.coords, { icon: landmarkIcon });
       marker.bindPopup(`
         <div class="p-1 max-w-[240px]">
-          <div class="flex items-center gap-1.5 mb-1 text-blue-900 font-bold text-xs">
-            <span class="text-xs font-bold text-blue-800 bg-blue-100 px-1 py-0.5 rounded">CIVIC</span>
+          <div class="flex items-center gap-1.5 mb-1 text-slate-900 font-semibold text-xs">
+            <span class="text-[10px] font-bold text-slate-700 bg-slate-100 px-1 py-0.5 rounded">CAMPUS</span>
             <span>${landmark.name}</span>
           </div>
           <p class="text-[11px] text-slate-600 mb-2 leading-relaxed">${landmark.description}</p>
@@ -290,12 +322,25 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
       landmarksLayerRef.current?.addLayer(marker);
     });
-  }, [showLandmarks]);
+  }, [showLandmarks, currentZoom]);
+
+  // Sync map view when selectedReportId prop changes from parent list
+  useEffect(() => {
+    if (selectedReportId) {
+      setActiveReportId(selectedReportId);
+      const targetMarker = markerByReportIdRef.current[selectedReportId];
+      if (targetMarker && mapRef.current) {
+        mapRef.current.panTo(targetMarker.getLatLng(), { animate: true, duration: 0.5 });
+        targetMarker.openPopup();
+      }
+    }
+  }, [selectedReportId]);
 
   // Update Complaint Markers with Red / Yellow / Green Severity Styling & Coordinate Clustering
   useEffect(() => {
     if (!markersLayerRef.current || !mapRef.current) return;
     markersLayerRef.current.clearLayers();
+    markerByReportIdRef.current = {};
 
     // Group reports by proximity key to prevent overlapping markers from occluding each other
     const coordGroups: Record<string, MaintenanceReport[]> = {};
@@ -325,36 +370,37 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
         const isUrgent = sevColor === 'red';
         const isYellow = sevColor === 'yellow';
+        const isSelected = activeReportId === report.id;
 
         const pulseRing = isUrgent
-          ? `<div class="absolute -inset-2.5 rounded-full bg-red-500/40 animate-ping"></div>`
+          ? `<div class="absolute -inset-2 rounded-full bg-red-500/30 animate-ping"></div>`
           : '';
 
         const markerBadgeIcon = isUrgent 
-          ? '•' 
+          ? '!' 
           : isYellow 
           ? '•' 
           : '✓';
 
         const clusterBadge = group.length > 1 && indexInGroup === 0 ? `
-          <div class="absolute -top-2 -right-2 z-20 px-1 py-0.2 bg-slate-900 text-white text-[9px] font-bold rounded-full border border-white">
+          <div class="absolute -top-1.5 -right-1.5 z-20 px-1 py-0.2 bg-slate-900 text-white text-[8px] font-bold rounded-full border border-white">
             ${group.length}
           </div>
         ` : '';
 
         const customMarkerHtml = `
-          <div class="relative flex items-center justify-center cursor-pointer group" style="width: 38px; height: 38px;">
+          <div class="relative flex items-center justify-center cursor-pointer group ${isSelected ? 'scale-115 z-30' : ''}" style="width: 32px; height: 32px;">
             ${pulseRing}
             ${clusterBadge}
             <!-- Outer Halo -->
             <div 
-              class="absolute inset-0 rounded-full transition-transform group-hover:scale-125 duration-200"
-              style="background: ${config.glowHex}; border: 2px solid ${config.borderHex};"
+              class="absolute inset-0 rounded-full transition-transform group-hover:scale-110 duration-200"
+              style="background: ${config.glowHex}; border: ${isSelected ? '2.5px solid #001e40' : `1.5px solid ${config.borderHex}`};"
             ></div>
             
             <!-- Inner Core Pin -->
             <div 
-              class="relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-white font-extrabold text-xs shadow-lg"
+              class="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-white font-extrabold text-[11px] shadow-sm"
               style="background: ${config.hex};"
             >
               <span>${markerBadgeIcon}</span>
@@ -362,7 +408,7 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
             <!-- Bottom Point Indicator -->
             <div 
-              class="absolute -bottom-1 z-0 w-2 h-2 rotate-45"
+              class="absolute -bottom-0.5 z-0 w-1.5 h-1.5 rotate-45"
               style="background: ${config.hex};"
             ></div>
           </div>
@@ -371,68 +417,65 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
         const customIcon = L.divIcon({
           html: customMarkerHtml,
           className: `csjmu-complaint-icon csjmu-${sevColor}-icon`,
-          iconSize: [38, 38],
-          iconAnchor: [19, 19],
-          popupAnchor: [0, -20]
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
         });
 
         const marker = L.marker(coords, { icon: customIcon });
+        markerByReportIdRef.current[report.id] = marker;
 
       // Severity Banner Label
       const severityBanner = `
-        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase ${config.badgeBg} ${config.badgeText} border ${config.badgeBorder} mb-1.5">
-          <span class="w-2 h-2 rounded-full inline-block" style="background-color: ${config.hex}"></span>
+        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${config.badgeBg} ${config.badgeText} border ${config.badgeBorder} mb-1.5">
+          <span class="w-1.5 h-1.5 rounded-full inline-block" style="background-color: ${config.hex}"></span>
           <span>${config.label}</span>
         </div>
       `;
 
       // Status pill
-      const statusPillColor = report.status === 'resolved' 
-        ? 'bg-emerald-100 text-emerald-800' 
-        : report.status === 'in_progress'
-        ? 'bg-blue-100 text-blue-800'
-        : 'bg-amber-100 text-amber-800';
+      const statusPillColor = (report.status || '').toLowerCase() === 'resolved' 
+        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+        : (report.status || '').toLowerCase() === 'in_progress'
+        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+        : 'bg-rose-50 text-rose-800 border border-rose-200';
 
       const popupHtml = `
-        <div class="p-1 min-w-[260px] max-w-[300px] text-slate-800 font-sans">
-          <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 mb-2">
+        <div class="p-1 min-w-[240px] max-w-[280px] text-slate-800 font-sans">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5 mb-2">
             ${severityBanner}
-            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-              ${report.id}
+            <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+              ${report.ticketNumber || report.id}
             </span>
           </div>
 
-          <h3 class="font-bold text-sm text-slate-900 leading-snug mb-1">
+          <h3 class="font-semibold text-xs text-slate-900 leading-snug mb-1">
             ${report.title}
           </h3>
 
           <div class="flex items-center gap-1.5 text-xs text-slate-600 mb-2">
-            <span class="text-slate-500 font-bold text-[10px]">LOC:</span>
-            <span class="font-medium">${report.location}</span>
+            <span class="text-slate-400 font-medium text-[10px]">LOC:</span>
+            <span class="font-medium truncate">${report.location}</span>
           </div>
 
           ${report.imageUrl ? `
-            <div class="mb-2.5 rounded-lg overflow-hidden border border-slate-200 h-28 bg-slate-100">
+            <div class="mb-2 rounded overflow-hidden border border-slate-200 h-24 bg-slate-100">
               <img src="${resolveMediaUrl(report.imageUrl)}" alt="${report.title}" class="w-full h-full object-cover" onerror="this.src='/sample-incidents/overflow_bin.jpg'" />
             </div>
           ` : ''}
 
-          <p class="text-xs text-slate-600 line-clamp-2 mb-2.5 leading-relaxed bg-slate-50 p-2 rounded border border-slate-100">
-            ${report.description || 'No detailed description provided.'}
-          </p>
-
-          <div class="flex items-center justify-between text-[11px] mb-3">
-            <span class="px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px] ${statusPillColor}">
-              ${report.status.replace('_', ' ')}
+          <div class="flex items-center justify-between text-[11px] mb-2.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-medium capitalize ${statusPillColor}">
+              ${(report.status || 'open').replace('_', ' ')}
             </span>
-            <span class="text-slate-500 font-medium">${report.timeAgo || 'Recent'}</span>
+            <span class="text-slate-400 font-mono text-[10px]">${report.timeAgo || 'Recent'}</span>
           </div>
 
           <button 
             data-inspect-report-id="${report.id}"
-            class="w-full py-1.5 px-3 rounded-lg bg-[#001e40] hover:bg-[#003366] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+            class="w-full py-1.5 px-3 rounded-md bg-[#001e40] hover:bg-[#003366] text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <span>View Full Incident Report</span>
+            <span>View report details</span>
             <span>&rarr;</span>
           </button>
         </div>
@@ -440,17 +483,20 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
       marker.bindPopup(popupHtml, {
         className: 'csjmu-custom-popup',
-        maxWidth: 320
+        maxWidth: 300
       });
 
       marker.on('click', () => {
-        setSelectedReportId(report.id);
+        setActiveReportId(report.id);
+        if (onSelectReport) {
+          onSelectReport(report);
+        }
       });
 
       markersLayerRef.current?.addLayer(marker);
       });
     });
-  }, [filteredReports]);
+  }, [filteredReports, activeReportId]);
 
   // Reset to CSJMU Center
   const handleResetCenter = () => {
@@ -480,16 +526,16 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
           {/* RED Filter Button */}
           <button
             onClick={() => setSeverityFilter(severityFilter === 'red' ? 'all' : 'red')}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
               severityFilter === 'red'
-                ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-400'
-                : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                ? 'bg-rose-600 text-white font-semibold'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
             }`}
-            title="Show Urgent & Critical Complaints"
+            title="Filter Urgent & Critical"
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
             <span>Red (Urgent)</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-red-200/60 text-red-900 text-[10px]">
+            <span className="font-mono tabular-nums text-[10px] opacity-80">
               {redCount}
             </span>
           </button>
@@ -497,16 +543,16 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
           {/* YELLOW Filter Button */}
           <button
             onClick={() => setSeverityFilter(severityFilter === 'yellow' ? 'all' : 'yellow')}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
               severityFilter === 'yellow'
-                ? 'bg-amber-500 text-slate-900 shadow-sm ring-2 ring-amber-300'
+                ? 'bg-amber-500 text-slate-900 font-semibold'
                 : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
             }`}
-            title="Show Medium & Normal Complaints"
+            title="Filter Medium & In Progress"
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
             <span>Yellow (Normal)</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-200/60 text-amber-900 text-[10px]">
+            <span className="font-mono tabular-nums text-[10px] opacity-80">
               {yellowCount}
             </span>
           </button>
@@ -514,16 +560,16 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
           {/* GREEN Filter Button */}
           <button
             onClick={() => setSeverityFilter(severityFilter === 'green' ? 'all' : 'green')}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
               severityFilter === 'green'
-                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
+                ? 'bg-emerald-600 text-white font-semibold'
                 : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
             }`}
-            title="Show Low Severity & Resolved Complaints"
+            title="Filter Low Severity & Resolved"
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <span>Green (Resolved/Low)</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-emerald-200/60 text-emerald-900 text-[10px]">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Green (Resolved)</span>
+            <span className="font-mono tabular-nums text-[10px] opacity-80">
               {greenCount}
             </span>
           </button>
@@ -532,41 +578,41 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
           {severityFilter !== 'all' && (
             <button
               onClick={() => setSeverityFilter('all')}
-              className="text-[11px] text-slate-500 hover:text-slate-800 underline px-1 py-1"
+              className="text-[11px] text-slate-500 hover:text-slate-800 underline px-1 py-0.5 cursor-pointer"
             >
-              Clear Filter
+              All
             </button>
           )}
         </div>
       </div>
 
       {/* Map Control Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-50 p-2 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-          <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1">
-            <Filter className="w-3 h-3 text-slate-600" /> Layer:
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/80 p-1.5 rounded-md border border-slate-200">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            Layer:
           </span>
-          <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
+          <div className="flex bg-white p-0.5 rounded-md border border-slate-200">
             <button
               onClick={() => setMapTileStyle('voyager')}
-              className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors ${
-                mapTileStyle === 'voyager' ? 'bg-[#001e40] text-white font-bold' : 'text-slate-600 hover:bg-slate-100'
+              className={`px-2 py-0.5 text-xs rounded transition-colors cursor-pointer ${
+                mapTileStyle === 'voyager' ? 'bg-[#001e40] text-white font-medium' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Campus Clean
+              Campus
             </button>
             <button
               onClick={() => setMapTileStyle('streets')}
-              className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors ${
-                mapTileStyle === 'streets' ? 'bg-[#001e40] text-white font-bold' : 'text-slate-600 hover:bg-slate-100'
+              className={`px-2 py-0.5 text-xs rounded transition-colors cursor-pointer ${
+                mapTileStyle === 'streets' ? 'bg-[#001e40] text-white font-medium' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              OpenStreetMap
+              Street
             </button>
             <button
               onClick={() => setMapTileStyle('satellite')}
-              className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors ${
-                mapTileStyle === 'satellite' ? 'bg-[#001e40] text-white font-bold' : 'text-slate-600 hover:bg-slate-100'
+              className={`px-2 py-0.5 text-xs rounded transition-colors cursor-pointer ${
+                mapTileStyle === 'satellite' ? 'bg-[#001e40] text-white font-medium' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               Satellite
@@ -575,8 +621,8 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
           <button
             onClick={() => setShowLandmarks(!showLandmarks)}
-            className={`px-2 py-1 rounded-md text-xs font-semibold border flex items-center gap-1 transition-colors ${
-              showLandmarks ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200'
+            className={`px-2 py-0.5 rounded-md text-xs font-medium border flex items-center gap-1 transition-colors cursor-pointer ${
+              showLandmarks ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-white text-slate-500 border-slate-200'
             }`}
           >
             <Building className="w-3 h-3" />
@@ -587,11 +633,11 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleResetCenter}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+            className="px-2 py-1 text-xs font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1 transition-colors cursor-pointer"
             title="Refocus CSJMU Kanpur Center"
           >
             <Compass className="w-3.5 h-3.5 text-[#001e40]" />
-            <span>Recenter CSJMU</span>
+            <span>Center campus</span>
           </button>
 
           {onOpenReportDrawerWithLocation && (
@@ -599,17 +645,17 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
               onClick={() => {
                 onOpenReportDrawerWithLocation('UIET Block 1 (CSE/IT)', { x: 38, y: 38 }, { latitude: 26.5028, longitude: 80.2658 });
               }}
-              className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#001e40] text-white hover:bg-[#003366] flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+              className="px-2 py-1 text-xs font-medium rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Report at Pin</span>
+              <Plus className="w-3 h-3 text-slate-500" />
+              <span>Report at pin</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Main Leaflet Map Viewport */}
-      <div className="relative w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner">
+      <div className="relative w-full rounded-md overflow-hidden border border-slate-200">
         <div 
           ref={mapContainerRef} 
           style={{ height: height || (compact ? '420px' : '580px') }}
@@ -618,66 +664,87 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
 
         {/* Floating Coordinates / Pin Info Pill if user clicked on map */}
         {clickedCoord && (
-          <div className="absolute bottom-3 left-3 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-slate-300 shadow-lg max-w-sm text-xs space-y-1 animate-in fade-in slide-in-from-bottom-2">
+          <div className="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-md px-3 py-2 rounded-md border border-slate-300 shadow-sm max-w-sm text-xs space-y-1 animate-in fade-in">
             <div className="flex items-center justify-between gap-3">
-              <span className="font-extrabold text-[#001e40] flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-red-600" />
-                <span>Selected: {clickedCoord.nearLandmark}</span>
+              <span className="font-semibold text-[#001e40] flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                <span>{clickedCoord.nearLandmark}</span>
               </span>
               <button 
                 onClick={() => setClickedCoord(null)}
-                className="text-slate-400 hover:text-slate-700 text-xs font-bold"
+                className="text-slate-400 hover:text-slate-700 text-xs px-1"
               >
                 ✕
               </button>
             </div>
-            <div className="text-[11px] text-slate-500 font-mono">
-              Lat: {clickedCoord.lat}°, Lng: {clickedCoord.lng}°
+            <div className="text-[10px] text-slate-500 font-mono">
+              {clickedCoord.lat.toFixed(4)}° N, {clickedCoord.lng.toFixed(4)}° E
             </div>
             {onOpenReportDrawerWithLocation && (
               <button
                 data-action="report-here"
-                className="w-full mt-1.5 py-1 px-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                className="w-full mt-1 py-1 px-2 rounded-md bg-[#001e40] hover:bg-[#003366] text-white font-medium text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
-                <span>Log Complaint At This Location</span>
+                <span>Log incident here</span>
               </button>
             )}
           </div>
         )}
 
-        {/* Floating Severity Legend Overlay */}
-        <div className="absolute top-3 left-3 z-20 hidden sm:flex flex-col gap-1 bg-white/95 backdrop-blur-md p-2.5 rounded-xl border border-slate-200/90 shadow-md text-[11px]">
-          <div className="font-bold text-slate-800 text-[10px] uppercase tracking-wider mb-0.5">
-            Severity Classification
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-600 shadow-xs flex items-center justify-center text-[8px] text-white font-black">!</span>
-            <span className="text-slate-700 font-medium">Red: Urgent / Critical Hazard</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-amber-500 shadow-xs flex items-center justify-center text-[8px] text-slate-900 font-black">▲</span>
-            <span className="text-slate-700 font-medium">Yellow: Medium / Normal Active</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-emerald-600 shadow-xs flex items-center justify-center text-[8px] text-white font-black">✓</span>
-            <span className="text-slate-700 font-medium">Green: Low / Resolved Issue</span>
-          </div>
+        {/* Collapsible Severity Legend in Bottom-Left Corner (does not cover map) */}
+        <div className="absolute bottom-3 left-3 z-20 font-sans">
+          {isLegendOpen ? (
+            <div className="bg-white/95 backdrop-blur-md p-2.5 rounded-md border border-slate-200 shadow-sm text-[11px] space-y-1 animate-in fade-in duration-100">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-1">
+                <span className="font-semibold text-slate-700 text-[10px] uppercase tracking-wider">
+                  Severity
+                </span>
+                <button
+                  onClick={() => setIsLegendOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 text-xs px-1 cursor-pointer"
+                  title="Collapse legend"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                <span className="text-slate-700">Red: Urgent / Critical</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                <span className="text-slate-700">Yellow: Normal active</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-slate-700">Green: Low / Resolved</span>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsLegendOpen(true)}
+              className="px-2 py-1 rounded-md bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 hover:text-slate-900 shadow-2xs text-[11px] font-medium flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <span>Legend</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Bottom Summary Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 pt-1">
-        <div className="flex items-center gap-4">
-          <span className="font-semibold text-slate-700">
-            Showing {filteredReports.length} of {reports.length} campus complaints
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-700">
+            Showing {filteredReports.length} of {reports.length} incidents
           </span>
-          <span className="hidden sm:inline">&bull;</span>
+          <span className="text-slate-300">&bull;</span>
           <span className="hidden sm:inline text-slate-500">
-            Click any pin for complaint details or click on map to report a hazard.
+            Click any pin to inspect or click the map to select coordinates.
           </span>
         </div>
-        <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
+        <div className="text-[11px] font-mono text-slate-400">
           <span>Center: 26.5030° N, 80.2678° E</span>
         </div>
       </div>

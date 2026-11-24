@@ -75,10 +75,10 @@ TRAINING_LABELS = {
     "ditch_clogged_drain.jpg": "blocked_drain",
     "river_ghat_canal_waste.jpg": "blocked_drain",
     "culvert_grate_drain_blocked.jpg": "blocked_drain",
+    "civil_pipe_construction_clean.jpg": "blocked_drain",
 
     # 3. Clean Areas, Pathways & Dustbin Infrastructure
     "Hostel_Dormitory.jpg": "bin_empty",
-    "civil_pipe_construction_clean.jpg": "bin_empty",
     "supermarket_store_aisle_clean.jpg": "bin_empty",
     "clean_highway_autumn_road.jpg": "bin_empty",
     "images (11).jpeg": "bin_empty",
