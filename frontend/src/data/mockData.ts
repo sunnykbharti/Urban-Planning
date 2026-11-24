@@ -675,7 +675,7 @@ export const initialCredentials: UserCredential[] = [
     name: 'Sunny Bharti',
     email: 'sunny.student@csjmu.ac.in',
     role: 'student',
-    pin: '',
+    pin: '1234',
     agency: 'CSJMU Student Council',
     department: 'Computer Science & Engineering (UIET)',
     badgeNumber: 'CSJMU/UIET/2023/104',

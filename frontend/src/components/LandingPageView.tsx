@@ -16,17 +16,20 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Footer } from './Footer';
+import { UserProfile } from '../types';
 
 interface LandingPageViewProps {
   onNavigateToLogin: () => void;
   onNavigateToApp: () => void;
   isAuthenticated?: boolean;
+  currentProfile?: UserProfile;
 }
 
 export const LandingPageView: React.FC<LandingPageViewProps> = ({
   onNavigateToLogin,
   onNavigateToApp,
-  isAuthenticated = false
+  isAuthenticated = false,
+  currentProfile
 }) => {
   const [locationInput, setLocationInput] = useState('UIET Block 1 • Pedestrian Quad');
   const [issueInput, setIssueInput] = useState('Overflowing recycling bin');
@@ -95,12 +98,26 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 </button>
               </>
             ) : (
-              <button
-                onClick={onNavigateToApp}
-                className="px-4 py-2 text-sm font-semibold text-black bg-white hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
-              >
-                Go to App
-              </button>
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={onNavigateToLogin}
+                  className="text-xs text-gray-300 hover:text-white px-2 py-1 transition-colors cursor-pointer"
+                  title="Switch or log in with different role"
+                >
+                  Switch User
+                </button>
+                <button
+                  onClick={onNavigateToApp}
+                  className="px-4 py-2 text-sm font-semibold text-black bg-white hover:bg-gray-200 rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Go to App</span>
+                  {currentProfile?.name && (
+                    <span className="text-[11px] font-normal text-gray-600 border-l border-gray-300 pl-1.5 hidden sm:inline">
+                      {currentProfile.name.split(' ')[0]}
+                    </span>
+                  )}
+                </button>
+              </div>
             )}
           </div>
 

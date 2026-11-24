@@ -615,12 +615,24 @@ export default function App() {
           onNavigateToLogin={() => setAppView('login')}
           onNavigateToApp={() => {
             if (isAuthenticated) {
+              if (userRole === 'developer') {
+                setActiveTab('developer_hub');
+              } else if (userRole === 'bvg_worker' || userRole === 'operator') {
+                setActiveTab('bvg_dashboard');
+              } else if (userRole === 'management') {
+                setActiveTab('management_dashboard');
+              } else if (userRole === 'super_admin' || userRole === 'admin') {
+                setActiveTab('admin_dashboard');
+              } else {
+                setActiveTab('student_dashboard');
+              }
               setAppView('app');
             } else {
               setAppView('login');
             }
           }}
           isAuthenticated={isAuthenticated}
+          currentProfile={currentUserProfile}
         />
         {/* Global Toast Notification */}
         {toastMessage && (

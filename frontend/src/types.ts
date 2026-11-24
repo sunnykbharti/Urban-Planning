@@ -365,7 +365,7 @@ export const DEFAULT_PROFILES: Record<'student' | 'bvg_worker' | 'management' | 
     badgeNumber: 'CSJMU/UIET/2023/104',
     email: 'sunny.student@csjmu.ac.in',
     avatar: 'SB',
-    pin: '', // No PIN required for students/public audience
+    pin: '1234',
     permissions: ['lodge_report', 'view_public_map', 'view_cool_havens']
   },
   bvg_worker: {
