@@ -62,7 +62,6 @@ TRAINING_LABELS = {
     "images (1) 2.jpeg": "litter_pile",
     "images (1).jpeg": "litter_pile",
     "images (12).jpeg": "litter_pile",
-    "images (8).jpeg": "litter_pile",
     "images.jpeg": "litter_pile",
     "slum_ground_litter_dump.jpg": "litter_pile",
     "gettyimages-1497035393-612x612.jpg": "litter_pile",
@@ -105,12 +104,14 @@ TRAINING_LABELS = {
     "images (5).jpeg": "bin_empty",
     "images (6).jpeg": "bin_empty",
     "images (7).jpeg": "bin_empty",
+    "images (8).jpeg": "bin_empty",
     "images (21).jpeg": "bin_empty",
     "images (28).jpeg": "bin_empty",
     "images (30).jpeg": "bin_empty",
     "images (35).jpeg": "bin_empty",
     "images (36).jpeg": "bin_empty",
     "images (37).jpeg": "bin_empty",
+    "images (38).jpeg": "bin_empty",
     "unnamed.jpg": "bin_empty",
     "WhatsApp Image 2026-10-15 at 14.13.52.jpeg": "bin_empty",
     "WhatsApp Image 2026-10-15 at 14.13.54.jpeg": "bin_empty",
@@ -369,18 +370,20 @@ class WasteMLPipeline:
         p_cat_waste = sum(prob_dict.get(c, 0.0) for c in waste_classes)
         p_cat_clean = prob_dict.get("bin_empty", 0.0)
 
-        # Robust dual-layer decision:
-        # A scene is declared clean when clean probability from both binary & multi-class classifiers exceeds waste.
-        # If waste probability exceeds clean or combined waste categories exceed clean, declare waste.
-        if p_waste_binary > p_clean_binary or p_cat_waste > p_cat_clean:
+        # Standard calibrated decision:
+        # Combined score weighting: 70% multiclass gradient boosting + 30% binary forest
+        combined_clean = 0.70 * p_cat_clean + 0.30 * p_clean_binary
+        combined_waste = 0.70 * p_cat_waste + 0.30 * p_waste_binary
+
+        if p_cat_clean >= 0.50 or combined_clean > combined_waste:
+            is_waste = False
+            predicted_cat = "bin_empty"
+            confidence = max(p_cat_clean, combined_clean)
+        else:
             is_waste = True
             best_waste_cat = max(waste_classes, key=lambda c: prob_dict.get(c, 0.0))
             predicted_cat = best_waste_cat
-            confidence = max(prob_dict.get(best_waste_cat, 0.5), p_waste_binary)
-        else:
-            is_waste = False
-            predicted_cat = "bin_empty"
-            confidence = max(p_cat_clean, p_clean_binary)
+            confidence = max(prob_dict.get(best_waste_cat, 0.5), combined_waste)
 
         if predicted_cat == "bin_empty":
             is_waste = False

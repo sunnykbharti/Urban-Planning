@@ -607,8 +607,8 @@ def analyze_garbage_image(
             print(f"[DetectionService] ML inference notice: {e}")
             ml_result = None
 
-    # Immediate Clean Guard: If ML pipeline verifies with high certainty that this is a clean area or upright dustbin
-    if ml_result and ml_result.get("primaryClass") == "bin_empty" and not ml_result.get("isGarbageDetected", True) and float(ml_result.get("confidence", 0.0)) >= 0.60:
+    # Immediate Clean Guard: If ML pipeline verifies with certainty that this is a clean area or upright dustbin
+    if ml_result and ml_result.get("primaryClass") == "bin_empty" and not ml_result.get("isGarbageDetected", True) and float(ml_result.get("confidence", 0.0)) >= 0.50:
         return {
             "isGarbageDetected": False,
             "confidence": round(float(ml_result.get("confidence", 0.98)), 2),
