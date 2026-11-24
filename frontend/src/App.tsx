@@ -204,6 +204,17 @@ export default function App() {
     return 'landing';
   });
 
+  // Security RBAC Guard: Strictly isolate Developer Hub to verified developer only
+  useEffect(() => {
+    if (activeTab === 'developer_hub' && userRole !== 'developer') {
+      const fallbackTab: ActiveTab = 
+        userRole === 'student' ? 'student_dashboard' :
+        userRole === 'bvg_worker' || userRole === 'operator' ? 'bvg_dashboard' :
+        userRole === 'management' ? 'management_dashboard' : 'admin_dashboard';
+      setActiveTab(fallbackTab);
+    }
+  }, [activeTab, userRole]);
+
   const handleRoleChange = (newRole: UserRole, newProfile?: UserProfile) => {
     setUserRole(newRole);
     localStorage.setItem('csjmu_user_role', newRole);

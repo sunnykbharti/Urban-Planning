@@ -71,6 +71,12 @@ TRAINING_LABELS = {
     "WhatsApp Image 2026-11-23 at 00.15.33.jpeg": "litter_pile",
     "images (22).jpeg": "litter_pile",
     "images (24).jpeg": "litter_pile",
+    "images (26).jpeg": "litter_pile",
+    "images (27).jpeg": "litter_pile",
+    "images (29).jpeg": "litter_pile",
+    "images (31).jpeg": "litter_pile",
+    "images (32).jpeg": "litter_pile",
+    "images (34).jpeg": "litter_pile",
 
     # 2. Blocked Drains, Gutters & Drainage Canals
     "download.jpeg": "blocked_drain",
@@ -85,6 +91,9 @@ TRAINING_LABELS = {
     "culvert_grate_drain_blocked.jpg": "blocked_drain",
     "civil_pipe_construction_clean.jpg": "blocked_drain",
     "iStock-1312738739-1080x675.jpg": "blocked_drain",
+    "images (25).jpeg": "blocked_drain",
+    "images (33).jpeg": "blocked_drain",
+    "1560047-dra.webp": "blocked_drain",
 
     # 3. Clean Areas, Pathways & Dustbin Infrastructure
     "Hostel_Dormitory.jpg": "bin_empty",
@@ -97,6 +106,11 @@ TRAINING_LABELS = {
     "images (6).jpeg": "bin_empty",
     "images (7).jpeg": "bin_empty",
     "images (21).jpeg": "bin_empty",
+    "images (28).jpeg": "bin_empty",
+    "images (30).jpeg": "bin_empty",
+    "images (35).jpeg": "bin_empty",
+    "images (36).jpeg": "bin_empty",
+    "images (37).jpeg": "bin_empty",
     "unnamed.jpg": "bin_empty",
     "WhatsApp Image 2026-10-15 at 14.13.52.jpeg": "bin_empty",
     "WhatsApp Image 2026-10-15 at 14.13.54.jpeg": "bin_empty",
@@ -356,13 +370,13 @@ class WasteMLPipeline:
         p_cat_clean = prob_dict.get("bin_empty", 0.0)
 
         # Robust dual-layer decision:
-        # A scene is declared clean ONLY when clean probability dominates waste probability with high certainty.
-        # If waste probability is >= 0.40 or combined waste categories exceed clean, declare waste.
-        if p_waste_binary >= 0.40 or p_cat_waste > p_cat_clean or p_cat_clean < 0.55:
+        # A scene is declared clean when clean probability from both binary & multi-class classifiers exceeds waste.
+        # If waste probability exceeds clean or combined waste categories exceed clean, declare waste.
+        if p_waste_binary > p_clean_binary or p_cat_waste > p_cat_clean:
             is_waste = True
             best_waste_cat = max(waste_classes, key=lambda c: prob_dict.get(c, 0.0))
             predicted_cat = best_waste_cat
-            confidence = max(prob_dict.get(best_waste_cat, 0.5), p_waste_binary, p_cat_waste)
+            confidence = max(prob_dict.get(best_waste_cat, 0.5), p_waste_binary)
         else:
             is_waste = False
             predicted_cat = "bin_empty"

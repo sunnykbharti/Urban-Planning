@@ -68,9 +68,27 @@ DETECTION_CLASSES = [
         "defaultSeverity": "CRITICAL"
     },
     {
+        "id": "washroom_hygiene",
+        "label": "Washroom & Sanitation Hygiene",
+        "description": "Dirty tiles, clogged urinal/toilet fixtures, standing water or severe restroom odor",
+        "defaultSeverity": "HIGH"
+    },
+    {
+        "id": "road_garbage",
+        "label": "Roadside & Pathway Garbage",
+        "description": "Heavy waste heaps along perimeter ring road, campus gate, or parking avenues",
+        "defaultSeverity": "HIGH"
+    },
+    {
+        "id": "garden_waste",
+        "label": "Garden & Horticultural Waste",
+        "description": "Piles of dry fallen leaves, tree branches from pruning, or lawn clippings",
+        "defaultSeverity": "LOW"
+    },
+    {
         "id": "litter_pile",
         "label": "Campus / Municipal Litter",
-        "description": "Unwanted bottles, paper scraps, dried leaves, or scattered packaging",
+        "description": "Unwanted bottles, paper scraps, wrappers, or scattered packaging in rooms or lawns",
         "defaultSeverity": "MEDIUM"
     },
     {
@@ -87,8 +105,8 @@ DETECTION_CLASSES = [
     },
     {
         "id": "bin_empty",
-        "label": "Bin Clear & Empty",
-        "description": "Receptacle sanitary and serviceable",
+        "label": "Bin Clear & Empty / Sanitary Clean",
+        "description": "Receptacle sanitary, clean washroom or unlittered floor/pavement",
         "defaultSeverity": "NORMAL"
     }
 ]
@@ -103,6 +121,9 @@ SAMPLE_SOURCES = [
 BULK_DENSITY_MAP = {
     "overflow": 125.0,
     "litter_pile": 90.0,
+    "road_garbage": 150.0,
+    "garden_waste": 65.0,
+    "washroom_hygiene": 85.0,
     "blocked_drain": 260.0,
     "bin_full": 140.0,
     "bin_partial": 110.0,
@@ -228,14 +249,14 @@ def _try_gemini_vision(image_path: str, api_key: str) -> Optional[Dict[str, Any]
             "An upright dustbin with painted lettering (e.g. 'DONATED BY...', 'USE ME', 'CSJMU') standing on pavers, grass, or indoors with NO garbage overflowing onto the ground MUST be classified with:\n"
             "'isGarbageDetected': false, 'primaryClass': 'bin_empty', 'classLabel': 'Sanitary Waste Receptacle (Dustbin Clean)', 'severity': 'NORMAL', 'estimatedWeightKg': 0.0, 'estimatedVolumeM3': 0.0, 'spreadAreaSqM': 0.0.\n"
             "A dustbin is NEVER garbage unless uncontained trash is visibly spilling over the brim onto the surrounding floor!\n"
-            "2. CLEAN SPACES: If the image depicts a clean campus lawn, grass, trees, park, outdoor pathway, study desk, empty room, or walkway with NO uncontained trash or litter, you MUST set 'isGarbageDetected': false, 'primaryClass': 'bin_empty', 'classLabel': 'Sanitary Clean Environment (Campus Lawn & Walkway)', 'severity': 'NORMAL', 'estimatedWeightKg': 0.0.\n"
-            "Under NO circumstances should healthy grass, tree canopies, sunlit walkways, or clean dustbins be classified as litter or debris!\n"
-            "Only set 'isGarbageDetected' to true if there is actual, genuine visible uncontained garbage spilling on the ground.\n\n"
+            "2. CLEAN SPACES & WASHROOMS: If the image depicts a clean campus lawn, grass, trees, park, outdoor pathway, study desk, empty room, walkway, or a clean washroom / restroom / toilet with tiled floors and washbasins with NO uncontained trash or litter, you MUST set 'isGarbageDetected': false, 'primaryClass': 'bin_empty', 'classLabel': 'Sanitary Clean Environment (Campus Walkway / Washroom)', 'severity': 'NORMAL', 'estimatedWeightKg': 0.0.\n"
+            "Under NO circumstances should clean tiled floors, clean restroom mirrors/fixtures, healthy grass, tree canopies, sunlit walkways, or clean dustbins be classified as litter or debris!\n"
+            "Only set 'isGarbageDetected' to true if there is actual, genuine visible uncontained garbage spilling on the ground, clogged drains, overflowing bins, roadside waste, or dirty restroom conditions.\n\n"
             "Return ONLY a valid JSON object matching this schema (no markdown, no backticks):\n"
             "{\n"
             '  "isGarbageDetected": boolean,\n'
-            '  "detectedEnvironment": "Campus Pathway / Lawn" | "Urban Street / Road" | "University Classroom / Lab" | "Drainage / Canal" | "Corridor / Quad" | "Public Area",\n'
-            '  "primaryClass": "overflow" | "litter_pile" | "blocked_drain" | "bin_full" | "bin_empty",\n'
+            '  "detectedEnvironment": "Campus Pathway / Lawn" | "Urban Street / Road" | "University Classroom / Lab" | "Drainage / Canal" | "Corridor / Quad" | "Washroom / Restroom" | "Public Area",\n'
+            '  "primaryClass": "overflow" | "litter_pile" | "blocked_drain" | "washroom_hygiene" | "road_garbage" | "garden_waste" | "bin_full" | "bin_empty",\n'
             '  "classLabel": "Concise descriptive title (e.g. Municipal Litter Pile or Clean Pathway)",\n'
             '  "confidence": number between 0.88 and 0.99,\n'
             '  "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "NORMAL",\n'

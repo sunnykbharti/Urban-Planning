@@ -24,7 +24,7 @@ def run_training():
     print("CSJMU Civic Operations - Machine Learning Feature Classifier Pipeline")
     print("=" * 70)
 
-    files = sorted([f for f in os.listdir(DATA_DIR) if f.endswith(('.jpg', '.jpeg', '.png'))])
+    files = sorted([f for f in os.listdir(DATA_DIR) if f.endswith(('.jpg', '.jpeg', '.png', '.webp'))])
     print(f"Discovered {len(files)} dataset images in: {DATA_DIR}")
 
     X_deep_list = []

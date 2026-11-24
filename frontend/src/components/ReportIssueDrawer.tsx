@@ -27,7 +27,10 @@ import {
   Zap,
   Hammer,
   Ban,
-  AlertCircle
+  AlertCircle,
+  Bath,
+  Leaf,
+  Truck
 } from 'lucide-react';
 import { ReportCategory, ReportSeverity, MaintenanceReport, GarbageDetectionResult, BoundingBox } from '../types';
 import { samplePhotos } from '../data/mockData';
@@ -169,7 +172,24 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
             d.classLabel.toLowerCase().includes('canal')
           ))
         );
-        setCategory(hasDrain ? 'waterlogging' : (suggestedCategory || 'garbage'));
+        const hasWashroom = allDets.some(d => 
+          d.primaryClass === 'washroom_hygiene' ||
+          (d.classLabel && (
+            d.classLabel.toLowerCase().includes('washroom') ||
+            d.classLabel.toLowerCase().includes('toilet') ||
+            d.classLabel.toLowerCase().includes('restroom')
+          ))
+        );
+        const hasOverflow = allDets.some(d => d.primaryClass === 'overflow');
+        const hasRoadGarbage = allDets.some(d => d.primaryClass === 'road_garbage');
+        const hasGarden = allDets.some(d => d.primaryClass === 'garden_waste');
+
+        if (hasDrain) setCategory('waterlogging');
+        else if (hasWashroom) setCategory('washroom');
+        else if (hasOverflow) setCategory('overflow');
+        else if (hasRoadGarbage) setCategory('road_garbage');
+        else if (hasGarden) setCategory('garden_waste');
+        else setCategory(suggestedCategory || 'garbage');
       } else {
         setCategory('');
       }
@@ -592,12 +612,16 @@ export const ReportIssueDrawer: React.FC<ReportIssueDrawerProps> = ({
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   3. Issue Category
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto p-0.5">
                   {[
                     { id: 'garbage', label: 'Solid Waste / Litter', icon: Trash2, color: 'text-emerald-700 bg-emerald-50 border-emerald-300' },
-                    { id: 'waterlogging', label: 'Drain / Water Clog', icon: Droplet, color: 'text-blue-700 bg-blue-50 border-blue-300' },
-                    { id: 'electrical', label: 'Electrical Hazard', icon: Zap, color: 'text-amber-700 bg-amber-50 border-amber-300' },
-                    { id: 'infrastructure', label: 'Civil / Pathway Repair', icon: Hammer, color: 'text-purple-700 bg-purple-50 border-purple-300' }
+                    { id: 'overflow', label: 'Dustbin Overflow', icon: Trash2, color: 'text-rose-700 bg-rose-50 border-rose-300' },
+                    { id: 'washroom', label: 'Washroom Hygiene', icon: Bath, color: 'text-cyan-700 bg-cyan-50 border-cyan-300' },
+                    { id: 'waterlogging', label: 'Drain / Sewer Clog', icon: Droplet, color: 'text-blue-700 bg-blue-50 border-blue-300' },
+                    { id: 'road_garbage', label: 'Roadside Waste', icon: Truck, color: 'text-orange-700 bg-orange-50 border-orange-300' },
+                    { id: 'garden_waste', label: 'Garden & Leaf Waste', icon: Leaf, color: 'text-lime-700 bg-lime-50 border-lime-300' },
+                    { id: 'infrastructure', label: 'Civil / Pathway Repair', icon: Hammer, color: 'text-purple-700 bg-purple-50 border-purple-300' },
+                    { id: 'electrical', label: 'Electrical Hazard', icon: Zap, color: 'text-amber-700 bg-amber-50 border-amber-300' }
                   ].map((cat) => {
                     const Icon = cat.icon;
                     const isSelected = category === cat.id;

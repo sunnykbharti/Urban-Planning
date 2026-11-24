@@ -4,11 +4,15 @@ export type ReportStatus = 'pending' | 'in_progress' | 'resolved' | 'dispatched'
 
 export type ReportCategory = 
   | 'garbage'
-  | 'infrastructure'
+  | 'overflow'
+  | 'washroom'
   | 'waterlogging'
+  | 'road_garbage'
+  | 'garden_waste'
+  | 'infrastructure'
+  | 'electrical'
   | 'safety'
   | 'plumbing'
-  | 'electrical'
   | 'hvac'
   | 'other';
 
@@ -18,7 +22,10 @@ export type DetectionClass =
   | 'bin_full'
   | 'overflow'
   | 'litter_pile'
-  | 'blocked_drain';
+  | 'blocked_drain'
+  | 'washroom_hygiene'
+  | 'road_garbage'
+  | 'garden_waste';
 
 export type SensorSourceType =
   | 'DRONE_SWEEP'
