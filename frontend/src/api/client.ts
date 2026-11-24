@@ -945,6 +945,23 @@ export async function fetchCctvRunsAPI(): Promise<any[]> {
   return [];
 }
 
+export async function runCctvProtocolTestAPI(): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cctv/protocol-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.report || null;
+    }
+  } catch (err) {
+    console.warn('CCTV protocol test API offline', err);
+  }
+  return null;
+}
+
 export async function fetchDeveloperStatsAPI(): Promise<DeveloperStats | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/developer/stats`, { signal: AbortSignal.timeout(4000) });

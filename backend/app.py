@@ -541,6 +541,31 @@ def get_cctv_pipeline_runs():
         "runs": cctv_service.get_pipeline_runs()
     }), 200
 
+@app.route("/api/cctv/protocol-test", methods=["GET", "POST"])
+def execute_cctv_protocol_test():
+    """
+    Executes the formal CCTV AI Garbage Detection Test Protocol across all 6 phases:
+    1. 6-Class Classification & Confidence Thresholds (TC-1.1 to TC-1.6)
+    2. False Positive Elimination (Temporal 3-Frame Burst)
+    3. Region of Interest (ROI) Masking
+    4. Optical Quality Gate (Blackout, Over-exposure, Blur)
+    5. Privacy Anonymization (Face Blurring)
+    6. Closed-Loop Before vs. After Verification
+    7. Authority Resolution Routing
+    """
+    try:
+        from tests.test_cctv_protocol import run_full_protocol_suite
+        report = run_full_protocol_suite()
+        return jsonify({
+            "success": True,
+            "report": report
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 # -------------------------------------------------------------
 # Developer Command Center & Model Diagnostics Endpoints
 # -------------------------------------------------------------

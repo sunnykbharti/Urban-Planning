@@ -642,6 +642,8 @@ class CctvPipelineService:
             run_status = "REOPENED_UNCLEAN"
         elif created_incident:
             run_status = "TICKET_DISPATCHED"
+        elif not confirmed_in_burst and is_significant and passes_confidence:
+            run_status = "TRANSIENT_IGNORED"
         elif is_duplicate:
             run_status = "DUPLICATE_IGNORED"
         else:

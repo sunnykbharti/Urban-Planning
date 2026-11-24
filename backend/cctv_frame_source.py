@@ -60,7 +60,7 @@ def evaluate_frame_quality(
     if mean_lum < 10.0:
         return FrameQualityResult(
             is_valid=False,
-            reason="Blackout frame (luminance < 10)",
+            reason="CRITICAL_BLACKOUT: Blackout frame (luminance < 10)",
             is_night_ir=True,
             laplacian_var=lap_var,
             mean_luminance=mean_lum
@@ -70,7 +70,7 @@ def evaluate_frame_quality(
     if mean_lum > max_mean_luminance:
         return FrameQualityResult(
             is_valid=False,
-            reason=f"Over-exposed frame (luminance {mean_lum:.1f} > {max_mean_luminance})",
+            reason=f"OVER_EXPOSURE: Over-exposed frame (luminance {mean_lum:.1f} > {max_mean_luminance})",
             is_night_ir=False,
             laplacian_var=lap_var,
             mean_luminance=mean_lum
@@ -83,7 +83,7 @@ def evaluate_frame_quality(
     if not is_night_ir and lap_var < min_laplacian_var:
         return FrameQualityResult(
             is_valid=False,
-            reason=f"Blurred frame (Laplacian variance {lap_var:.1f} < {min_laplacian_var})",
+            reason=f"DEFOCUS_OR_MOTION_BLUR: Blurred frame (Laplacian variance {lap_var:.1f} < {min_laplacian_var})",
             is_night_ir=is_night_ir,
             laplacian_var=lap_var,
             mean_luminance=mean_lum
